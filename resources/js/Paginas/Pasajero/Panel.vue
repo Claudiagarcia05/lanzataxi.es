@@ -164,7 +164,7 @@
           <div class="bg-white rounded-xl shadow-sm p-6 sticky top-6">
             <h3 class="font-semibold text-neutral-dark mb-4">Taxis cerca de ti</h3>
             
-            <MapaTaxi :pickupLat="bookingForm.pickupLat" :pickupLng="bookingForm.pickupLng" :dropoffLat="bookingForm.dropoffLat" :dropoffLng="bookingForm.dropoffLng" @distance-calculated="(distance) => bookingForm.distance = distance" @location-found="handleUserLocation"/>
+            <MapaTaxi :pickupLat="bookingForm.pickupLat" :pickupLng="bookingForm.pickupLng" :dropoffLat="bookingForm.dropoffLat" :dropoffLng="bookingForm.dropoffLng" @distance-calculated="(distance) => bookingForm.distance = Number.parseFloat(distance) || 0" @location-found="handleUserLocation"/>
             
             <div class="mt-4 space-y-2 text-sm">
               <div class="flex justify-between items-center py-2 border-b border-neutral-volcanic">
@@ -218,6 +218,46 @@ const handleUserLocation = (location) => {
   }
 }
 
+let pickupGeocodeTimeout = null
+let dropoffGeocodeTimeout = null
+const suppressPickupWatch = ref(false)
+const suppressDropoffWatch = ref(false)
+
+const geocodeAddress = async (address) => {
+  const q = (address || '').trim()
+  if (!q) return null
+
+  const response = await axios.get('https://nominatim.openstreetmap.org/search', {
+    params: {
+      q,
+      format: 'json',
+      limit: 1,
+      countrycodes: 'es'
+    }
+  })
+
+  const first = response.data?.[0]
+  if (!first) return null
+
+  const lat = Number.parseFloat(first.lat)
+  const lng = Number.parseFloat(first.lon)
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+
+  return { lat, lng, displayName: first.display_name }
+}
+
+const setPickupCoords = ({ lat, lng }) => {
+  suppressPickupWatch.value = true
+  bookingForm.value.pickupLat = lat
+  bookingForm.value.pickupLng = lng
+}
+
+const setDropoffCoords = ({ lat, lng }) => {
+  suppressDropoffWatch.value = true
+  bookingForm.value.dropoffLat = lat
+  bookingForm.value.dropoffLng = lng
+}
+
 const obtenerUbicacionUsuario = async () => {
   errorMsg.value = '';
   infoMsg.value = '';
@@ -238,12 +278,21 @@ const obtenerUbicacionUsuario = async () => {
       });
       const address = response.data.display_name || `${lat}, ${lng}`;
       handleUserLocation({ address, lat, lng });
+
+      // Al fijar el origen, limpiar distancia/precio hasta que haya destino real.
+      bookingForm.value.distance = 0
+      bookingForm.value.estimatedPrice = 0
+
       infoMsg.value = 'Ubicación obtenida correctamente.';
       setTimeout(() => { infoMsg.value = ''; }, 4000);
     } catch (e) {
       bookingForm.value.pickupAddress = `${lat}, ${lng}`;
       bookingForm.value.pickupLat = lat;
       bookingForm.value.pickupLng = lng;
+
+      bookingForm.value.distance = 0
+      bookingForm.value.estimatedPrice = 0
+
       infoMsg.value = 'Ubicación obtenida, pero no se pudo determinar la dirección exacta.';
       setTimeout(() => { infoMsg.value = ''; }, 4000);
     }
@@ -316,9 +365,18 @@ const getMunicipio = (direccion) => {
 }
 
 const calculateEstimatedPrice = () => {
+  const distance = Number.parseFloat(bookingForm.value.distance)
+  const hasDistance = Number.isFinite(distance) && distance > 0
+  const hasAddresses = Boolean(bookingForm.value.pickupAddress?.trim()) && Boolean(bookingForm.value.dropoffAddress?.trim())
+
+  // Hasta que el usuario no indique destino y exista una distancia real, no mostrar ni calcular precio.
+  if (!hasAddresses || !hasDistance) {
+    bookingForm.value.estimatedPrice = 0
+    return
+  }
+
   const origen = getMunicipio(bookingForm.value.pickupAddress)
   const destino = getMunicipio(bookingForm.value.dropoffAddress)
-  const distance = bookingForm.value.distance || 5.5
   const isNoche = isNightTime()
 
   for (const t of trayectosFijos) {
@@ -354,11 +412,101 @@ watch([() => bookingForm.value.distance, () => bookingForm.value.luggage, () => 
   calculateEstimatedPrice()
 })
 
+// Geocodificar origen escrito (cuando no viene de "Mi ubicación")
+watch(() => bookingForm.value.pickupAddress, (newAddress) => {
+  if (suppressPickupWatch.value) {
+    suppressPickupWatch.value = false
+    return
+  }
+
+  // Si el usuario cambia el origen manualmente, invalidar coords/distancia
+  bookingForm.value.pickupLat = null
+  bookingForm.value.pickupLng = null
+  bookingForm.value.distance = 0
+  bookingForm.value.estimatedPrice = 0
+
+  if (pickupGeocodeTimeout) clearTimeout(pickupGeocodeTimeout)
+  const q = (newAddress || '').trim()
+  if (q.length < 5) return
+
+  pickupGeocodeTimeout = setTimeout(async () => {
+    // Evitar aplicar resultados si el usuario cambió el texto mientras tanto
+    if ((bookingForm.value.pickupAddress || '').trim() !== q) return
+    try {
+      const result = await geocodeAddress(q)
+      if (!result) return
+      if ((bookingForm.value.pickupAddress || '').trim() !== q) return
+      setPickupCoords(result)
+    } catch {
+    }
+  }, 700)
+})
+
+// Geocodificar destino escrito
+watch(() => bookingForm.value.dropoffAddress, (newAddress) => {
+  if (suppressDropoffWatch.value) {
+    suppressDropoffWatch.value = false
+    return
+  }
+
+  bookingForm.value.dropoffLat = null
+  bookingForm.value.dropoffLng = null
+  bookingForm.value.distance = 0
+  bookingForm.value.estimatedPrice = 0
+
+  if (dropoffGeocodeTimeout) clearTimeout(dropoffGeocodeTimeout)
+  const q = (newAddress || '').trim()
+  if (q.length < 5) return
+
+  dropoffGeocodeTimeout = setTimeout(async () => {
+    if ((bookingForm.value.dropoffAddress || '').trim() !== q) return
+    try {
+      const result = await geocodeAddress(q)
+      if (!result) return
+      if ((bookingForm.value.dropoffAddress || '').trim() !== q) return
+      setDropoffCoords(result)
+    } catch {
+    }
+  }, 700)
+})
+
+watch([
+  () => bookingForm.value.pickupAddress,
+  () => bookingForm.value.dropoffAddress,
+  () => bookingForm.value.distance,
+  () => bookingForm.value.luggage,
+  () => bookingForm.value.viajeTime,
+], () => {
+  calculateEstimatedPrice()
+})
+
 const submitBooking = async () => {
   errorMsg.value = ''
   if (!bookingForm.value.pickupAddress || !bookingForm.value.dropoffAddress) {
     errorMsg.value = 'Por favor completa los datos de origen y destino.'
 
+    return
+  }
+
+  // Asegurar coordenadas reales (no por defecto)
+  const pickupLat = Number.parseFloat(bookingForm.value.pickupLat)
+  const pickupLng = Number.parseFloat(bookingForm.value.pickupLng)
+  const dropoffLat = Number.parseFloat(bookingForm.value.dropoffLat)
+  const dropoffLng = Number.parseFloat(bookingForm.value.dropoffLng)
+
+  if (!Number.isFinite(pickupLat) || !Number.isFinite(pickupLng)) {
+    errorMsg.value = 'No se pudo localizar la dirección de origen. Prueba con una dirección más específica o usa "Mi ubicación".'
+    return
+  }
+
+  if (!Number.isFinite(dropoffLat) || !Number.isFinite(dropoffLng)) {
+    errorMsg.value = 'No se pudo localizar la dirección de destino. Prueba con una dirección más específica.'
+    return
+  }
+
+  const distance = Number.parseFloat(bookingForm.value.distance)
+  if (!Number.isFinite(distance) || distance <= 0) {
+    errorMsg.value = 'No se pudo calcular la distancia del viaje todavía. Espera un momento e inténtalo de nuevo.'
     return
   }
 
@@ -370,12 +518,12 @@ const submitBooking = async () => {
   
   const datosViaje = {
     pickup_address: bookingForm.value.pickupAddress,
-    pickup_lat: bookingForm.value.pickupLat,
-    pickup_lng: bookingForm.value.pickupLng,
+    pickup_lat: pickupLat,
+    pickup_lng: pickupLng,
     dropoff_address: bookingForm.value.dropoffAddress,
-    dropoff_lat: bookingForm.value.dropoffLat || 28.978,
-    dropoff_lng: bookingForm.value.dropoffLng || -13.561,
-    distance: bookingForm.value.distance || 5.5,
+    dropoff_lat: dropoffLat,
+    dropoff_lng: dropoffLng,
+    distance: distance,
     scheduled_for: bookingForm.value.isScheduled 
       ? `${bookingForm.value.viajeDate} ${bookingForm.value.viajeTime}` 
       : null,

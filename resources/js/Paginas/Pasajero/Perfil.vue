@@ -472,15 +472,21 @@ const saveAvatar = async (file) => {
 }
 
 const handleImageError = (event) => {
-  console.error('Error al cargar la imagen:', event.target.src)
-  console.log('Intentando con authStore.usuario.avatar:', authStore.usuario?.avatar)
-  
-  if (authStore.usuario?.avatar && event.target.src !== authStore.usuario.avatar) {
-    event.target.src = authStore.usuario.avatar
-  } else {
-    userAvatar.value = null
-    avatarPreview.value = null
+  console.error('Error al cargar la imagen:', event?.target?.src)
+
+  const authAvatar = authStore.usuario?.avatar
+  const absoluteAuthAvatar = authAvatar
+    ? new URL(authAvatar, window.location.origin).href
+    : null
+
+  // Reintentar una sola vez si la URL actual no coincide con la del store
+  if (absoluteAuthAvatar && event?.target?.src && event.target.src !== absoluteAuthAvatar) {
+    event.target.src = absoluteAuthAvatar
+    return
   }
+
+  userAvatar.value = null
+  avatarPreview.value = null
 }
 
 const startEditingPersonal = () => {

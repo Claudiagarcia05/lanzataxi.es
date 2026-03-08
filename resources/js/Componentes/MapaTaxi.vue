@@ -45,6 +45,16 @@ import 'leaflet-control-geocoder/dist/Control.Geocoder.css'
 import 'leaflet-control-geocoder'
 import '../../css/taximap.css'
 
+const normalizeOsrmServiceUrl = (url) => {
+  if (typeof url !== 'string') return null
+  const trimmed = url.trim()
+  if (!trimmed) return null
+  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`
+}
+
+const OSRM_SERVICE_URL = normalizeOsrmServiceUrl(import.meta.env.VITE_OSRM_SERVICE_URL)
+  || 'https://router.project-osrm.org/route/v1/'
+
 // Props
 const props = defineProps({
   pickupLat: { type: Number, default: 28.963 },
@@ -186,16 +196,21 @@ const centerOnUser = () => {
 
 // Calcular ruta
 const calculateRoute = () => {
+  if (!map) return
+
   // Eliminar ruta anterior
   if (routingControl) {
     map.removeControl(routingControl)
+    routingControl = null
   }
 
   // Validar puntos
+  const hasPickup = Number.isFinite(props.pickupLat) && Number.isFinite(props.pickupLng)
+  if (!hasPickup) return
+
   const pickup = [props.pickupLat, props.pickupLng]
-  let dropoff = props.dropoffLat && props.dropoffLng 
-    ? [props.dropoffLat, props.dropoffLng] 
-    : [28.978, -13.561] // Coordenadas por defecto
+
+  const hasDropoff = Number.isFinite(props.dropoffLat) && Number.isFinite(props.dropoffLng)
 
   // Actualizar marcadores
   if (pickupMarker) {
@@ -204,6 +219,21 @@ const calculateRoute = () => {
     pickupMarker = L.marker(pickup, { icon: icons.pickup }).addTo(map)
       .bindPopup('Origen')
   }
+
+  // Si todavía no hay destino, NO inventar uno. Limpiar estado y salir.
+  if (!hasDropoff) {
+    if (dropoffMarker) {
+      map.removeLayer(dropoffMarker)
+      dropoffMarker = null
+    }
+
+    routeInfo.value = null
+    currentRoutePoints = []
+    emit('distance-calculated', 0)
+    return
+  }
+
+  const dropoff = [props.dropoffLat, props.dropoffLng]
 
   if (dropoffMarker) {
     dropoffMarker.setLatLng(dropoff)
@@ -219,7 +249,7 @@ const calculateRoute = () => {
       L.latLng(dropoff[0], dropoff[1])
     ],
     router: L.Routing.osrmv1({
-      serviceUrl: 'https://router.project-osrm.org/route/v1/',
+      serviceUrl: OSRM_SERVICE_URL,
       profile: 'car' // Para rutas en coche/taxi
     }),
     lineOptions: {
@@ -233,34 +263,52 @@ const calculateRoute = () => {
 
   // Escuchar evento de ruta encontrada
   routingControl.on('routesfound', function(e) {
-    const routes = e.routes
-    const summary = routes[0].summary
-    const coordinates = routes[0].coordinates
+    const route = e?.routes?.[0]
+    if (!route) return
+
+    const summary = route.summary
+    const coordinates = Array.isArray(route.coordinates) ? route.coordinates : []
     
     // Guardar puntos de la ruta para simulación
-    currentRoutePoints = coordinates.map(coord => ({
-      lat: coord.lat,
-      lng: coord.lng
-    }))
+    currentRoutePoints = coordinates
+      .filter(coord => coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lng))
+      .map(coord => ({ lat: coord.lat, lng: coord.lng }))
 
     // Calcular distancia y duración
-    const distance = (summary.totalDistance / 1000).toFixed(2)
-    const duration = Math.round(summary.totalTime / 60)
+    const totalDistance = Number(summary?.totalDistance)
+    const totalTime = Number(summary?.totalTime)
+
+    const distance = Number.isFinite(totalDistance) ? (totalDistance / 1000).toFixed(2) : null
+    const duration = Number.isFinite(totalTime) ? Math.round(totalTime / 60) : null
     
-    routeInfo.value = {
-      distance: distance,
-      duration: `${duration} min`
-    }
+    routeInfo.value = distance && duration !== null
+      ? { distance, duration: `${duration} min` }
+      : null
 
     // Emitir distancia calculada
-    emit('distance-calculated', distance)
+    if (distance) emit('distance-calculated', distance)
 
     // Ajustar vista del mapa para mostrar toda la ruta
-    const bounds = routes[0].bounds
-    map.fitBounds([
-      [bounds.getSouth(), bounds.getWest()],
-      [bounds.getNorth(), bounds.getEast()]
-    ], { padding: [50, 50] })
+    const bounds = route.bounds
+
+    // Ajustar vista del mapa para mostrar toda la ruta (solo si hay bounds válidos)
+    if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50] })
+      return
+    }
+
+    if (coordinates.length) {
+      const computedBounds = L.latLngBounds(coordinates)
+      if (computedBounds.isValid()) {
+        map.fitBounds(computedBounds, { padding: [50, 50] })
+      }
+    }
+  })
+
+  routingControl.on('routingerror', function(err) {
+    console.error('Routing error:', err)
+    routeInfo.value = null
+    currentRoutePoints = []
   })
 }
 
@@ -323,7 +371,7 @@ const toggleSimulation = () => {
 watch(
   () => [props.pickupLat, props.pickupLng, props.dropoffLat, props.dropoffLng],
   () => {
-    if (props.pickupLat && props.pickupLng) {
+    if (Number.isFinite(props.pickupLat) && Number.isFinite(props.pickupLng)) {
       calculateRoute()
     }
   },

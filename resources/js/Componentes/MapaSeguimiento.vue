@@ -34,6 +34,16 @@ import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import 'leaflet-routing-machine'
 import '../../css/seguimiento.css'
 
+const normalizeOsrmServiceUrl = (url) => {
+  if (typeof url !== 'string') return null
+  const trimmed = url.trim()
+  if (!trimmed) return null
+  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`
+}
+
+const OSRM_SERVICE_URL = normalizeOsrmServiceUrl(import.meta.env.VITE_OSRM_SERVICE_URL)
+  || 'https://router.project-osrm.org/route/v1/'
+
 const props = defineProps({
   pickupLat: { type: Number, default: null },
   pickupLng: { type: Number, default: null },
@@ -137,7 +147,7 @@ const calculateRoute = () => {
       L.latLng(props.dropoffLat, props.dropoffLng)
     ],
     router: L.Routing.osrmv1({
-      serviceUrl: 'https://router.project-osrm.org/route/v1/',
+      serviceUrl: OSRM_SERVICE_URL,
       profile: 'car'
     }),
     lineOptions: {
@@ -149,11 +159,26 @@ const calculateRoute = () => {
   }).addTo(map)
 
   routingControl.on('routesfound', function(e) {
-    const bounds = e.routes[0].bounds
-    map.fitBounds([
-      [bounds.getSouth(), bounds.getWest()],
-      [bounds.getNorth(), bounds.getEast()]
-    ], { padding: [50, 50] })
+    const route = e?.routes?.[0]
+    if (!route) return
+
+    const bounds = route.bounds
+    if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
+      map.fitBounds(bounds, { padding: [50, 50] })
+      return
+    }
+
+    const coordinates = Array.isArray(route.coordinates) ? route.coordinates : []
+    if (coordinates.length) {
+      const computedBounds = L.latLngBounds(coordinates)
+      if (computedBounds.isValid()) {
+        map.fitBounds(computedBounds, { padding: [50, 50] })
+      }
+    }
+  })
+
+  routingControl.on('routingerror', function(err) {
+    console.error('Routing error:', err)
   })
 }
 

@@ -1,6 +1,36 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+const normalizeAvatarUrl = (avatar) => {
+    if (typeof avatar !== 'string') return avatar
+
+    const trimmed = avatar.trim()
+    if (!trimmed) return null
+
+    if (/^https?:\/\//i.test(trimmed)) return trimmed
+    if (trimmed.startsWith('/storage/')) return trimmed
+    if (trimmed.startsWith('storage/')) return `/${trimmed}`
+
+    // Si por algún motivo viene como "/avatars/...", en esta app vive bajo "/storage/avatars/...".
+    if (trimmed.startsWith('/avatars/')) return `/storage${trimmed}`
+
+    // Caso normal: DB guarda "avatars/...".
+    if (!trimmed.startsWith('/')) return `/storage/${trimmed}`
+
+    return trimmed
+}
+
+const normalizeUser = (user) => {
+    if (!user || typeof user !== 'object') return user
+
+    if (!('avatar' in user)) return user
+
+    return {
+        ...user,
+        avatar: normalizeAvatarUrl(user.avatar),
+    }
+}
+
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         usuario: null,
@@ -27,11 +57,12 @@ export const useAuthStore = defineStore('auth', {
             try {
                 const response = await axios.post('/api/login', credentials)
                 const { token, user: usuario } = response.data
+                const usuarioNormalizado = normalizeUser(usuario)
 
-                this.usuario = usuario
+                this.usuario = usuarioNormalizado
                 this.token = token
                 localStorage.setItem('token', token)
-                localStorage.setItem('usuario', JSON.stringify(usuario))
+                localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
 
                 // ⭐ Guardar token en cookie para que Laravel lo reconozca (7 días)
                 const expirationDate = new Date()
@@ -69,12 +100,13 @@ export const useAuthStore = defineStore('auth', {
             try {
                 const response = await axios.post('/api/register', datosUsuario)
                 const { token, user: usuario } = response.data
+                const usuarioNormalizado = normalizeUser(usuario)
 
                 // Autenticar automáticamente después del registro
-                this.usuario = usuario
+                this.usuario = usuarioNormalizado
                 this.token = token
                 localStorage.setItem('token', token)
-                localStorage.setItem('usuario', JSON.stringify(usuario))
+                localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
 
                 // ⭐ Guardar token en cookie para que Laravel lo reconozca (7 días)
                 const expirationDate = new Date()
@@ -83,7 +115,7 @@ export const useAuthStore = defineStore('auth', {
 
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-                return { success: true, usuario }
+                return { success: true, usuario: usuarioNormalizado }
             } catch (error) {
                 const message = error.response?.data?.message || 'No se pudo registrar el usuario'
                 const errors = error.response?.data?.errors || {}
@@ -138,8 +170,9 @@ export const useAuthStore = defineStore('auth', {
             if (!token && !cadenaUsuario) {
                 try {
                     const response = await axios.get('/api/me')
-                    this.usuario = response.data
-                    localStorage.setItem('usuario', JSON.stringify(response.data))
+                    const usuarioNormalizado = normalizeUser(response.data)
+                    this.usuario = usuarioNormalizado
+                    localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
                     this.initialized = true
                     return true
                 } catch {
@@ -165,8 +198,9 @@ export const useAuthStore = defineStore('auth', {
                     console.log('Sincronizando usuario desde el servidor...')
                     try {
                         const response = await axios.get('/api/me')
-                        this.usuario = response.data
-                        localStorage.setItem('usuario', JSON.stringify(response.data))
+                        const usuarioNormalizado = normalizeUser(response.data)
+                        this.usuario = usuarioNormalizado
+                        localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
                         this.initialized = true
                         return true
                     } catch (error) {
@@ -182,7 +216,9 @@ export const useAuthStore = defineStore('auth', {
                     try {
                         // Parsear el usuario guardado
                         const usuario = JSON.parse(cadenaUsuario)
-                        this.usuario = usuario
+                        const usuarioNormalizado = normalizeUser(usuario)
+                        this.usuario = usuarioNormalizado
+                        localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
                         this.initialized = true
                         return true
                     } catch (error) {
@@ -223,8 +259,9 @@ export const useAuthStore = defineStore('auth', {
 
             try {
                 const response = await axios.get('/api/me')
-                this.usuario = response.data
-                localStorage.setItem('usuario', JSON.stringify(response.data))
+                const usuarioNormalizado = normalizeUser(response.data)
+                this.usuario = usuarioNormalizado
+                localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
                 console.log('Usuario sincronizado desde el servidor:', this.usuario)
                 return true
             } catch (error) {
