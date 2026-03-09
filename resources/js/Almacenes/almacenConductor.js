@@ -1,5 +1,4 @@
-﻿// Eliminar bloque actions duplicado, dejar solo el que está dentro de defineStore
-import { defineStore } from 'pinia'
+﻿import { defineStore } from 'pinia'
 import { useAuthStore } from './almacenAutenticacion'
 import { useTripStore } from './almacenViaje'
 import axios from 'axios'
@@ -30,7 +29,6 @@ export const useConductorStore = defineStore('conductor', {
     valoracionFormateada: (state) => state.estadisticas.valoracion.toFixed(2),
     gananciasHoyFormateadas: (state) => `${state.estadisticas.gananciasHoy.toFixed(2)} €`,
     estaDisponible: (state) => state.estaEnLinea && state.perfil?.verified,
-    // isOnline y isAvailable eliminados, solo dejar para Mi Perfil si es necesario
     formattedRating: (state) => state.estadisticas.valoracion.toFixed(2),
     todayEarningsFormatted: (state) => `${state.estadisticas.gananciasHoy.toFixed(2)} €`,
     horasConectado: (state) => (Number(state.tiempoConectadoMesSegundos || 0) / 3600),
@@ -65,10 +63,8 @@ export const useConductorStore = defineStore('conductor', {
         const auth = useAuthStore()
         const datosPerfil = respuestaPerfil.data
         const taxi = datosPerfil.taxi || {}
-        // Guardar avatar si existe en user
         const avatar = datosPerfil.user?.avatar || null
 
-        // Sincronizar datos de usuario autenticado
         if (datosPerfil.user) {
           auth.usuario = {
             ...(auth.usuario || {}),
@@ -208,4 +204,3 @@ export const useConductorStore = defineStore('conductor', {
 })
 
 export const useDriverStore = useConductorStore
-

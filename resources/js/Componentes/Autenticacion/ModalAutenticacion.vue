@@ -161,6 +161,27 @@ const validateForm = () => {
 
       return false
     }
+
+    // Regla de negocio: coherencia entre el tipo de usuario Admin y el dominio del email
+    // - Admin => email obligatorio @admin.com
+    // - Email @admin.com => rol obligatorio Admin
+    const email = (formData.value.email || '').trim().toLowerCase()
+    const role = formData.value.role || 'pasajero'
+    const isAdminEmail = email.endsWith('@admin.com')
+
+    const mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.'
+
+    if (role === 'admin' && !isAdminEmail) {
+      error.value = mensajeGenericoCredenciales
+
+      return false
+    }
+
+    if (role !== 'admin' && isAdminEmail) {
+      error.value = mensajeGenericoCredenciales
+
+      return false
+    }
   }
 
   return true
@@ -239,7 +260,16 @@ const handleSubmit = async () => {
       || Object.values(e.response?.data?.errors || {})?.flat()?.[0]
       || 'Error en la autenticación'
 
-    error.value = mensaje
+    // Unificar mensaje para la regla Admin ⇔ @admin.com
+    const mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.'
+    const mensajesAUnificar = [
+      'Para crear un usuario administrador el email debe terminar en @admin.com.',
+      'Si el email termina en @admin.com debes seleccionar el tipo de usuario Admin.'
+    ]
+
+    error.value = mensajesAUnificar.includes(mensaje)
+      ? mensajeGenericoCredenciales
+      : mensaje
   } finally {
     cargando.value = false
   }

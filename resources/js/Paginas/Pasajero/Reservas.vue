@@ -1,11 +1,14 @@
 <template>
   <DisposicionPasajero>
+    <!-- Página del pasajero: historial de reservas y acceso a seguimiento en tiempo real -->
     <div class="max-w-7xl mx-auto">
       <div class="mb-8">
+        <!-- Título de la sección -->
         <h1 class="text-3xl font-bold text-neutral-dark">Mis Reservas</h1>
         <p class="text-neutral-slate mt-1">Historial y seguimiento de tus viajes</p>
       </div>
 
+      <!-- Tarjetas resumen (totales) -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-neutral-dark">{{ viajeStats.all }}</p>
@@ -22,6 +25,7 @@
       </div>
 
       <div class="bg-white rounded-xl shadow-sm p-6">
+        <!-- Mensajes de estado (errores e información) -->
         <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
           <p class="text-sm font-medium text-red-500">{{ errorMsg }}</p>
         </div>
@@ -34,6 +38,7 @@
         </div>
 
         <div class="space-y-4">
+          <!-- Listado de viajes (filtrados y ordenados por fecha) -->
           <div v-for="viaje in filteredviajes" :key="viaje.id" class="border border-neutral-volcanic rounded-xl p-5 hover:shadow-md transition-shadow">
             <div class="flex flex-col md:flex-row md:items-start justify-between mb-4">
               <div>
@@ -47,6 +52,7 @@
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <!-- Datos principales del viaje -->
               <div>
                 <p class="text-xs text-neutral-slate">Precio</p>
                 <p class="text-lg font-bold text-lanzarote-blue">{{ viaje.price?.toFixed(2) }}€</p>
@@ -68,6 +74,7 @@
             </div>
 
             <div v-if="['completed', 'cancelled'].includes(viaje.estado)" class="border-t border-neutral-volcanic pt-4 mt-2">
+              <!-- Viaje finalizado/cancelado: se muestra estado del pago -->
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-sm text-neutral-slate">Pago:</span>
@@ -82,6 +89,7 @@
             </div>
 
             <div v-else-if="viaje.estado === 'pendiente'" class="border-t border-neutral-volcanic pt-4 mt-2">
+              <!-- Viaje pendiente: permite cancelar la reserva -->
               <div class="flex justify-end">
                 <button @click="cancelTrip(viaje.id)" class="text-sm text-red-600 hover:text-red-800">
                   Cancelar reserva
@@ -90,6 +98,7 @@
             </div>
 
             <div v-else-if="['accepted', 'in_progress'].includes(viaje.estado)" class="border-t border-neutral-volcanic pt-4 mt-2">
+              <!-- Viaje aceptado/en curso: acceso a seguimiento en tiempo real -->
               <div class="flex justify-end">
                 <button @click="irASeguimiento(viaje.id)" class="text-sm text-lanzarote-blue hover:text-lanzarote-yellow">
                   Ver seguimiento en tiempo real
@@ -105,11 +114,14 @@
       </div>
     </div>
 
+    <!-- Modal de valoración (actualmente sin contenido visible en este archivo) -->
     <div v-if="showRatingModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       </div>
 
+    <!-- Modal de pago reutilizable -->
     <ModalPago :show="showpagoModal" :viaje="pagoviaje" @close="showpagoModal = false" @success="handlepagoSuccess"/>
   </DisposicionPasajero>
+    <!-- Confirmación de cancelación (evita confirm/alert nativos) -->
     <div v-if="showCancelConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Cancelar reserva?</h3>
@@ -142,6 +154,7 @@ const showpagoModal = ref(false)
 const pagoviaje = ref(null)
 
 const totalGastado = computed(() => {
+  // Total gastado aproximado: suma viajes pagados menos deuda liquidada asociada
   let total = 0;
   let deudaPagada = 0;
   viajeStore.viajesPasajero.forEach(t => {
@@ -155,6 +168,7 @@ const totalGastado = computed(() => {
 })
 
 const filteredviajes = computed(() => {
+  // Aplica el filtro seleccionado y ordena por fecha (más reciente primero)
   let viajes = [...viajeStore.viajesPasajero]
 
   if (filtroSeleccionado.value !== 'all') {
@@ -165,6 +179,7 @@ const filteredviajes = computed(() => {
 })
 
 const viajeStats = computed(() => {
+  // Estadísticas rápidas para la cabecera
   const all = viajeStore.viajesPasajero.length
   const completed = viajeStore.viajesPasajero.filter(t => t.estado === 'completed').length
   const pendiente = viajeStore.viajesPasajero.filter(t => t.estado === 'pendiente').length
@@ -175,6 +190,7 @@ const viajeStats = computed(() => {
 })
 
 const getStatusBadge = (estado) => {
+  // Traduce estado a etiqueta + clases de estilo
   const badges = {
     'pendiente': { class: 'bg-yellow-100 text-yellow-800', label: 'Pendiente' },
     'accepted': { class: 'bg-blue-100 text-blue-800', label: 'Aceptado' },
@@ -187,6 +203,7 @@ const getStatusBadge = (estado) => {
 }
 
 const cancelTrip = async (viajeId) => {
+  // Abre el modal de confirmación; no cancela directamente
   errorMsg.value = ''
   infoMsg.value = ''
   showCancelConfirm.value = viajeId
@@ -194,6 +211,7 @@ const cancelTrip = async (viajeId) => {
 const showCancelConfirm = ref(null)
 
 const confirmCancelTrip = async () => {
+  // Confirma la cancelación y refresca cartera/deuda
   const viajeId = showCancelConfirm.value
   await viajeStore.cancelTrip(viajeId)
   await walletStore.fetchBalance()
@@ -234,6 +252,7 @@ const formatDate = (dateString) => {
 }
 
 const irASeguimiento = (viajeId) => {
+  // Navegación al detalle de seguimiento
   window.location.href = `/pasajero/seguimiento/${viajeId}`
 }
 

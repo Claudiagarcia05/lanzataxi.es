@@ -1,11 +1,12 @@
 <template>
-  <!-- Contenedor principal de la página de inicio -->
+  <!-- Página de Inicio (Landing) -->
   <div class="min-h-screen bg-neutral-soft">
-    <!-- Barra de navegación superior -->
+    <!-- Barra de navegación superior (logo + enlaces) -->
     <BarraNavegacion />
-    <!-- Contenido principal -->
+
+    <!-- Contenido principal; el enlace "Saltar al contenido" apunta aquí -->
     <main id="main-content">
-      <!-- Sección de cabecera -->
+      <!-- Hero: propuesta de valor + CTA -->
       <section class="pt-20 bg-lanzarote-blue text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div class="grid md:grid-cols-2 gap-12 items-center">
@@ -17,6 +18,7 @@
                 Reserva tu taxi con seguimiento en tiempo real. Llega a cualquier municipio de la isla de forma segura, rápida y con precios cerrados.
               </p>
               <div class="flex flex-wrap gap-4">
+                <!-- CTA: abre modal de autenticación para reservar -->
                 <button @click="showAuthModal = true" class="bg-lanzarote-yellow text-black px-8 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-all shadow-lg">
                   Reservar ahora
                 </button>
@@ -26,7 +28,7 @@
         </div>
       </section>
 
-    <!-- Sección: Cómo funciona LanzaTaxi -->
+    <!-- Sección: Cómo funciona -->
     <section id="como-funciona-section" class="py-20 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
@@ -38,6 +40,7 @@
           </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <!-- Pasos (contenido estático definido en el script) -->
           <div v-for="paso in pasosReserva" :key="paso.numero" class="text-center relative">
             <div class="text-8xl font-bold text-neutral-volcanic/30 absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/4">
               {{ paso.numero }}
@@ -54,7 +57,7 @@
       </div>
     </section>
 
-    <!-- Sección: Municipios de Lanzarote -->
+    <!-- Sección: Municipios / teléfonos (enlaces tel:) -->
     <section id="municipios-section" class="py-20 bg-neutral-soft">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
@@ -75,6 +78,7 @@
               <div>
                 <span class="text-sm font-medium text-neutral-dark mb-2 block">Radio taxi</span>
                 <div class="space-y-2">
+                  <!-- Se genera un enlace de llamada por cada teléfono del municipio -->
                   <a v-for="telefono in municipio.telefonos" :key="telefono" :href="`tel:${telefono.replace(/\s/g, '')}`" class="flex items-center space-x-2 text-lanzarote-blue hover:text-lanzarote-blue/80 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
@@ -89,7 +93,7 @@
       </div>
     </section>
 
-    <!-- Sección: Testimonios de usuarios -->
+    <!-- Sección: Opiniones / testimonios -->
     <section id="testimonios-section" class="py-20 bg-lanzarote-yellow">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col items-center mb-16">
@@ -99,10 +103,12 @@
               <template v-for="i in 5">★</template>
             </div>
             <span class="text-neutral-dark font-medium ml-1">18 reseñas</span>
+            <!-- Logo externo de Google (reputación / reseñas) -->
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="h-5 ml-1">
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <!-- Tarjeta por testimonio (contenido definido en el script) -->
           <div v-for="testimonio in testimonios" :key="testimonio.nombre" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-fit">
             <div class="flex justify-between items-start mb-1">
               <h4 class="font-bold text-gray-900 text-[15px] leading-tight">{{ testimonio.nombre }}</h4>
@@ -132,9 +138,10 @@
       </div>
     </section>
 
-      <!-- Modal de autenticación para login/registro -->
+      <!-- Modal de autenticación (login/registro) -->
       <ModalAutenticacion v-model="showAuthModal" />
-      <!-- Pie de página con información de contacto y enlaces -->
+
+      <!-- Footer: enlaces informativos + contacto + redes -->
       <footer id="contacto-footer" class="bg-lanzarote-blue text-white mt-16" role="contentinfo">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div class="mb-12">
@@ -146,7 +153,6 @@
             </p>
           </div>
 
-          <!-- Navegación de enlaces rápidos en el footer -->
           <nav class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12" aria-label="Enlaces del sitio">
             <div>
               <h3 class="font-semibold text-lg mb-4">Empresa</h3>
@@ -185,7 +191,6 @@
             </div>
           </nav>
 
-          <!-- Información de contacto y redes sociales -->
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8 border-t border-white/20">
             <div>
               <h3 class="font-semibold text-lg mb-4">Contacto</h3>
@@ -237,7 +242,6 @@
           </div>
         </div>
 
-        <!-- Barra inferior del footer con derechos y enlaces legales -->
         <div class="bg-black/20 py-4">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-white/60">
             <p>© {{ currentYear }} LanzaTaxi. Todos los derechos reservados.</p>
@@ -255,15 +259,14 @@
 
 
 <script setup>
-// Importación de utilidades y componentes
 import { ref } from 'vue'
 import BarraNavegacion from '../Componentes/BarraNavegacion.vue'
 import ModalAutenticacion from '../Componentes/Autenticacion/ModalAutenticacion.vue'
 
-// Controla la visibilidad del modal de autenticación
+// Control de visibilidad del modal de autenticación
 const showAuthModal = ref(false)
 
-// Pasos para reservar un taxi
+// Contenido estático: pasos explicativos del proceso de reserva
 const pasosReserva = [
   {
     numero: '1',
@@ -282,7 +285,7 @@ const pasosReserva = [
   }
 ]
 
-// Lista de municipios de Lanzarote y teléfonos de radio taxi
+// Contenido estático: municipios y teléfonos de radio taxi
 const municipios = [
   { 
     nombre: 'Arrecife', 
@@ -321,7 +324,7 @@ const municipios = [
   }
 ]
 
-// Testimonios de usuarios
+// Contenido de testimonios (ref por si se quiere actualizar dinámicamente)
 const testimonios = ref([
   {
     nombre: 'Angie',
@@ -373,7 +376,7 @@ const testimonios = ref([
   }
 ])
 
-// Función para hacer scroll suave a la sección de pasos
+// Utilidad: scroll suave a una sección concreta
 const scrollToPasos = () => {
   const pasos = document.getElementById('como-funciona-section')
   if (pasos) {
@@ -381,10 +384,10 @@ const scrollToPasos = () => {
   }
 }
 
-// Año actual para mostrar en el footer
+// Año actual para el copyright del footer
 const currentYear = new Date().getFullYear()
 
-// Estructura de secciones y enlaces del footer
+// Estructura de enlaces del footer (por bloques)
 const footerSections = {
   empresa: {
     title: 'Empresa',
@@ -423,14 +426,14 @@ const footerSections = {
   }
 }
 
-// Información de contacto
+// Información de contacto (se muestra en el footer)
 const contactInfo = {
-  email: 'info@lanzataxi.com',
+  email: 'info@lanzataxi.es',
   phone: '+34 928 123 456',
   address: 'Arrecife, Lanzarote'
 }
 
-// Función genérica para hacer scroll a una sección por ID
+// Utilidad genérica: scroll suave a un id de sección
 const scrollToSection = (sectionId) => {
   const element = document.getElementById(sectionId)
   if (element) {

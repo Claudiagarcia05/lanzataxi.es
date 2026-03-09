@@ -1,6 +1,8 @@
 <template>
   <DisposicionPasajero>
+    <!-- Página del pasajero para crear una nueva reserva de taxi -->
     <div class="max-w-7xl mx-auto">
+      <!-- Cabecera / presentación de la sección -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <h1 class="text-3xl font-bold mb-2">Nueva Reserva</h1>
         <p class="text-blue-100">Reserva tu taxi en Lanzarote de forma rápida y segura</p>
@@ -9,12 +11,14 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2">
           <div class="bg-white rounded-xl shadow-sm p-6">
+            <!-- Encabezado del formulario -->
             <div class="flex items-center space-x-2 mb-6">
               <svg class="w-6 h-6 text-neutral-dark" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="taxiIconSvg"></svg>
               <h2 class="text-xl font-bold text-neutral-dark">LanzaTaxi</h2>
               <span class="text-neutral-slate">¿A dónde vamos?</span>
             </div>
 
+            <!-- Mensajes de estado (errores e información) -->
             <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
               <p class="text-sm font-medium text-red-500">{{ errorMsg }}</p>
             </div>
@@ -22,8 +26,10 @@
               <p class="text-sm font-medium text-green-500">{{ infoMsg }}</p>
             </div>
 
+            <!-- Formulario principal de creación de reserva -->
             <form @submit.prevent="submitBooking" class="space-y-6">
               <div class="border-b border-neutral-volcanic pb-6">
+                <!-- Sección: origen y destino -->
                 <h3 class="font-semibold text-neutral-dark mb-4">Detalles del viaje</h3>
                 
                 <div class="space-y-4">
@@ -32,6 +38,7 @@
                       Origen - Dirección de recogida <span class="text-red-500">*</span>
                     </label>
                     <div class="flex items-center gap-2">
+                      <!-- Origen: escritura manual + botón de geolocalización -->
                       <input v-model="bookingForm.pickupAddress" type="text" required class="flex-1 px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: Calle Real 45, Arrecife"/>
                       <button type="button" class="ml-1 px-3 py-2 rounded-lg bg-lanzarote-blue text-white hover:bg-lanzarote-yellow hover:text-black transition-colors text-xs" title="Usar mi ubicación actual" @click="obtenerUbicacionUsuario">
                         Mi ubicación
@@ -43,12 +50,14 @@
                     <label class="block text-sm font-medium text-neutral-dark mb-1">
                       Destino - ¿A dónde vas? <span class="text-red-500">*</span>
                     </label>
+                    <!-- Destino: escritura manual (se geocodifica para poder calcular ruta/distancia) -->
                     <input v-model="bookingForm.dropoffAddress" type="text" required class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: Aeropuerto César Manrique"/>
                   </div>
                 </div>
               </div>
 
               <div class="border-b border-neutral-volcanic pb-6">
+                <!-- Sección: reserva inmediata vs programada -->
                 <h3 class="font-semibold text-neutral-dark mb-4">Fecha y hora</h3>
                 
                 <div class="space-y-4">
@@ -77,6 +86,7 @@
               </div>
 
               <div class="border-b border-neutral-volcanic pb-6">
+                <!-- Sección: pasajeros, maletas y método de pago -->
                 <h3 class="font-semibold text-neutral-dark mb-4">Opciones del viaje</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -109,6 +119,7 @@
                 </div>
 
                 <div v-if="bookingForm.pagoMethod === 'wallet' && totalEstimatedPrice > walletBalance" class="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg">
+                  <!-- Aviso de saldo insuficiente si se paga con cartera -->
                   <p class="text-sm text-red-600">
                     Saldo insuficiente. Te faltan {{ (totalEstimatedPrice - walletBalance).toFixed(2) }}€
                   </p>
@@ -116,11 +127,13 @@
               </div>
 
               <div class="border-b border-neutral-volcanic pb-6">
+                <!-- Sección: notas (opcional) -->
                 <h3 class="font-semibold text-neutral-dark mb-4">Notas adicionales</h3>
                 <textarea v-model="bookingForm.notes" rows="3" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue resize-none" placeholder="Ej: Necesito silla para bebé, vuelo número..."></textarea>
               </div>
 
               <div v-if="bookingForm.distance > 0" class="bg-neutral-soft p-4 rounded-lg">
+                <!-- Resumen estimado: distancia, precio y deuda (si existe) -->
                 <div class="flex justify-between items-center mb-2">
                   <span class="text-neutral-slate">Distancia estimada:</span>
                   <span class="font-semibold">{{ bookingForm.distance }} km</span>
@@ -140,6 +153,7 @@
               </div>
 
               <button type="submit" :disabled="!canSubmit" class="w-full bg-lanzarote-blue text-white font-bold py-4 px-6 rounded-xl text-lg hover:bg-lanzarote-yellow hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <!-- Botón principal: se deshabilita si falta información, hay viaje activo o deuda impagada -->
                 Confirmar Reserva
               </button>
             </form>
@@ -148,8 +162,10 @@
 
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-sm p-6 sticky top-6">
+            <!-- Columna lateral: mapa y datos “cerca de ti” -->
             <h3 class="font-semibold text-neutral-dark mb-4">Taxis cerca de ti</h3>
             
+            <!-- Mapa: calcula distancia y permite fijar ubicación -->
             <MapaTaxi :pickupLat="bookingForm.pickupLat" :pickupLng="bookingForm.pickupLng" :dropoffLat="bookingForm.dropoffLat" :dropoffLng="bookingForm.dropoffLng" @distance-calculated="(distance) => bookingForm.distance = Number.parseFloat(distance) || 0" @location-found="handleUserLocation"/>
             
             <div class="mt-4 space-y-2 text-sm">
@@ -187,6 +203,7 @@ const authStore = useAuthStore()
 const viajeStore = useTripStore()
 const walletStore = useWalletStore()
 
+// Normaliza el SVG (bootstrap-icons) para poder inyectarlo con v-html
 const innerSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
   .replace(/<\/svg>\s*$/i, '')
@@ -194,6 +211,7 @@ const innerSvg = (raw) => raw
 
 const taxiIconSvg = innerSvg(svgTaxiFront)
 
+// Recibe una ubicación (por ejemplo, desde el componente del mapa) y actualiza el formulario
 const handleUserLocation = (location) => {
   if (location && location.address) {
     bookingForm.value.pickupAddress = location.address;
@@ -210,6 +228,7 @@ const suppressPickupWatch = ref(false)
 const suppressDropoffWatch = ref(false)
 
 const geocodeAddress = async (address) => {
+  // Geocodificación (Nominatim): convierte una dirección en coordenadas
   const q = (address || '').trim()
   if (!q) return null
 
@@ -233,18 +252,21 @@ const geocodeAddress = async (address) => {
 }
 
 const setPickupCoords = ({ lat, lng }) => {
+  // Evita que el watcher de pickup dispare geocoding extra al setear coords
   suppressPickupWatch.value = true
   bookingForm.value.pickupLat = lat
   bookingForm.value.pickupLng = lng
 }
 
 const setDropoffCoords = ({ lat, lng }) => {
+  // Evita que el watcher de dropoff dispare geocoding extra al setear coords
   suppressDropoffWatch.value = true
   bookingForm.value.dropoffLat = lat
   bookingForm.value.dropoffLng = lng
 }
 
 const obtenerUbicacionUsuario = async () => {
+  // Geolocalización del navegador + reverse geocode para rellenar el origen
   errorMsg.value = '';
   infoMsg.value = '';
   if (!navigator.geolocation) {
@@ -347,11 +369,11 @@ const getMunicipio = (direccion) => {
 }
 
 const calculateEstimatedPrice = () => {
+  // Calcula el precio estimado a partir de distancia y franja horaria
   const distance = Number.parseFloat(bookingForm.value.distance)
   const hasDistance = Number.isFinite(distance) && distance > 0
   const hasAddresses = Boolean(bookingForm.value.pickupAddress?.trim()) && Boolean(bookingForm.value.dropoffAddress?.trim())
 
-  // Hasta que el usuario no indique destino y exista una distancia real, no mostrar ni calcular precio.
   if (!hasAddresses || !hasDistance) {
     bookingForm.value.estimatedPrice = 0
     return
@@ -394,14 +416,13 @@ watch([() => bookingForm.value.distance, () => bookingForm.value.luggage, () => 
   calculateEstimatedPrice()
 })
 
-// Geocodificar origen escrito (cuando no viene de "Mi ubicación")
 watch(() => bookingForm.value.pickupAddress, (newAddress) => {
+  // Cuando cambia el origen, se resetean coords/precio y se intenta geocodificar (debounce)
   if (suppressPickupWatch.value) {
     suppressPickupWatch.value = false
     return
   }
 
-  // Si el usuario cambia el origen manualmente, invalidar coords/distancia
   bookingForm.value.pickupLat = null
   bookingForm.value.pickupLng = null
   bookingForm.value.distance = 0
@@ -412,7 +433,6 @@ watch(() => bookingForm.value.pickupAddress, (newAddress) => {
   if (q.length < 5) return
 
   pickupGeocodeTimeout = setTimeout(async () => {
-    // Evitar aplicar resultados si el usuario cambió el texto mientras tanto
     if ((bookingForm.value.pickupAddress || '').trim() !== q) return
     try {
       const result = await geocodeAddress(q)
@@ -424,8 +444,8 @@ watch(() => bookingForm.value.pickupAddress, (newAddress) => {
   }, 700)
 })
 
-// Geocodificar destino escrito
 watch(() => bookingForm.value.dropoffAddress, (newAddress) => {
+  // Cuando cambia el destino, se resetean coords/precio y se intenta geocodificar (debounce)
   if (suppressDropoffWatch.value) {
     suppressDropoffWatch.value = false
     return
@@ -463,6 +483,7 @@ watch([
 })
 
 const submitBooking = async () => {
+  // Envía la solicitud de viaje (con validaciones previas)
   errorMsg.value = ''
   if (viajeActivo.value) {
     errorMsg.value = 'No puedes pedir un taxi nuevo mientras tengas un viaje pendiente, aceptado o en curso.'
@@ -480,7 +501,6 @@ const submitBooking = async () => {
     return
   }
 
-  // Asegurar coordenadas reales (no por defecto)
   const pickupLat = Number.parseFloat(bookingForm.value.pickupLat)
   const pickupLng = Number.parseFloat(bookingForm.value.pickupLng)
   const dropoffLat = Number.parseFloat(bookingForm.value.dropoffLat)
@@ -568,7 +588,7 @@ const resetForm = () => {
 }
 
 const viajeActivo = computed(() => {
-
+  // Viaje considerado “activo” a efectos de bloquear nuevas solicitudes
   return viajeStore.viajesPasajero.find(t => ['pendiente', 'accepted', 'in_progress'].includes(t.estado))
 })
 
@@ -577,6 +597,7 @@ const pendingDebt = computed(() => walletStore.pendingDebt)
 const totalEstimatedPrice = computed(() => bookingForm.value.estimatedPrice + pendingDebt.value)
 
 const canSubmit = computed(() => {
+  // Condiciones para permitir enviar el formulario
   const hasAddresses = Boolean(bookingForm.value.pickupAddress) && Boolean(bookingForm.value.dropoffAddress)
   if (!hasAddresses) return false
   if (viajeActivo.value) return false

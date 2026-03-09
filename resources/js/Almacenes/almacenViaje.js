@@ -15,24 +15,24 @@ export const useTripStore = defineStore('viaje', {
 
     getters: {
         viajesPasajero: (state) => {
-            // Ya el backend filtra por usuario autenticado en /api/user/viajes
-            // Así que simplemente devolvemos todos los viajes del estado
+
             return state.viajes
         },
         viajesConductor: (state) => {
             const auth = useAuthStore()
             const userId = auth.usuario?.id
-            // En vistas de conductor podemos tener viajes ya filtrados por backend (mis viajes)
-            // incluso antes de que el auth store termine de cargar el usuario.
             if (userId == null) {
+
                 return state.viajes.filter(t => t.conductorEntityId != null)
             }
+
             return state.viajes.filter(t => Number(t.conductorId) === Number(userId))
         },
         viajesPendientes: (state) => state.viajes.filter(t => t.estado === 'pendiente'),
         completedviajes: (state) => state.viajes.filter(t => t.estado === 'completed'),
         viajesHoy: (state) => {
             const today = new Date().toDateString()
+
             return state.viajes.filter(t => new Date(t.date).toDateString() === today)
         }
     },
@@ -40,6 +40,7 @@ export const useTripStore = defineStore('viaje', {
     actions: {
         parseFiniteNumber(value) {
             const n = typeof value === 'number' ? value : parseFloat(value)
+            
             return Number.isFinite(n) ? n : null
         },
 
@@ -125,12 +126,9 @@ export const useTripStore = defineStore('viaje', {
                 }
 
                 if (assumeConductor) {
-                    // 1) Siempre cargar primero mis viajes
                     const misViajesResponse = await axios.get(endpoint)
                     const misViajes = (misViajesResponse.data || []).map(this.mapearViaje)
 
-                    // 2) Si ya tengo un viaje accepted/in_progress, NO pedir ofertas.
-                    //    Así en el frontend dejan de "entrar" nuevas ofertas mientras está ocupado.
                     const conductorOcupado = misViajes.some(t => ['accepted', 'in_progress'].includes(t.estado))
 
                     let disponibles = []
@@ -189,6 +187,7 @@ export const useTripStore = defineStore('viaje', {
             } catch (error) {
                 const message = error.response?.data?.message || 'No se pudo crear el viaje'
                 this.error = message
+
                 return { success: false, error: message }
             } finally {
                 this.cargando = false
@@ -211,8 +210,6 @@ export const useTripStore = defineStore('viaje', {
                 this.viajes = replaced ? updatedList : [viajeActualizado, ...updatedList]
                 this.viajeActivo = viajeActualizado
 
-                // Asegurar consistencia: el backend ya asignó conductor/taxi/estado.
-                // Refrescamos para que el panel del conductor refleje el cambio inmediatamente.
                 const auth = useAuthStore()
                 const path = typeof window !== 'undefined' ? window.location.pathname : ''
                 const assumeConductor = auth.isconductor || path.startsWith('/conductor')
@@ -224,11 +221,13 @@ export const useTripStore = defineStore('viaje', {
                 if (status === 400) {
                     this.error = error.response?.data?.message || 'No se pudo aceptar el viaje.'
                     await this.fetchTrips()
+
                     return
                 }
                 if (status === 409) {
                     this.error = 'Este viaje ya fue aceptado por otro conductor.'
                     await this.fetchTrips()
+
                     return
                 }
                 throw error
@@ -317,5 +316,3 @@ export const useTripStore = defineStore('viaje', {
         }
     }
 })
-
-

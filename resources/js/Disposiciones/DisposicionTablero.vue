@@ -119,6 +119,7 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useAuthStore } from '../Almacenes/almacenAutenticacion.js'

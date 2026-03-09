@@ -1,6 +1,8 @@
 <template>
   <DisposicionPasajero>
+    <!-- Página del pasajero: seguimiento del viaje en tiempo real y cancelación (si aplica) -->
     <div class="max-w-7xl mx-auto">
+      <!-- Cabecera con estado resumido -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <div class="flex items-center justify-between">
           <div>
@@ -16,6 +18,7 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 relative z-0">
           <div class="bg-white rounded-xl shadow-sm p-6">
+            <!-- Mapa de seguimiento -->
             <div class="h-[500px] rounded-lg overflow-hidden">
               <div v-if="puedeRenderMapa" class="h-full">
                 <MapaSeguimiento ref="mapRef" :pickupLat="viaje.pickupLat" :pickupLng="viaje.pickupLng" :dropoffLat="viaje.dropoffLat" :dropoffLng="viaje.dropoffLng" :taxiLat="taxiLocation?.lat" :taxiLng="taxiLocation?.lng" :estado="viaje.estado" />
@@ -29,6 +32,7 @@
 
         <div class="lg:col-span-1 space-y-4 relative z-10">
           <div class="bg-white rounded-xl shadow-sm p-6">
+            <!-- Línea de tiempo del estado del viaje -->
             <h3 class="font-semibold text-neutral-dark mb-4 flex items-center gap-2">
               <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="taxiIconSvg"></svg>
               Estado del viaje
@@ -73,6 +77,7 @@
           </div>
 
           <div class="bg-white rounded-xl shadow-sm p-6">
+            <!-- Detalles resumidos del viaje (origen, destino, distancia y precio) -->
             <h3 class="font-semibold text-neutral-dark mb-4">Detalles del viaje</h3>
             
             <div class="space-y-3">
@@ -98,6 +103,7 @@
               </div>
 
               <div v-if="['pendiente', 'accepted'].includes(viaje?.estado)" class="mt-4">
+                <!-- Cancelación: solo disponible mientras el viaje esté pendiente o aceptado -->
                 <button type="button" @click.stop.prevent="abrirConfirmacionCancelacion" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors">
                   Cancelar solicitud
                 </button>
@@ -111,6 +117,7 @@
       </div>
     </div>
 
+    <!-- Modal de confirmación de cancelación (evita confirm/alert nativos) -->
     <div v-if="showCancelConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Confirmar cancelación?</h3>
@@ -146,6 +153,7 @@ const props = defineProps({
 const viajeStore = useTripStore()
 const mapRef = ref(null)
 
+// Normaliza el SVG (bootstrap-icons) para poder inyectarlo con v-html
 const innerSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
   .replace(/<\/svg>\s*$/i, '')
@@ -159,6 +167,7 @@ let intervalId = null
 const showCancelConfirm = ref(false)
 
 const puedeRenderMapa = computed(() => {
+  // Evita renderizar el mapa si faltan coordenadas
   const v = viaje.value
   if (!v) return false
   const hasPickup = Number.isFinite(v.pickupLat) && Number.isFinite(v.pickupLng)
@@ -173,6 +182,7 @@ const viajeFromStore = computed(() => {
 })
 
 const loadViaje = async () => {
+  // Carga el viaje desde el store; si no existe, refresca y redirige si sigue sin encontrarse
   viaje.value = viajeFromStore.value
 
   if (!viaje.value) {
@@ -211,6 +221,7 @@ const formatDate = (dateString) => {
 }
 
 const refreshTaxiLocation = async () => {
+  // Consulta periódica de la ubicación del taxi (solo cuando tiene sentido)
   if (!viaje.value) return
   if (!['accepted', 'in_progress'].includes(viaje.value.estado)) return
 
@@ -218,15 +229,16 @@ const refreshTaxiLocation = async () => {
     const response = await axios.get(`/api/viajes/${viaje.value.id}/track`)
     taxiLocation.value = response.data?.ubicacion || null
   } catch (error) {
-    // Si aún no hay conductor asignado o no hay ubicación, mantener null
   }
 }
 
 const abrirConfirmacionCancelacion = () => {
+  // Abre el modal de confirmación
   showCancelConfirm.value = true
 }
 
 const confirmCancelTrip = async () => {
+  // Confirma la cancelación y vuelve al listado
   try {
     await viajeStore.cancelTrip(viaje.value.id)
     showCancelConfirm.value = false
@@ -241,6 +253,7 @@ const cancelCancelTrip = () => {
 }
 
 onMounted(() => {
+  // Carga inicial + polling de estado/ubicación
   loadViaje()
 
   intervalId = setInterval(() => {
@@ -250,6 +263,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // Limpieza del intervalo al salir de la página
   if (intervalId) {
     clearInterval(intervalId)
   }

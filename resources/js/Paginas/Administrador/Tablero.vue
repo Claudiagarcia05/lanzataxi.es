@@ -1,62 +1,4 @@
-﻿<script setup>
-import { ref, computed, onMounted } from 'vue'
-import DisposicionTablero from '../../Disposiciones/DisposicionTablero.vue'
-import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
-import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
-import { useTripStore } from '../../Almacenes/almacenViaje.js'
-
-const authStore = useAuthStore()
-const adminStore = useAdminStore()
-const viajeStore = useTripStore()
-
-onMounted(() => {
-  adminStore.fetchAllData()
-  viajeStore.fetchTrips()
-})
-
-const estadisticas = computed(() => [
-  { label: 'Usuarios totales', value: adminStore.estadisticas.totalUsers, icon: 'Ã°Å¸â€˜Â¥', change: '+124 este mes' },
-  { label: 'Taxis activos', value: adminStore.activeTaxis, icon: 'Ã°Å¸Å¡â€¢', change: `de ${adminStore.estadisticas.totalTaxis} totales` },
-  { label: 'Viajes hoy', value: adminStore.estadisticas.viajesHoy, icon: 'Ã°Å¸â€œÅ ', change: '+12% vs ayer' },
-  { label: 'Ingresos hoy', value: adminStore.revenueToday, icon: 'Ã°Å¸â€™Â°', change: `media ${(adminStore.estadisticas.ingresosHoy / adminStore.estadisticas.viajesHoy).toFixed(2)} Ã¢â€šÂ¬/viaje` }
-])
-
-const solicitudesPendientes = computed(() => adminStore.pendingconductors)
-
-const viajesRecientes = computed(() => {
-  return viajeStore.viajes
-    .sort((a, b) => new Date(b.date) - new Date(a.date))
-    .slice(0, 5)
-})
-
-const actividadSemanas = ref(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'])
-const actividadDatos = ref([65, 72, 80, 78, 92, 85, 70])
-
-const approveconductor = async (conductorId) => {
-  if (confirm('¿Aprobar esta solicitud de taxista?')) {
-    await adminStore.approveconductor(conductorId)
-  }
-}
-
-const rejectconductor = async (conductorId) => {
-  if (confirm('¿Rechazar esta solicitud?')) {
-    await adminStore.rejectconductor(conductorId)
-  }
-}
-
-const getStatusClass = (estado) => {
-  const classes = {
-    'completed': 'bg-green-100 text-green-800',
-    'pendiente': 'bg-yellow-100 text-yellow-800',
-    'accepted': 'bg-lanzarote-blue/10 text-lanzarote-blue',
-    'in_progress': 'bg-lanzarote-yellow/20 text-lanzarote-blue',
-    'cancelled': 'bg-red-100 text-red-800'
-  }
-  return classes[estado] || 'bg-neutral-100 text-neutral-slate'
-}
-</script>
-
-<template>
+﻿<template>
   <DisposicionTablero>
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-neutral-dark">Panel de AdministraciÃƒÂ³n Ã°Å¸â€˜â€˜</h2>
@@ -229,3 +171,60 @@ const getStatusClass = (estado) => {
 </template>
 
 
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import DisposicionTablero from '../../Disposiciones/DisposicionTablero.vue'
+import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
+import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
+import { useTripStore } from '../../Almacenes/almacenViaje.js'
+
+const authStore = useAuthStore()
+const adminStore = useAdminStore()
+const viajeStore = useTripStore()
+
+onMounted(() => {
+  adminStore.fetchAllData()
+  viajeStore.fetchTrips()
+})
+
+const estadisticas = computed(() => [
+  { label: 'Usuarios totales', value: adminStore.estadisticas.totalUsers, icon: 'Ã°Å¸â€˜Â¥', change: '+124 este mes' },
+  { label: 'Taxis activos', value: adminStore.activeTaxis, icon: 'Ã°Å¸Å¡â€¢', change: `de ${adminStore.estadisticas.totalTaxis} totales` },
+  { label: 'Viajes hoy', value: adminStore.estadisticas.viajesHoy, icon: 'Ã°Å¸â€œÅ ', change: '+12% vs ayer' },
+  { label: 'Ingresos hoy', value: adminStore.revenueToday, icon: 'Ã°Å¸â€™Â°', change: `media ${(adminStore.estadisticas.ingresosHoy / adminStore.estadisticas.viajesHoy).toFixed(2)} Ã¢â€šÂ¬/viaje` }
+])
+
+const solicitudesPendientes = computed(() => adminStore.pendingconductors)
+
+const viajesRecientes = computed(() => {
+  return viajeStore.viajes
+    .sort((a, b) => new Date(b.date) - new Date(a.date))
+    .slice(0, 5)
+})
+
+const actividadSemanas = ref(['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'])
+const actividadDatos = ref([65, 72, 80, 78, 92, 85, 70])
+
+const approveconductor = async (conductorId) => {
+  if (confirm('¿Aprobar esta solicitud de taxista?')) {
+    await adminStore.approveconductor(conductorId)
+  }
+}
+
+const rejectconductor = async (conductorId) => {
+  if (confirm('¿Rechazar esta solicitud?')) {
+    await adminStore.rejectconductor(conductorId)
+  }
+}
+
+const getStatusClass = (estado) => {
+  const classes = {
+    'completed': 'bg-green-100 text-green-800',
+    'pendiente': 'bg-yellow-100 text-yellow-800',
+    'accepted': 'bg-lanzarote-blue/10 text-lanzarote-blue',
+    'in_progress': 'bg-lanzarote-yellow/20 text-lanzarote-blue',
+    'cancelled': 'bg-red-100 text-red-800'
+  }
+  return classes[estado] || 'bg-neutral-100 text-neutral-slate'
+}
+</script>

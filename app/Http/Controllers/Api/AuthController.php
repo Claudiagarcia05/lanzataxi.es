@@ -20,6 +20,33 @@
                 'email.unique' => 'El email ya está registrado.',
             ]);
 
+            // Regla de negocio: los administradores deben usar obligatoriamente emails @admin.com
+            // - Si el rol es admin, el email debe terminar en @admin.com
+            // - Si el email termina en @admin.com, el rol debe ser admin
+            $role = $validated['role'] ?? 'pasajero';
+            $email = strtolower(trim($validated['email'] ?? ''));
+            $isAdminEmail = str_ends_with($email, '@admin.com');
+
+            $mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.';
+
+            if ($role === 'admin' && !$isAdminEmail) {
+                return response()->json([
+                    'message' => $mensajeGenericoCredenciales,
+                    'errors' => [
+                        'email' => [$mensajeGenericoCredenciales],
+                    ],
+                ], 422);
+            }
+
+            if ($role !== 'admin' && $isAdminEmail) {
+                return response()->json([
+                    'message' => $mensajeGenericoCredenciales,
+                    'errors' => [
+                        'role' => [$mensajeGenericoCredenciales],
+                    ],
+                ], 422);
+            }
+
             $usuario = User::create([
                 'name' => $validated['name'],
                 'email' => $validated['email'],

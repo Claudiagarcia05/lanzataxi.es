@@ -75,14 +75,12 @@
   color: #3b82f6;
 }
 
-/* Estilos para los marcadores personalizados */
 .custom-marker {
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-/* Ajustes para el control de geocodificación */
 .leaflet-control-geocoder {
   border-radius: 8px;
   overflow: hidden;

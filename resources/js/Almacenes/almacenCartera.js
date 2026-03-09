@@ -11,6 +11,7 @@ export const useWalletStore = defineStore('wallet', {
 
   getters: {
     formattedBalance: (state) => {
+
       return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(state.balance)
     }
   },
@@ -57,8 +58,10 @@ export const useWalletStore = defineStore('wallet', {
           ...response.data.transaction,
           amount: parseFloat(response.data.transaction.amount)
         })
+
         return { success: true }
       } catch (error) {
+
         return { 
           success: false, 
           error: error.response?.data?.message || 'Error al añadir fondos' 
@@ -78,8 +81,10 @@ export const useWalletStore = defineStore('wallet', {
           ...response.data.transaction,
           amount: parseFloat(response.data.transaction.amount)
         })
+
         return { success: true }
       } catch (error) {
+
         return { 
           success: false, 
           error: error.response?.data?.message || 'Error al retirar fondos' 
@@ -94,8 +99,10 @@ export const useWalletStore = defineStore('wallet', {
           viaje_id: viajeId 
         })
         this.balance = parseFloat(response.data.new_balance)
+
         return { success: true }
       } catch (error) {
+
         return { 
           success: false, 
           error: error.response?.data?.message || 'Error al usar fondos' 
@@ -104,4 +111,3 @@ export const useWalletStore = defineStore('wallet', {
     }
   }
 })
-

@@ -1,118 +1,168 @@
 <?php
 
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\AuthSessionController;
-use App\Models\Viaje;
-use Illuminate\Foundation\Application;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
+    // Rutas web (Inertia):
+    // - Página de inicio
+    // - Rutas de prototipo
+    // - Acceso por roles (pasajero / conductor / admin)
+    // - Rutas de perfil (Breeze/Jetstream style)
 
-Route::get('/', function () {
-    return Inertia::render('Inicio', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
-});
+    use App\Http\Controllers\ProfileController;
+    use App\Http\Controllers\AuthSessionController;
+    use App\Models\Viaje;
+    use Illuminate\Foundation\Application;
+    use Illuminate\Support\Facades\Route;
+    use Inertia\Inertia;
 
-Route::get('/prototype', function () {
-    return Inertia::render('Prototype');
-})->name('prototype');
+    // Landing / Inicio
+    Route::get('/', function () {
 
-Route::get('/auth/session-login', [AuthSessionController::class, 'establishSession'])
-    ->name('auth.session-login');
-
-Route::middleware('auth')->group(function () {
-    Route::get('/dashboard', function () {
-        return match (auth()->user()->role) {
-            'conductor' => redirect()->route('conductor.dashboard'),
-            'admin' => redirect()->route('admin.dashboard'),
-            default => redirect()->route('pasajero.dashboard'),
-        };
-    })->name('dashboard');
-
-    Route::middleware('role:pasajero')->group(function () {
-        Route::get('/pasajero/home', function () {
-            return Inertia::render('Pasajero/Panel');
-        })->name('pasajero.dashboard');
-
-        Route::get('/pasajero/reservas', function () {
-            return Inertia::render('Pasajero/Reservas');
-        })->name('pasajero.reservas');
-
-        Route::get('/pasajero/seguimiento/{viaje}', function (Viaje $viaje) {
-            abort_unless((int) $viaje->pasajero_id === (int) auth()->id(), 403);
-
-            return Inertia::render('Pasajero/Seguimiento', [
-                'viajeId' => $viaje->id,
-            ]);
-        })->name('pasajero.seguimiento');
-
-        Route::get('/pasajero/perfil', function () {
-            return Inertia::render('Pasajero/Perfil');
-        })->name('pasajero.perfil');
-
-        Route::get('/dashboard/cartera', function () {
-            return Inertia::render('Pasajero/Cartera');
-        })->name('pasajero.wallet');
-
-        Route::get('/dashboard/viajes', function () {
-            return Inertia::render('Pasajero/Panel');
-        })->name('pasajero.viajes');
+        return Inertia::render('Inicio', [
+            'canLogin' => Route::has('login'),
+            'canRegister' => Route::has('register'),
+            'laravelVersion' => Application::VERSION,
+            'phpVersion' => PHP_VERSION,
+        ]);
     });
 
-    Route::middleware('role:conductor')->group(function () {
-        Route::get('/conductor/dashboard', function () {
-            return Inertia::render('Conductor/Panel');
-        })->name('conductor.dashboard');
+    // Vista de prototipado (para pruebas internas)
+    Route::get('/prototype', function () {
 
-        Route::get('/conductor/viajes', function () {
-            return Inertia::render('Conductor/Panel');
-        })->name('conductor.viajes');
+        return Inertia::render('Prototype');
+    })->name('prototype');
 
-        Route::get('/conductor/ganancias', function () {
-            return Inertia::render('Conductor/Ganancias');
-        })->name('conductor.earnings');
+    // Establece sesión web a partir de un token (flujo híbrido API -> sesión)
+    Route::get('/auth/session-login', [AuthSessionController::class, 'establishSession'])
+        ->name('auth.session-login');
 
-        // Ruta para el perfil del conductor
-        Route::get('/conductor/perfil', function () {
-            return Inertia::render('Conductor/Perfil');
-        })->name('conductor.perfil');
+    // Rutas protegidas por autenticación (sesión Laravel)
+    Route::middleware('auth')->group(function () {
+        // Dashboard genérico: redirige según el rol del usuario
+        Route::get('/dashboard', function () {
+
+            return match (auth()->user()->role) {
+                'conductor' => redirect()->route('conductor.dashboard'),
+                'admin' => redirect()->route('admin.dashboard'),
+                default => redirect()->route('pasajero.dashboard'),
+            };
+        })->name('dashboard');
+
+        // Rutas del PASAJERO
+        Route::middleware('role:pasajero')->group(function () {
+            // Panel principal del pasajero
+            Route::get('/pasajero/home', function () {
+
+                return Inertia::render('Pasajero/Panel');
+            })->name('pasajero.dashboard');
+
+            // Historial y reservas del pasajero
+            Route::get('/pasajero/reservas', function () {
+
+                return Inertia::render('Pasajero/Reservas');
+            })->name('pasajero.reservas');
+
+            // Seguimiento del viaje (solo si el viaje pertenece al pasajero autenticado)
+            Route::get('/pasajero/seguimiento/{viaje}', function (Viaje $viaje) {
+                abort_unless((int) $viaje->pasajero_id === (int) auth()->id(), 403);
+
+                return Inertia::render('Pasajero/Seguimiento', [
+                    'viajeId' => $viaje->id,
+                ]);
+            })->name('pasajero.seguimiento');
+
+            // Perfil del pasajero
+            Route::get('/pasajero/perfil', function () {
+
+                return Inertia::render('Pasajero/Perfil');
+            })->name('pasajero.perfil');
+
+            // Cartera del pasajero
+            Route::get('/dashboard/cartera', function () {
+
+                return Inertia::render('Pasajero/Cartera');
+            })->name('pasajero.wallet');
+
+            // Alias/entrada adicional para viajes del pasajero (renderiza panel)
+            Route::get('/dashboard/viajes', function () {
+
+                return Inertia::render('Pasajero/Panel');
+            })->name('pasajero.viajes');
+        });
+
+        // Rutas del CONDUCTOR
+        Route::middleware('role:conductor')->group(function () {
+            // Panel principal del conductor
+            Route::get('/conductor/dashboard', function () {
+
+                return Inertia::render('Conductor/Panel');
+            })->name('conductor.dashboard');
+
+            // Alias/entrada adicional a viajes del conductor (renderiza panel)
+            Route::get('/conductor/viajes', function () {
+
+                return Inertia::render('Conductor/Panel');
+            })->name('conductor.viajes');
+
+            // Pantalla de ganancias del conductor
+            Route::get('/conductor/ganancias', function () {
+
+                return Inertia::render('Conductor/Ganancias');
+            })->name('conductor.earnings');
+
+            // Perfil del conductor
+            Route::get('/conductor/perfil', function () {
+
+                return Inertia::render('Conductor/Perfil');
+            })->name('conductor.perfil');
+        });
+
+        // Rutas del ADMIN
+        Route::middleware('role:admin')->group(function () {
+            // Dashboard de administración
+            Route::get('/admin/dashboard', function () {
+
+                return Inertia::render('Admin/Dashboard');
+            })->name('admin.dashboard');
+
+            // Secciones del admin (actualmente renderizan la misma vista)
+            Route::get('/admin/viajes', function () {
+
+                return Inertia::render('Admin/Dashboard');
+            })->name('admin.viajes');
+
+            Route::get('/admin/users', function () {
+
+                return Inertia::render('Admin/Dashboard');
+            })->name('admin.users');
+
+            Route::get('/admin/taxis', function () {
+
+                return Inertia::render('Admin/Dashboard');
+            })->name('admin.taxis');
+
+            Route::get('/admin/reports', function () {
+                
+                return Inertia::render('Admin/Dashboard');
+            })->name('admin.reports');
+
+            // Perfil del administrador
+            Route::get('/perfil', function () {
+
+                return Inertia::render('Administrador/Perfil');
+            })->name('admin.perfil');
+        });
+
+        // Perfil (scaffolding Laravel)
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 
-    Route::middleware('role:admin')->group(function () {
-        Route::get('/admin/dashboard', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('admin.dashboard');
+    // Rutas de autenticación de Laravel (Breeze)
+    require __DIR__.'/auth.php';
 
-        Route::get('/admin/viajes', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('admin.viajes');
+    // Catch-all: cualquier ruta no definida renderiza Inicio
+    // Útil para SPA con Inertia cuando el frontend maneja enlaces.
+    Route::get('/{any}', function () {
 
-        Route::get('/admin/users', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('admin.users');
-
-        Route::get('/admin/taxis', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('admin.taxis');
-
-        Route::get('/admin/reports', function () {
-            return Inertia::render('Admin/Dashboard');
-        })->name('admin.reports');
-    });
-
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-
-require __DIR__.'/auth.php';
-
-// Catch-all para SPA (Vue Router). Debe ir al final del archivo.
-Route::get('/{any}', function () {
-    return Inertia::render('Inicio'); // Cambia 'Inicio' si tu vista principal es otra
-})->where('any', '.*');
-
+        return Inertia::render('Inicio');
+    })->where('any', '.*');

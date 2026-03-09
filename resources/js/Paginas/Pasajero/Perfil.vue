@@ -1,8 +1,10 @@
 <template>
   <DisposicionPasajero>
+    <!-- Página del pasajero: gestión de perfil, contraseña y cartera virtual -->
     <div class="max-w-3xl mx-auto">
       <div class="bg-white rounded-xl shadow-sm p-8">
         <h1 class="text-2xl font-bold text-neutral-dark mb-6">Mi Perfil</h1>
+        <!-- Mensajes de estado (errores e información) -->
         <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
           <p class="text-sm font-medium text-red-500">{{ errorMsg }}</p>
         </div>
@@ -10,6 +12,7 @@
           <p class="text-sm font-medium text-green-500">{{ infoMsg }}</p>
         </div>
 
+        <!-- Avatar: previsualización, carga y fallback con inicial -->
         <div class="flex justify-center mb-8">
           <div class="relative">
             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-lanzarote-blue/20">
@@ -18,6 +21,7 @@
                 {{ authStore.usuario?.name?.charAt(0) || 'U' }}
               </div>
             </div>
+            <!-- Botón flotante para subir una nueva imagen -->
             <label class="absolute bottom-0 right-0 bg-lanzarote-blue rounded-full p-2 shadow-lg cursor-pointer hover:bg-lanzarote-yellow transition-colors">
               <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
@@ -29,6 +33,7 @@
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
+          <!-- Datos personales: modo lectura y modo edición -->
           <div class="flex justify-between items-center mb-4">
             <h3 class="font-semibold text-neutral-dark">Información personal</h3>
             <button v-if="!editingPersonal" @click="startEditingPersonal" class="text-sm text-lanzarote-blue flex items-center space-x-1">
@@ -55,6 +60,7 @@
           </div>
 
           <div v-if="editingPersonal" class="space-y-4">
+            <!-- En edición: el nombre se mantiene como solo lectura -->
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Nombre</label>
               <input :value="authStore.usuario?.name || ''" type="text" disabled class="w-full px-4 py-2 bg-neutral-soft border border-neutral-volcanic rounded-lg cursor-not-allowed">
@@ -82,6 +88,7 @@
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
+          <!-- Cambio de contraseña con validaciones de fortaleza -->
           <h3 class="font-semibold text-neutral-dark mb-4">Cambiar contraseña</h3>
           
           <div class="space-y-4">
@@ -133,6 +140,7 @@
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
+          <!-- Cartera virtual: top-up con tarjeta + retirada -->
           <div class="flex items-center justify-between mb-6">
             <h3 class="font-semibold text-neutral-dark">Cartera Virtual</h3>
             <div class="text-right">
@@ -142,6 +150,7 @@
           </div>
 
           <div class="bg-lanzarote-blue/5 p-4 rounded-lg mb-4">
+            <!-- Añadir saldo: cantidades rápidas o una cantidad personalizada -->
             <h4 class="font-medium text-neutral-dark mb-3">Añadir saldo</h4>
             <div class="space-y-4">
               <div class="flex gap-2">
@@ -155,6 +164,7 @@
               </div>
 
               <div v-if="showpagoForm" class="border-t border-neutral-volcanic pt-4 mt-4">
+                <!-- Formulario de tarjeta (solo se muestra tras pulsar “Añadir saldo”) -->
                 <h5 class="font-medium text-neutral-dark mb-3">Datos de pago</h5>
                 <div class="space-y-3">
                   <div>
@@ -185,6 +195,7 @@
           </div>
 
           <div class="border-t border-neutral-volcanic pt-4">
+            <!-- Retirada: se confirma en un modal antes de enviar -->
             <h4 class="font-medium text-neutral-dark mb-3">Retirar dinero</h4>
             <div class="flex space-x-3">
               <input v-model="withdrawAmount" type="number" min="5" :max="walletBalance" step="1" placeholder="Cantidad a retirar" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue">
@@ -197,6 +208,7 @@
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
+          <!-- Preferencias simples de notificaciones -->
           <h3 class="font-semibold text-neutral-dark mb-4">Preferencias y notificaciones</h3>
           <div class="space-y-3">
             <label class="flex items-center space-x-3">
@@ -211,6 +223,7 @@
         </div>
 
         <div class="flex justify-end pt-4">
+          <!-- Acción destructiva: eliminación de cuenta (con confirmación) -->
           <button @click="showDeleteConfirm = true" class="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -221,6 +234,7 @@
       </div>
     </div>
 
+    <!-- Modal de confirmación de eliminación de cuenta -->
     <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Eliminar cuenta?</h3>
@@ -236,6 +250,7 @@
       </div>
     </div>
   </DisposicionPasajero>
+    <!-- Modal de confirmación de retirada (evita confirm/alert nativos) -->
     <div v-if="showWithdrawConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Confirmar retirada?</h3>
@@ -262,6 +277,8 @@ import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useWalletStore } from '../../Almacenes/almacenCartera.js'
 const authStore = useAuthStore()
 const walletStore = useWalletStore()
+
+// Estado del avatar (previsualización local y URL persistida)
 
 const avatarPreview = ref(null)
 const userAvatar = ref(null)
@@ -325,6 +342,7 @@ const isValidCardName = computed(() => {
 })
 
 const canAddToWallet = computed(() => {
+  // Habilita “Añadir saldo” si el importe es válido; si hay formulario, valida tarjeta
   const amount = customAmount.value ? parseFloat(customAmount.value) : walletTopUp.value
   if (!amount || amount < 5) return false
   
@@ -334,6 +352,7 @@ const canAddToWallet = computed(() => {
 })
 
 const canWithdraw = computed(() => {
+  // Retirada permitida: mínimo 5€ y no superar el saldo
   const amount = parseFloat(withdrawAmount.value)
 
   return amount >= 5 && amount <= walletStore.balance
@@ -374,6 +393,7 @@ const formatDate = (date) => {
 }
 
 const loadUserAvatar = async () => {
+  // Normaliza la URL del avatar (soporta rutas relativas y absolutas)
   try {
     if (authStore.usuario?.avatar) {
       const avatar = authStore.usuario.avatar
@@ -390,6 +410,7 @@ const loadUserAvatar = async () => {
 }
 
 const handleAvatarUpload = async (event) => {
+  // Validaciones básicas del archivo antes de subir (tamaño y tipo)
   const file = event.target.files[0]
   if (file) {
     if (file.size > 2 * 1024 * 1024) {
@@ -416,6 +437,7 @@ const handleAvatarUpload = async (event) => {
 }
 
 const saveAvatar = async (file) => {
+  // Subida del avatar y sincronización local (store + localStorage)
   if (!file) return
   
   try {
@@ -472,6 +494,7 @@ const saveAvatar = async (file) => {
 }
 
 const handleImageError = (event) => {
+  // Fallback si la imagen del avatar falla (reintento con URL del store una vez)
   console.error('Error al cargar la imagen:', event?.target?.src)
 
   const authAvatar = authStore.usuario?.avatar
@@ -515,6 +538,7 @@ const validatePhone = (phone) => {
 }
 
 const savePersonalInfo = async () => {
+  // Guarda email/teléfono con validaciones de formato
   emailError.value = ''
   phoneError.value = ''
   
@@ -549,6 +573,7 @@ const savePersonalInfo = async () => {
 }
 
 const checkPasswordStrength = () => {
+  // Calcula un nivel simple de fortaleza basado en reglas mínimas
   let strength = 0
   if (password.new?.length >= 8) strength++
   if (/[A-Z]/.test(password.new)) strength++
@@ -587,6 +612,7 @@ const strengthTextColor = computed(() => {
 })
 
 const changePassword = async () => {
+  // Llama al endpoint de cambio de contraseña si es válida
   if (!canChangePassword.value) return
   
   try {
@@ -637,6 +663,7 @@ const validateCardName = (e) => {
 }
 
 const processAddToWallet = async () => {
+  // Flujo en dos pasos: 1) mostrar formulario 2) confirmar pago y recargar saldo
   const amount = customAmount.value ? parseFloat(customAmount.value) : walletTopUp.value
   
   if (amount < 5) {
@@ -671,6 +698,7 @@ const processAddToWallet = async () => {
 }
 
 const processWithdraw = async () => {
+  // Abre confirmación de retirada (no retira directamente)
   const amount = parseFloat(withdrawAmount.value)
   
   if (amount < 5) {
@@ -691,6 +719,7 @@ const processWithdraw = async () => {
 }
 
 const confirmWithdraw = async () => {
+  // Ejecuta la retirada tras confirmar
   const amount = parseFloat(withdrawAmount.value)
   const result = await walletStore.withdrawFunds(amount)
   if (result.success) {
@@ -707,6 +736,7 @@ const cancelWithdraw = () => {
 
 
 const deleteAccount = async () => {
+  // Elimina la cuenta y fuerza logout
   try {
     await axios.delete('/api/user')
   } catch (error) {
@@ -716,6 +746,7 @@ const deleteAccount = async () => {
 }
 
 onMounted(async () => {
+  // Carga inicial: sincroniza usuario, avatar y datos de cartera
   await authStore.syncUser()
   if (authStore.usuario) {
     form.name = authStore.usuario.name || ''
