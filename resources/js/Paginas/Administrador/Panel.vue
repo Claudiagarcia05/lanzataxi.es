@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <DisposicionTablero>
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-neutral-dark">Panel de AdministraciÃƒÂ³n Ã°Å¸â€˜â€˜</h2>

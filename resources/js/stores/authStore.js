@@ -20,7 +20,7 @@ export function useAuthStore() {
         return '/conductor/dashboard';
       case 'admin':
 
-        return '/admin/dashboard';
+        return '/administradir/home';
       default:
 
         return '/pasajero/home';

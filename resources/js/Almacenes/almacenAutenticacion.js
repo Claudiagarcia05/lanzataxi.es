@@ -237,7 +237,7 @@ export const useAuthStore = defineStore('auth', {
                     return '/conductor/dashboard'
                 case 'admin':
 
-                    return '/admin/dashboard'
+                    return '/administradir/home'
                 case 'pasajero':
                 default:
 

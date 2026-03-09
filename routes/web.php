@@ -117,31 +117,37 @@
 
         // Rutas del ADMIN
         Route::middleware('role:admin')->group(function () {
-            // Dashboard de administración
+            // Home del panel de administración (URL canónica)
+            Route::get('/administradir/home', function () {
+
+                return Inertia::render('Administrador/Panel');
+            })->name('admin.dashboard');
+
+            // Compatibilidad: antigua URL de dashboard
             Route::get('/admin/dashboard', function () {
 
-                return Inertia::render('Admin/Dashboard');
-            })->name('admin.dashboard');
+                return redirect()->route('admin.dashboard');
+            });
 
             // Secciones del admin (actualmente renderizan la misma vista)
             Route::get('/admin/viajes', function () {
 
-                return Inertia::render('Admin/Dashboard');
+                return Inertia::render('Administrador/Panel');
             })->name('admin.viajes');
 
             Route::get('/admin/users', function () {
 
-                return Inertia::render('Admin/Dashboard');
+                return Inertia::render('Administrador/Panel');
             })->name('admin.users');
 
             Route::get('/admin/taxis', function () {
 
-                return Inertia::render('Admin/Dashboard');
+                return Inertia::render('Administrador/Panel');
             })->name('admin.taxis');
 
             Route::get('/admin/reports', function () {
                 
-                return Inertia::render('Admin/Dashboard');
+                return Inertia::render('Administrador/Panel');
             })->name('admin.reports');
 
             // Perfil del administrador
