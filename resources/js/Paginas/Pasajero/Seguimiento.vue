@@ -14,7 +14,7 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2">
+        <div class="lg:col-span-2 relative z-0">
           <div class="bg-white rounded-xl shadow-sm p-6">
             <div class="h-[500px] rounded-lg overflow-hidden">
               <div v-if="puedeRenderMapa" class="h-full">
@@ -27,7 +27,7 @@
           </div>
         </div>
 
-        <div class="lg:col-span-1 space-y-4">
+        <div class="lg:col-span-1 space-y-4 relative z-10">
           <div class="bg-white rounded-xl shadow-sm p-6">
             <h3 class="font-semibold text-neutral-dark mb-4 flex items-center gap-2">
               <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="taxiIconSvg"></svg>
@@ -98,7 +98,7 @@
               </div>
 
               <div v-if="['pendiente', 'accepted'].includes(viaje?.estado)" class="mt-4">
-                <button @click="abrirConfirmacionCancelacion" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors">
+                <button type="button" @click.stop.prevent="abrirConfirmacionCancelacion" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors">
                   Cancelar solicitud
                 </button>
                 <p v-if="viaje?.estado === 'pendiente'" class="text-xs text-center text-neutral-slate mt-2">
