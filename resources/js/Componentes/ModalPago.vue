@@ -37,7 +37,7 @@
               : 'border-neutral-volcanic hover:border-lanzarote-blue/30'
           ]"
         >
-          <span class="text-2xl">{{ method.icon }}</span>
+          <svg class="w-6 h-6 text-neutral-dark" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="method.iconSvg"></svg>
           <div class="flex-1 text-left">
             <p class="font-medium text-neutral-dark">{{ method.label }}</p>
             <p class="text-xs text-neutral-slate">{{ method.description }}</p>
@@ -45,6 +45,30 @@
           <span v-if="selectedMethod === method.value" class="text-lanzarote-blue">✓</span>
         </button>
       </div>
+
+      <Teleport to="body">
+        <div v-if="errorMsg" class="fixed inset-0 z-50 overflow-y-auto">
+          <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"></div>
+          <div class="flex min-h-full items-center justify-center p-4">
+            <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6" role="dialog" aria-modal="true" aria-label="Error">
+              <button type="button" @click="errorMsg = ''" class="absolute top-4 right-4 text-neutral-slate hover:text-neutral-dark" aria-label="Cerrar">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              <h3 class="text-lg font-bold text-neutral-dark mb-2">Error</h3>
+              <p class="text-sm text-neutral-slate" style="white-space: pre-line;">{{ errorMsg }}</p>
+
+              <div class="mt-6 flex justify-end">
+                <button type="button" @click="errorMsg = ''" class="px-4 py-2 rounded-lg bg-lanzarote-blue text-white font-semibold hover:bg-lanzarote-yellow hover:text-black transition-all">
+                  Aceptar
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </Teleport>
 
       <!-- Detalles adicionales según método -->
       <div v-if="selectedMethod === 'card' || selectedMethod === 'stripe'" class="mb-6 space-y-3">
@@ -114,6 +138,11 @@
 import { ref, computed } from 'vue'
 import axios from 'axios'
 
+import svgCashCoin from 'bootstrap-icons/icons/cash-coin.svg?raw'
+import svgCreditCard from 'bootstrap-icons/icons/credit-card.svg?raw'
+import svgShieldLock from 'bootstrap-icons/icons/shield-lock.svg?raw'
+import svgPaypal from 'bootstrap-icons/icons/paypal.svg?raw'
+
 const props = defineProps({
   show: Boolean,
   viaje: Object
@@ -123,6 +152,12 @@ const emit = defineEmits(['close', 'success'])
 
 const selectedMethod = ref('cash')
 const processing = ref(false)
+const errorMsg = ref('')
+
+const innerSvg = (raw) => raw
+  .replace(/^<svg[^>]*>/i, '')
+  .replace(/<\/svg>\s*$/i, '')
+  .trim()
 
 const cardDetails = ref({
   number: '',
@@ -131,14 +166,15 @@ const cardDetails = ref({
 })
 
 const pagoMethods = [
-  { value: 'cash', label: 'Efectivo', description: 'Pagar al conductor', icon: '💵' },
-  { value: 'card', label: 'Tarjeta', description: 'Débito o crédito', icon: '💳' },
-  { value: 'stripe', label: 'stripe', description: 'Pago online seguro', icon: '📁' },
-  { value: 'paypal', label: 'PayPal', description: 'Cuenta PayPal', icon: '🔅' }
+  { value: 'cash', label: 'Efectivo', description: 'Pagar al conductor', iconSvg: innerSvg(svgCashCoin) },
+  { value: 'card', label: 'Tarjeta', description: 'Débito o crédito', iconSvg: innerSvg(svgCreditCard) },
+  { value: 'stripe', label: 'Stripe', description: 'Pago online seguro', iconSvg: innerSvg(svgShieldLock) },
+  { value: 'paypal', label: 'PayPal', description: 'Cuenta PayPal', iconSvg: innerSvg(svgPaypal) }
 ]
 
 const processpago = async () => {
   processing.value = true
+  errorMsg.value = ''
   
   try {
     let response
@@ -167,7 +203,7 @@ const processpago = async () => {
     }
   } catch (error) {
     console.error('Error al procesar pago:', error)
-    alert('Error al procesar el pago. Inténtalo de nuevo.')
+    errorMsg.value = 'Error al procesar el pago. Inténtalo de nuevo.'
   } finally {
     processing.value = false
   }

@@ -105,9 +105,16 @@
                 return response()->json([]);
             }
 
+            $taxi = $conductor->ensureTaxiExists('available');
+            $capacity = (int) ($taxi->capacity ?? 4);
+            if ($capacity <= 0) {
+                $capacity = 4;
+            }
+
             $viajes = Viaje::query()
                 ->where('status', 'pending')
                 ->whereNull('conductor_id')
+                ->where('pasajeros', '<=', $capacity)
                 ->with([
                     'pasajero:id,name',
                     'conductor.user:id,name',
@@ -118,6 +125,72 @@
                 ->get();
 
             return response()->json($viajes);
+        }
+
+        private function settlePendingDebtsIfPossible(User $usuario): array
+        {
+            $result = [
+                'had_debt' => false,
+                'settled' => false,
+                'pending_debt' => 0.0,
+            ];
+
+            $debts = Debt::query()
+                ->where('user_id', $usuario->id)
+                ->where('status', 'pending')
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            $totalDebt = (float) $debts->sum('amount');
+            $result['pending_debt'] = $totalDebt;
+            if ($totalDebt <= 0) {
+                return $result;
+            }
+
+            $result['had_debt'] = true;
+            $balance = (float) ($usuario->wallet_balance ?? 0);
+            if ($balance < $totalDebt) {
+                return $result;
+            }
+
+            $usuario->wallet_balance = $balance - $totalDebt;
+            $usuario->save();
+
+            foreach ($debts as $debt) {
+                $debt->status = 'paid';
+                $debt->save();
+
+                if (!$debt->trip_id) {
+                    continue;
+                }
+
+                $trip = Viaje::query()->with('conductor')->find($debt->trip_id);
+                if (!$trip || !$trip->conductor) {
+                    continue;
+                }
+
+                $conductorUser = User::query()
+                    ->whereKey($trip->conductor->user_id)
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($conductorUser) {
+                    $conductorUser->wallet_balance = (float) ($conductorUser->wallet_balance ?? 0) + (float) ($debt->amount ?? 0);
+                    $conductorUser->save();
+                }
+
+                $trip->loadMissing('pago');
+                if ($trip->pago && ($trip->pago->status ?? null) !== 'paid') {
+                    $trip->pago->status = 'paid';
+                    $trip->pago->transaction_id = $trip->pago->transaction_id ?: ('debt_settlement_' . $trip->id);
+                    $trip->pago->save();
+                }
+            }
+
+            $result['settled'] = true;
+            $result['pending_debt'] = 0.0;
+            return $result;
         }
 
         public function store(Request $solicitud) {
@@ -157,8 +230,45 @@
 
             $precio = $this->calcularPrecio($mun_origen, $mun_destino, $distance, $hora);
 
+            $usuario = $solicitud->user();
+
+            $activeTripExists = Viaje::query()
+                ->where('pasajero_id', $usuario->id)
+                ->whereIn('status', ['pending', 'accepted', 'in_progress'])
+                ->exists();
+
+            if ($activeTripExists) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'No puedes pedir un taxi nuevo mientras tengas un viaje pendiente, aceptado o en curso.'
+                ], 409);
+            }
+
+            try {
+                $debtCheck = DB::transaction(function () use ($usuario) {
+                    $lockedUser = User::query()->whereKey($usuario->id)->lockForUpdate()->first();
+                    if (!$lockedUser) {
+                        throw new \RuntimeException('Usuario no encontrado');
+                    }
+                    return $this->settlePendingDebtsIfPossible($lockedUser);
+                }, 3);
+            } catch (\RuntimeException $e) {
+                return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
+            }
+
+            // Refrescar saldo por si se liquidaron deudas
+            $usuario = $usuario->fresh();
+
+            if (!empty($debtCheck['had_debt']) && empty($debtCheck['settled'])) {
+                $pending = (float) ($debtCheck['pending_debt'] ?? 0);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tienes una deuda pendiente de ' . number_format($pending, 2, '.', '') . '€ en tu cartera virtual. Añade saldo para poder solicitar un nuevo taxi.',
+                    'pending_debt' => $pending,
+                ], 400);
+            }
+
             if ($this->mapPaymentMethod($validated['pago_method'] ?? 'efectivo') === 'app') {
-                $usuario = $solicitud->user();
                 $saldo = $usuario->wallet_balance ?? 0;
                 if ($saldo < $precio) {
 
@@ -192,19 +302,6 @@
             $viaje->co2_saved = $viaje->calculateCO2Saved();
             $viaje->save();
 
-            $pendingDebt = Debt::where('user_id', $viaje->pasajero_id)
-                ->where('status', 'pending')
-                ->sum('amount');
-
-            if ($pendingDebt > 0) {
-                $viaje->price += $pendingDebt;
-                $viaje->save();
-
-                Debt::where('user_id', $viaje->pasajero_id)
-                    ->where('status', 'pending')
-                    ->update(['status' => 'paid']);
-            }
-
             return response()->json($viaje->load(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']), 201);
         }
 
@@ -224,30 +321,91 @@
                 return response()->json(['message' => 'viaje cannot be cancelled'], 400);
             }
 
-            $user = auth()->user();
-            $tripPrice = $viaje->price ?? 0;
-            $currentBalance = $user->wallet_balance ?? 0;
+            try {
+                $viajeActualizado = DB::transaction(function () use ($viaje) {
+                    $lockedTrip = Viaje::query()->whereKey($viaje->id)->lockForUpdate()->first();
+                    if (!$lockedTrip) {
+                        return null;
+                    }
 
-            $viaje->update(['status' => 'cancelled']);
+                    if (!in_array($lockedTrip->status, ['pending', 'accepted'], true)) {
+                        throw new \RuntimeException('viaje cannot be cancelled');
+                    }
 
-            if ($currentBalance >= $tripPrice) {
-                $user->wallet_balance = $currentBalance - $tripPrice;
-                $user->save();
-            } else {
-                $debtAmount = $tripPrice - $currentBalance;
-                $user->wallet_balance = 0;
-                $user->save();
+                    $user = User::query()->whereKey($lockedTrip->pasajero_id)->lockForUpdate()->first();
+                    if (!$user) {
+                        throw new \RuntimeException('Usuario no encontrado');
+                    }
 
-                Debt::create([
-                    'user_id' => $user->id,
-                    'trip_id' => $viaje->id,
-                    'amount' => $debtAmount,
-                    'status' => 'pending',
-                    'reason' => 'Cancelación de viaje - Cobro total'
-                ]);
+                    $tripPrice = (float) ($lockedTrip->price ?? 0);
+                    $currentBalance = (float) ($user->wallet_balance ?? 0);
+                    $chargedNow = min($currentBalance, $tripPrice);
+                    $remainingDebt = max(0, $tripPrice - $chargedNow);
+
+                    // Cambiar estado
+                    $lockedTrip->status = 'cancelled';
+                    $lockedTrip->save();
+
+                    // Cobro inmediato desde cartera (si hay saldo)
+                    $user->wallet_balance = $currentBalance - $chargedNow;
+                    $user->save();
+
+                    // Pagar al conductor (si existe) con lo cobrado ahora
+                    if ($chargedNow > 0 && $lockedTrip->conductor_id) {
+                        $lockedTrip->loadMissing('conductor');
+                        if ($lockedTrip->conductor) {
+                            $conductorUser = User::query()
+                                ->whereKey($lockedTrip->conductor->user_id)
+                                ->lockForUpdate()
+                                ->first();
+                            if ($conductorUser) {
+                                $conductorUser->wallet_balance = (float) ($conductorUser->wallet_balance ?? 0) + $chargedNow;
+                                $conductorUser->save();
+                            }
+                        }
+                    }
+
+                    // Si falta dinero, crear deuda pendiente (se liquidará al recargar o antes del siguiente viaje)
+                    if ($remainingDebt > 0) {
+                        Debt::create([
+                            'user_id' => $user->id,
+                            'trip_id' => $lockedTrip->id,
+                            'amount' => $remainingDebt,
+                            'status' => 'pending',
+                            'reason' => 'Cancelación de viaje - Cobro total'
+                        ]);
+                    }
+
+                    // Registrar pago del viaje cancelado (paid si cobrado completo, pending si queda deuda)
+                    $lockedTrip->loadMissing('pago');
+                    if (!$lockedTrip->pago) {
+                        $lockedTrip->pago()->create([
+                            'amount' => $tripPrice,
+                            'method' => 'app',
+                            'status' => $remainingDebt > 0 ? 'pending' : 'paid',
+                            'transaction_id' => 'cancel_wallet_' . $lockedTrip->id,
+                        ]);
+                    } else {
+                        if ($remainingDebt <= 0 && ($lockedTrip->pago->status ?? null) !== 'paid') {
+                            $lockedTrip->pago->status = 'paid';
+                            $lockedTrip->pago->save();
+                        }
+                    }
+
+                    return $lockedTrip;
+                }, 3);
+            } catch (\RuntimeException $e) {
+                return response()->json(['message' => $e->getMessage()], 400);
+            } catch (\Throwable $e) {
+                report($e);
+                return response()->json(['message' => 'Error al cancelar el viaje'], 500);
             }
 
-            return response()->json($viaje);
+            if ($viajeActualizado === null) {
+                return response()->json(['message' => 'viaje not found'], 404);
+            }
+
+            return response()->json($viajeActualizado->fresh(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }
 
         public function track(Viaje $viaje) {

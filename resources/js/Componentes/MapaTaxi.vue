@@ -9,7 +9,7 @@
         class="control-btn"
         title="Centrar en mi ubicación"
       >
-        <span class="text-lg">📍</span>
+        <svg class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconos.geoAlt"></svg>
       </button>
       <button 
         @click="toggleSimulation" 
@@ -17,7 +17,8 @@
         :class="{ 'active': isSimulating }"
         :title="isSimulating ? 'Detener simulación' : 'Simular viaje'"
       >
-        <span class="text-lg">{{ isSimulating ? '⏸️' : '🚕' }}</span>
+        <svg v-if="isSimulating" class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconos.pauseFill"></svg>
+        <svg v-else class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconos.playFill"></svg>
       </button>
     </div>
 
@@ -32,6 +33,30 @@
         <span class="info-value">{{ routeInfo.duration }}</span>
       </div>
     </div>
+
+    <Teleport to="body">
+      <div v-if="geolocationError" class="fixed inset-0 z-50 overflow-y-auto">
+        <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"></div>
+        <div class="flex min-h-full items-center justify-center p-4">
+          <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6" role="dialog" aria-modal="true" aria-label="Aviso">
+            <button type="button" @click="geolocationError = ''" class="absolute top-4 right-4 text-neutral-slate hover:text-neutral-dark" aria-label="Cerrar">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h3 class="text-lg font-bold text-neutral-dark mb-2">Aviso</h3>
+            <p class="text-sm text-neutral-slate" style="white-space: pre-line;">{{ geolocationError }}</p>
+
+            <div class="mt-6 flex justify-end">
+              <button type="button" @click="geolocationError = ''" class="px-4 py-2 rounded-lg bg-lanzarote-blue text-white font-semibold hover:bg-lanzarote-yellow hover:text-black transition-all">
+                Aceptar
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -44,6 +69,14 @@ import 'leaflet-routing-machine'
 import 'leaflet-control-geocoder/dist/Control.Geocoder.css'
 import 'leaflet-control-geocoder'
 import '../../css/taximap.css'
+
+import svgGeoAlt from 'bootstrap-icons/icons/geo-alt.svg?raw'
+import svgPlayFill from 'bootstrap-icons/icons/play-fill.svg?raw'
+import svgPauseFill from 'bootstrap-icons/icons/pause-fill.svg?raw'
+import svgPerson from 'bootstrap-icons/icons/person.svg?raw'
+import svgGeoAltFill from 'bootstrap-icons/icons/geo-alt-fill.svg?raw'
+import svgFlagFill from 'bootstrap-icons/icons/flag-fill.svg?raw'
+import svgTaxiFront from 'bootstrap-icons/icons/taxi-front.svg?raw'
 
 const normalizeOsrmServiceUrl = (url) => {
   if (typeof url !== 'string') return null
@@ -83,11 +116,33 @@ let currentRoutePoints = []
 const isSimulating = ref(false)
 const routeInfo = ref(null)
 const userLocation = ref(null)
+const geolocationError = ref('')
 
-// Configuración de iconos personalizados para Leaflet
-const createIcon = (emoji, color = 'blue') => {
+const innerSvg = (raw) => raw
+  .replace(/^<svg[^>]*>/i, '')
+  .replace(/<\/svg>\s*$/i, '')
+  .trim()
+
+const iconos = {
+  geoAlt: innerSvg(svgGeoAlt),
+  playFill: innerSvg(svgPlayFill),
+  pauseFill: innerSvg(svgPauseFill),
+  person: innerSvg(svgPerson),
+  geoAltFill: innerSvg(svgGeoAltFill),
+  flagFill: innerSvg(svgFlagFill),
+  taxiFront: innerSvg(svgTaxiFront),
+}
+
+// Configuración de iconos personalizados para Leaflet (SVG)
+const createSvgIcon = (svgInnerHtml) => {
+  const html = `
+    <svg viewBox="0 0 16 16" width="24" height="24" fill="currentColor" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));">
+      ${svgInnerHtml}
+    </svg>
+  `.trim()
+
   return L.divIcon({
-    html: `<div style="font-size: 24px; filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));">${emoji}</div>`,
+    html,
     className: 'custom-marker',
     iconSize: [24, 24],
     popupAnchor: [0, -12]
@@ -95,10 +150,10 @@ const createIcon = (emoji, color = 'blue') => {
 }
 
 const icons = {
-  user: createIcon('👤', 'green'),
-  pickup: createIcon('📍', 'blue'),
-  dropoff: createIcon('🏁', 'red'),
-  taxi: createIcon('🚕', 'yellow')
+  user: createSvgIcon(iconos.person),
+  pickup: createSvgIcon(iconos.geoAltFill),
+  dropoff: createSvgIcon(iconos.flagFill),
+  taxi: createSvgIcon(iconos.taxiFront)
 }
 
 // Inicializar mapa
@@ -177,7 +232,7 @@ const getUserLocation = () => {
         mensaje += ' Tiempo de espera agotado.';
       }
       mensaje += '\nActiva los permisos de ubicación o accede por HTTPS/localhost.';
-      alert(mensaje);
+      geolocationError.value = mensaje;
       // Si no se puede obtener la ubicación, usar ubicación por defecto
       userMarker = L.marker([28.963, -13.550], { icon: icons.user }).addTo(map)
         .bindPopup('Ubicación por defecto')
@@ -334,8 +389,7 @@ const simulateTaxiMovement = () => {
       const point = currentRoutePoints[currentPoint]
       taxiMarker.setLatLng([point.lat, point.lng])
       
-      // Rotar el marcador (simulado con emoji)
-      taxiMarker.setIcon(createIcon('🚕'))
+      taxiMarker.setIcon(icons.taxi)
       
       // Centrar mapa en el taxi cada 10 puntos
       if (currentPoint % 10 === 0) {
@@ -344,7 +398,7 @@ const simulateTaxiMovement = () => {
     } else {
       // Llegó al destino
       stopSimulation()
-      taxiMarker.bindPopup('🚕 Taxi ha llegado al destino').openPopup()
+      taxiMarker.bindPopup('Taxi ha llegado al destino').openPopup()
     }
   }, 100) // Actualizar cada 100ms para movimiento suave
 }

@@ -5,7 +5,10 @@
     <!-- Estado de búsqueda -->
     <div v-if="estado === 'pendiente'" class="searching-overlay">
       <div class="bg-white rounded-lg p-4 text-center">
-        <div class="animate-spin text-3xl mb-2">🔄</div>
+        <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-lanzarote-blue" fill="none" viewBox="0 0 24 24" aria-hidden="true">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
         <p class="font-medium">Buscando taxista disponible</p>
         <p class="text-sm text-neutral-slate mt-1">Espera mientras encontramos un taxi cerca de ti</p>
       </div>
@@ -15,7 +18,7 @@
     <div v-if="estado === 'accepted' && taxiLocation" class="taxi-info">
       <div class="bg-white rounded-lg p-3 shadow-lg">
         <div class="flex items-center gap-2">
-          <span class="text-2xl">🚕</span>
+          <svg class="w-6 h-6 text-neutral-dark" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconos.taxiFront"></svg>
           <div>
             <p class="text-sm font-medium">Taxista en camino</p>
             <p class="text-xs text-neutral-slate">Llegada estimada: {{ tiempoLlegada }}</p>
@@ -33,6 +36,10 @@ import 'leaflet/dist/leaflet.css'
 import 'leaflet-routing-machine/dist/leaflet-routing-machine.css'
 import 'leaflet-routing-machine'
 import '../../css/seguimiento.css'
+
+import svgGeoAltFill from 'bootstrap-icons/icons/geo-alt-fill.svg?raw'
+import svgFlagFill from 'bootstrap-icons/icons/flag-fill.svg?raw'
+import svgTaxiFront from 'bootstrap-icons/icons/taxi-front.svg?raw'
 
 const normalizeOsrmServiceUrl = (url) => {
   if (typeof url !== 'string') return null
@@ -77,10 +84,27 @@ const tiempoLlegada = computed(() => {
   return `${minutos} min`
 })
 
-// Iconos personalizados
-const createIcon = (emoji, className = '') => {
+const innerSvg = (raw) => raw
+  .replace(/^<svg[^>]*>/i, '')
+  .replace(/<\/svg>\s*$/i, '')
+  .trim()
+
+const iconos = {
+  geoAltFill: innerSvg(svgGeoAltFill),
+  flagFill: innerSvg(svgFlagFill),
+  taxiFront: innerSvg(svgTaxiFront),
+}
+
+// Iconos personalizados (SVG) para Leaflet
+const createSvgIcon = (svgInnerHtml, className = '') => {
+  const html = `
+    <svg viewBox="0 0 16 16" width="32" height="32" fill="currentColor" class="marker-svg ${className}">
+      ${svgInnerHtml}
+    </svg>
+  `.trim()
+
   return L.divIcon({
-    html: `<div class="marker-emoji ${className}">${emoji}</div>`,
+    html,
     className: 'custom-marker',
     iconSize: [32, 32],
     popupAnchor: [0, -16]
@@ -88,9 +112,9 @@ const createIcon = (emoji, className = '') => {
 }
 
 const icons = {
-  pickup: createIcon('📍'),
-  dropoff: createIcon('🏁'),
-  taxi: createIcon('🚕', 'taxi-marker')
+  pickup: createSvgIcon(iconos.geoAltFill),
+  dropoff: createSvgIcon(iconos.flagFill),
+  taxi: createSvgIcon(iconos.taxiFront, 'taxi-marker')
 }
 
 // Inicializar mapa

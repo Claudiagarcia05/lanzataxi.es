@@ -97,37 +97,27 @@
                 </div>
               </div>
 
-              <div v-if="viaje?.estado === 'pendiente'" class="mt-4">
-                <button @click="cancelarViaje" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors">
+              <div v-if="['pendiente', 'accepted'].includes(viaje?.estado)" class="mt-4">
+                <button @click="abrirConfirmacionCancelacion" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors">
                   Cancelar solicitud
                 </button>
-                <p class="text-xs text-center text-neutral-slate mt-2">
+                <p v-if="viaje?.estado === 'pendiente'" class="text-xs text-center text-neutral-slate mt-2">
                   Buscando taxista disponible...
                 </p>
               </div>
-
-              <div v-if="viaje?.estado === 'completed'" class="mt-4">
-                <button @click="irAValorar" class="w-full bg-lanzarote-yellow text-black py-3 rounded-lg hover:bg-yellow-400 transition-colors">
-                  Valorar viaje
-                </button>
-              </div>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <div v-if="viaje?.conductorName" class="bg-white rounded-xl shadow-sm p-6">
-            <h3 class="font-semibold text-neutral-dark mb-4">Contacto con taxista</h3>
-            
-            <div class="space-y-3">
-              <button class="w-full flex items-center justify-center gap-2 bg-blue-50 text-lanzarote-blue py-3 rounded-lg hover:bg-blue-100 transition-colors">
-                <svg class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="phoneIconSvg"></svg>
-                Llamar al taxista
-              </button>
-              <button class="w-full flex items-center justify-center gap-2 bg-green-50 text-green-600 py-3 rounded-lg hover:bg-green-100 transition-colors">
-                <svg class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="chatIconSvg"></svg>
-                Enviar mensaje
-              </button>
-            </div>
-          </div>
+    <div v-if="showCancelConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+        <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Confirmar cancelación?</h3>
+        <p class="text-neutral-slate mb-6">¿Confirmas la cancelación de este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera virtual, se generará una deuda.</p>
+        <div class="flex space-x-3">
+          <button @click="confirmCancelTrip" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">Sí, cancelar</button>
+          <button @click="cancelCancelTrip" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">Cancelar</button>
         </div>
       </div>
     </div>
@@ -145,8 +135,6 @@ import axios from 'axios'
 import '../../../css/seguimiento.css'
 
 import svgTaxiFront from 'bootstrap-icons/icons/taxi-front.svg?raw'
-import svgTelephone from 'bootstrap-icons/icons/telephone.svg?raw'
-import svgChatDots from 'bootstrap-icons/icons/chat-dots.svg?raw'
 
 const props = defineProps({
   viajeId: {
@@ -164,12 +152,11 @@ const innerSvg = (raw) => raw
   .trim()
 
 const taxiIconSvg = innerSvg(svgTaxiFront)
-const phoneIconSvg = innerSvg(svgTelephone)
-const chatIconSvg = innerSvg(svgChatDots)
 
 const viaje = ref(null)
 const taxiLocation = ref(null)
 let intervalId = null
+const showCancelConfirm = ref(false)
 
 const puedeRenderMapa = computed(() => {
   const v = viaje.value
@@ -235,19 +222,22 @@ const refreshTaxiLocation = async () => {
   }
 }
 
-const cancelarViaje = async () => {
-  if (!confirm('¿Estás seguro de que quieres cancelar este viaje?')) return
-  
+const abrirConfirmacionCancelacion = () => {
+  showCancelConfirm.value = true
+}
+
+const confirmCancelTrip = async () => {
   try {
     await viajeStore.cancelTrip(viaje.value.id)
+    showCancelConfirm.value = false
     inertiaRouter.visit('/pasajero/reservas')
   } catch (error) {
     console.error('Error cancelando viaje:', error)
   }
 }
 
-const irAValorar = () => {
-  inertiaRouter.visit('/pasajero/reservas')
+const cancelCancelTrip = () => {
+  showCancelConfirm.value = false
 }
 
 onMounted(() => {

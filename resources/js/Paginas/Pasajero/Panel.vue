@@ -6,20 +6,6 @@
         <p class="text-blue-100">Reserva tu taxi en Lanzarote de forma rápida y segura</p>
       </div>
 
-      <div v-if="viajeActivo" class="mb-6 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-sm font-medium text-yellow-800">
-              Tienes un viaje en curso: {{ viajeActivo.pickup_address }} → {{ viajeActivo.dropoff_address }}
-            </p>
-            <p class="text-xs text-yellow-700 mt-1">Estado: {{ getEstadoText(viajeActivo.estado) }}</p>
-          </div>
-          <button @click="irASeguimiento(viajeActivo.id)" class="text-sm bg-lanzarote-blue text-white px-4 py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors">
-            Ver seguimiento
-          </button>
-        </div>
-      </div>
-
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2">
           <div class="bg-white rounded-xl shadow-sm p-6">
@@ -153,7 +139,7 @@
                 </div>
               </div>
 
-              <button type="submit" :disabled="!bookingForm.pickupAddress || !bookingForm.dropoffAddress || (bookingForm.pagoMethod === 'wallet' && totalEstimatedPrice > walletBalance)" class="w-full bg-lanzarote-blue text-white font-bold py-4 px-6 rounded-xl text-lg hover:bg-lanzarote-yellow hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+              <button type="submit" :disabled="!canSubmit" class="w-full bg-lanzarote-blue text-white font-bold py-4 px-6 rounded-xl text-lg hover:bg-lanzarote-yellow hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 Confirmar Reserva
               </button>
             </form>
@@ -299,10 +285,6 @@ const obtenerUbicacionUsuario = async () => {
   }, (error) => {
     errorMsg.value = 'No se pudo obtener la ubicación';
   });
-}
-
-const irASeguimiento = (viajeId) => {
-  window.location.href = `/pasajero/seguimiento/${viajeId}`
 }
 
 const getEstadoText = (estado) => {
@@ -482,6 +464,16 @@ watch([
 
 const submitBooking = async () => {
   errorMsg.value = ''
+  if (viajeActivo.value) {
+    errorMsg.value = 'No puedes pedir un taxi nuevo mientras tengas un viaje pendiente, aceptado o en curso.'
+    return
+  }
+
+  if (pendingDebt.value > 0 && walletBalance.value < pendingDebt.value) {
+    errorMsg.value = `Tienes una deuda pendiente de ${pendingDebt.value.toFixed(2)}€. Añade saldo a tu cartera para poder solicitar un nuevo taxi.`
+    return
+  }
+
   if (!bookingForm.value.pickupAddress || !bookingForm.value.dropoffAddress) {
     errorMsg.value = 'Por favor completa los datos de origen y destino.'
 
@@ -539,9 +531,6 @@ const submitBooking = async () => {
 
   if (result.success) {
     console.log('Trip created successfully:', result.viaje)
-    if (bookingForm.value.pagoMethod === 'wallet') {
-      await walletStore.useFunds(result.viaje.price, result.viaje.id)
-    }
     console.log('Fetching trips...')
     await viajeStore.fetchTrips()
     console.log('Viajes loaded:', viajeStore.viajesPasajero)
@@ -586,6 +575,15 @@ const viajeActivo = computed(() => {
 const walletBalance = computed(() => walletStore.balance)
 const pendingDebt = computed(() => walletStore.pendingDebt)
 const totalEstimatedPrice = computed(() => bookingForm.value.estimatedPrice + pendingDebt.value)
+
+const canSubmit = computed(() => {
+  const hasAddresses = Boolean(bookingForm.value.pickupAddress) && Boolean(bookingForm.value.dropoffAddress)
+  if (!hasAddresses) return false
+  if (viajeActivo.value) return false
+  if (pendingDebt.value > 0 && walletBalance.value < pendingDebt.value) return false
+  if (bookingForm.value.pagoMethod === 'wallet' && totalEstimatedPrice.value > walletBalance.value) return false
+  return true
+})
 
 onMounted(() => {
   walletStore.fetchBalance()

@@ -6,14 +6,10 @@
         <p class="text-neutral-slate mt-1">Historial y seguimiento de tus viajes</p>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-neutral-dark">{{ viajeStats.all }}</p>
           <p class="text-sm text-neutral-slate">Total reservas</p>
-        </div>
-        <div class="bg-white rounded-xl shadow-sm p-5">
-          <p class="text-3xl font-bold text-yellow-600">{{ viajeStats.pendiente + viajeStats.activo }}</p>
-          <p class="text-sm text-neutral-slate">Pendientes</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-green-600">{{ viajeStats.completed }}</p>
@@ -46,7 +42,7 @@
               </div>
               <div class="flex items-center gap-3 mt-2 md:mt-0">
                 <span class="text-sm text-neutral-slate">{{ formatDate(viaje.created_at) }}</span>
-                <span class="text-sm font-medium text-neutral-dark">{{ viaje.conductor?.usuario?.name || 'Pendiente' }}</span>
+                <span v-if="viaje.conductor?.usuario?.name" class="text-sm font-medium text-neutral-dark">{{ viaje.conductor.usuario.name }}</span>
               </div>
             </div>
 
@@ -71,17 +67,13 @@
               </div>
             </div>
 
-            <div v-if="viaje.estado === 'completed' || viaje.pago_method === 'app'" class="border-t border-neutral-volcanic pt-4 mt-2">
+            <div v-if="['completed', 'cancelled'].includes(viaje.estado)" class="border-t border-neutral-volcanic pt-4 mt-2">
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-sm text-neutral-slate">Pago:</span>
-                  <span v-if="viaje.pago && viaje.pago.status === 'paid'" class="text-green-600 font-medium">Pagado</span>
+                  <span v-if="viaje.estado === 'cancelled'" class="text-green-600 font-medium">Pagado</span>
+                  <span v-else-if="viaje.pago && viaje.pago.status === 'paid'" class="text-green-600 font-medium">Pagado</span>
                   <span v-else class="text-yellow-600 font-medium">Pendiente de pago</span>
-                </div>
-                <div class="flex gap-2">
-                  <button class="text-sm text-neutral-slate hover:text-lanzarote-blue">
-                    Ver detalles
-                  </button>
                 </div>
               </div>
 
@@ -99,7 +91,7 @@
 
             <div v-else-if="['accepted', 'in_progress'].includes(viaje.estado)" class="border-t border-neutral-volcanic pt-4 mt-2">
               <div class="flex justify-end">
-                <button class="text-sm text-lanzarote-blue hover:text-lanzarote-yellow">
+                <button @click="irASeguimiento(viaje.id)" class="text-sm text-lanzarote-blue hover:text-lanzarote-yellow">
                   Ver seguimiento en tiempo real
                 </button>
               </div>
@@ -239,6 +231,10 @@ const formatDate = (dateString) => {
     hour: '2-digit',
     minute: '2-digit'
   }).replace(',', '')
+}
+
+const irASeguimiento = (viajeId) => {
+  window.location.href = `/pasajero/seguimiento/${viajeId}`
 }
 
 onMounted(() => {

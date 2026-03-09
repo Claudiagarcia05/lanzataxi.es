@@ -51,7 +51,7 @@ export const useTripStore = defineStore('viaje', {
 
             const statusMap = {
                 pending: 'pendiente',
-                accepted: isConductorContext ? 'accepted' : 'in_progress',
+                accepted: 'accepted',
                 in_progress: 'in_progress',
                 completed: 'completed',
                 cancelled: 'cancelled',
