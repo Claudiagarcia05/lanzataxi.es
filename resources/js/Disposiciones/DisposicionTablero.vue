@@ -117,11 +117,49 @@
       </main>
     </div>
   </div>
+
+  <div v-if="authStore.isAdmin && adminStore.modalPendientesAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
+      <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
+        <div>
+          <h3 class="font-semibold text-neutral-dark">Solicitud de taxista</h3>
+          <p class="text-sm text-neutral-slate">Revisa y decide: aprobar o rechazar.</p>
+        </div>
+        <button @click="adminStore.cerrarModalPendientes()" class="p-2 rounded-lg hover:bg-neutral-soft">
+          <span class="text-neutral-slate">Cerrar</span>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
+        <div v-for="solicitud in adminStore.pendientesNuevos" :key="solicitud.id" class="border border-neutral-volcanic rounded-lg p-4">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <p class="font-medium text-neutral-dark">{{ solicitud.name }}</p>
+              <p class="text-sm text-neutral-slate">{{ solicitud.email }} · {{ solicitud.phone }}</p>
+              <p class="text-xs text-neutral-slate mt-1">Licencia: {{ solicitud.license_number || '—' }} · Solicitó: {{ (solicitud.created_at || '').split('T')[0] }}</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button @click="adminStore.aprobarConductor(solicitud.id)" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600">
+                Aprobar
+              </button>
+              <button @click="adminStore.rechazarConductor(solicitud.id)" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600">
+                Rechazar
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="adminStore.pendientesNuevos.length === 0" class="text-sm text-neutral-slate">
+          No hay nuevas solicitudes.
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../Almacenes/almacenAutenticacion.js'
 import { useTripStore } from '../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../Almacenes/almacenConductor.js'
@@ -133,6 +171,8 @@ const viajeStore = useTripStore()
 const conductorStore = useConductorStore()
 const adminStore = useAdminStore()
 const page = usePage()
+
+let pendingPollIntervalId = null
 
 const isSidebarOpen = ref(true)
 const showNotifications = ref(false)
@@ -150,7 +190,15 @@ onMounted(() => {
     conductorStore.obtenerPerfilConductor()
   } else if (authStore.isAdmin) {
     adminStore.fetchAllData()
+
+    pendingPollIntervalId = setInterval(() => {
+      adminStore.obtenerConductoresPendientes({ openModalOnNew: true })
+    }, 15000)
   }
+})
+
+onUnmounted(() => {
+  if (pendingPollIntervalId) clearInterval(pendingPollIntervalId)
 })
 
 const logout = async () => {
@@ -204,14 +252,8 @@ const elementosMenu = computed(() => {
     {
       label: 'Dashboard',
       icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-      path: authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/administradir/home',
-      activo: rutaActual.value === (authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/administradir/home')
-    },
-    {
-      label: 'Mis viajes',
-      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-      path: authStore.ispasajero ? '/dashboard/viajes' : authStore.isconductor ? '/conductor/viajes' : '/admin/viajes',
-      activo: rutaActual.value.includes('viajes')
+      path: authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard',
+      activo: rutaActual.value === (authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard') || rutaActual.value === '/administradir/home'
     },
     {
       label: 'Perfil',
@@ -220,6 +262,15 @@ const elementosMenu = computed(() => {
       activo: rutaActual.value === '/perfil'
     }
   ]
+
+  if (!authStore.isAdmin) {
+    items.splice(1, 0, {
+      label: 'Mis viajes',
+      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+      path: authStore.ispasajero ? '/dashboard/viajes' : '/conductor/viajes',
+      activo: rutaActual.value.includes('viajes')
+    })
+  }
 
   if (authStore.isconductor) {
     items.splice(2, 0, {
@@ -233,22 +284,16 @@ const elementosMenu = computed(() => {
   if (authStore.isAdmin) {
     items.push(
       {
-        label: 'Usuarios',
+        label: 'Taxistas',
         icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-        path: '/admin/usuarios',
-        activo: rutaActual.value.includes('/admin/usuarios')
+        path: '/admin/taxistas',
+        activo: rutaActual.value.includes('/admin/taxistas')
       },
       {
-        label: 'Taxis',
-        icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-        path: '/admin/taxis',
-        activo: rutaActual.value.includes('/admin/taxis')
-      },
-      {
-        label: 'Reportes',
-        icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z',
-        path: '/admin/reports',
-        activo: rutaActual.value.includes('/admin/reports')
+        label: 'Clientes',
+        icon: 'M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3zM8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.29.84-2.4 2.1-3.25C11.2 13.29 9.56 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45v2h7v-2c0-2.66-5.33-4-8-4z',
+        path: '/admin/clientes',
+        activo: rutaActual.value.includes('/admin/clientes')
       }
     )
   }

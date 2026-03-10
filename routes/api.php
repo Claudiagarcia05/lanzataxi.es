@@ -32,7 +32,7 @@
     Route::get('/nearby-conductors', [ConductorController::class, 'nearbyconductors']);
 
     // --- Protegido (requiere token Sanctum) ---
-    Route::middleware('auth:sanctum')->group(function () {
+    Route::middleware(['auth:sanctum', 'account.enabled'])->group(function () {
         // Sesión API
         Route::get('/me', [AuthController::class, 'me']);
         Route::post('/logout', [AuthController::class, 'logout']);
@@ -81,7 +81,7 @@
         Route::get('/conductor/status', [ConductorController::class, 'status']);
 
         // --- Conductor (solo rol conductor) ---
-        Route::middleware('role:conductor')->group(function () {
+        Route::middleware(['role:conductor', 'conductor.approved'])->group(function () {
             // Viajes asignados al conductor / disponibles
             Route::get('/conductor/viajes', [ViajeController::class, 'driverTrips']);
             Route::get('/conductor/viajes/available', [ViajeController::class, 'available']);
@@ -103,6 +103,18 @@
             Route::get('/admin/viajes', [AdminController::class, 'viajes']);
             Route::get('/admin/pending-conductors', [AdminController::class, 'pendingconductors']);
             Route::get('/admin/stats', [AdminController::class, 'stats']);
+            Route::get('/admin/monthly-stats', [AdminController::class, 'monthlyStats']);
+
+            // Aprobación / rechazo de taxistas
+            Route::post('/admin/conductors/{conductor}/approve', [AdminController::class, 'approveConductor']);
+            Route::post('/admin/conductors/{conductor}/reject', [AdminController::class, 'rejectConductor']);
+
+            // Bajas (desactivar cuentas)
+            Route::patch('/admin/users/{user}/disable', [AdminController::class, 'disableUser']);
+
+            // Informes
+            Route::get('/admin/conductors/{conductor}/earnings-report', [AdminController::class, 'conductorEarningsReport']);
+            Route::get('/admin/clients/{user}/trips-report', [AdminController::class, 'clientTripsReport']);
 
             // CRUDs expuestos como API Resources
             Route::apiResource('conductors', ConductorController::class);

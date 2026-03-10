@@ -31,7 +31,11 @@
 
         public function test_viaje_can_be_accepted_by_conductor(): void {
             $conductorUser = User::factory()->create(['role' => 'conductor']);
-            $conductor = Conductor::factory()->create(['user_id' => $conductorUser->id, 'is_active' => true]);
+            $conductor = Conductor::factory()->create([
+                'user_id' => $conductorUser->id,
+                'is_active' => true,
+                'approval_status' => 'approved',
+            ]);
             Taxi::factory()->create(['conductor_id' => $conductor->id]);
 
             $viaje = Viaje::factory()->create(['status' => 'pending']);

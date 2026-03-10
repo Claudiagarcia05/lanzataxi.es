@@ -23,6 +23,7 @@
             'password',
             'role',
             'phone',
+            'is_disabled',
             'avatar',
             'wallet_balance',
         ];
@@ -48,6 +49,7 @@
                 'email_verified_at' => 'datetime',
                 'password' => 'hashed',
                 'wallet_balance' => 'decimal:2',
+                'is_disabled' => 'boolean',
             ];
         }
 

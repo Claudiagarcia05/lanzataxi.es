@@ -14,6 +14,9 @@
             'license_number',
             'rating',
             'is_active',
+            'approval_status',
+            'approved_at',
+            'rejected_at',
             'online_seconds',
             'online_since',
             'online_seconds_month',
@@ -23,6 +26,8 @@
         protected $casts = [
             'rating' => 'float',
             'is_active' => 'boolean',
+            'approved_at' => 'datetime',
+            'rejected_at' => 'datetime',
             'online_seconds' => 'integer',
             'online_since' => 'datetime',
             'online_seconds_month' => 'integer',

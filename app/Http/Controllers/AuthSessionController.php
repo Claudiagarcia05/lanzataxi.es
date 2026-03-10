@@ -29,6 +29,20 @@
                 return redirect('/')->with('error', 'Usuario no encontrado');
             }
 
+            if (!empty($usuario->is_disabled)) {
+
+                return redirect('/')->with('error', 'Tu cuenta está desactivada.');
+            }
+
+            if (($usuario->role ?? null) === 'conductor') {
+                $usuario->loadMissing('conductor');
+                if (($usuario->conductor?->approval_status ?? null) !== 'approved') {
+                    return redirect()->route('login')->withErrors([
+                        'email' => 'No tienes permiso de taxista',
+                    ]);
+                }
+            }
+
             Auth::guard('web')->login($usuario, remember: true);
             
             \Log::info('User authenticated via API token', [

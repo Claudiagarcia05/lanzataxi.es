@@ -22,13 +22,13 @@
                 $taxi->update(['status' => 'available']);
             }
 
-            return response()->json($conductor->load(['user:id,name,email,phone,avatar', 'taxi']));
+            return response()->json($conductor->load(['user:id,name,email,phone,avatar,is_disabled', 'taxi']));
         }
 
         public function index() {
 
             return response()->json(
-                conductor::with(['user:id,name,email,phone', 'taxi:id,conductor_id,plate,model,status'])
+                conductor::with(['user:id,name,email,phone,is_disabled', 'taxi:id,conductor_id,plate,model,capacity,color,status'])
                     ->latest()
                     ->get()
             );
@@ -53,7 +53,7 @@
 
         public function show(conductor $conductor) {
 
-            return response()->json($conductor->load(['user:id,name,email,phone', 'taxi']));
+            return response()->json($conductor->load(['user:id,name,email,phone,is_disabled', 'taxi']));
         }
 
         public function update(Request $solicitud, conductor $conductor) {

@@ -54,6 +54,7 @@
                 'role' => $validated['role'] ?? 'pasajero',
                 'phone' => $validated['phone'] ?? null,
                 'wallet_balance' => 0,
+                'is_disabled' => false,
             ]);
 
             if (($validated['role'] ?? 'pasajero') === 'conductor') {
@@ -62,6 +63,9 @@
                     'license_number' => 'LIC-' . strtoupper(uniqid()),
                     'rating' => 5.0,
                     'is_active' => false,
+                    'approval_status' => 'pending',
+                    'approved_at' => null,
+                    'rejected_at' => null,
                 ]);
 
                 $conductor->ensureTaxiExists('offline');
@@ -99,6 +103,22 @@
                         'email' => ['Las credenciales proporcionadas no coinciden con nuestros registros.']
                     ]
                 ], 401);
+            }
+
+            if (!empty($usuario->is_disabled)) {
+                return response()->json([
+                    'message' => 'Tu cuenta está desactivada.',
+                ], 403);
+            }
+
+            // Regla de negocio: un taxista debe estar aprobado por un admin.
+            if (($usuario->role ?? null) === 'conductor') {
+                $usuario->loadMissing('conductor');
+                if (($usuario->conductor?->approval_status ?? null) !== 'approved') {
+                    return response()->json([
+                        'message' => 'No tienes permiso de taxista',
+                    ], 403);
+                }
             }
 
             $usuario->tokens()->delete();

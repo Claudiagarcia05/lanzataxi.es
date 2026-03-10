@@ -3,13 +3,16 @@
 </div>
 
 <div align="center">
-  <img src="public\images\logo_sin_fondo.png" alt="LanzaTaxi" width="300" />
+  <img src="public/images/logo_sin_fondo.png" alt="LanzaTaxi" width="300" />
 
   <div>
-    <img src="https://img.shields.io/badge/PHP-8.3-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP" />
-    <img src="https://img.shields.io/badge/Laravel-11.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel" />
+    <img src="https://img.shields.io/badge/PHP-8.2%2B-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP" />
+    <img src="https://img.shields.io/badge/Laravel-12.x-FF2D20?style=for-the-badge&logo=laravel&logoColor=white" alt="Laravel" />
     <img src="https://img.shields.io/badge/MySQL-8.0-4479A1?style=for-the-badge&logo=mysql&logoColor=white" alt="MySQL" />
-    <img src="https://img.shields.io/badge/Bootstrap-5-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white" alt="Bootstrap" />
+    <img src="https://img.shields.io/badge/JavaScript-ESM-F7DF1E?style=for-the-badge&logo=javascript&logoColor=000" alt="JavaScript" />
+    <img src="https://img.shields.io/badge/Vue.js-3-4FC08D?style=for-the-badge&logo=vue.js&logoColor=white" alt="Vue" />
+    <img src="https://img.shields.io/badge/Tailwind_CSS-3-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white" alt="Tailwind CSS" />
+    <img src="https://img.shields.io/badge/Vite-7-646CFF?style=for-the-badge&logo=vite&logoColor=white" alt="Vite" />
     <img src="https://img.shields.io/badge/Node.js-18.x-339933?style=for-the-badge&logo=node.js&logoColor=white" alt="Node.js" />
     <img src="https://img.shields.io/badge/Composer-2.x-885630?style=for-the-badge&logo=composer&logoColor=white" alt="Composer" />
     <img src="https://img.shields.io/badge/Git-F05032?style=for-the-badge&logo=git&logoColor=white" alt="Git" />
@@ -75,7 +78,7 @@ Para ejecutar LanzaTaxi localmente, sigue estos pasos:
 
 ### Requisitos previos:
 
-- PHP >= 8.1 , y todas las extensiones necesarias:
+- PHP >= 8.2, y todas las extensiones necesarias:
 ```
 sudo apt install software-properties-common -y
 sudo add-apt-repository ppa:ondrej/php -y
@@ -103,8 +106,8 @@ Configura la base de datos y el usuario correspondiente:
 ```
 sudo mysql
 CREATE DATABASE lanzataxi_db;
-CREATE USER 'lanzataxi_db'@'localhost' IDENTIFIED BY 'lanzataxi_db';
-GRANT ALL PRIVILEGES ON *.* TO 'lanzataxi_db'@'localhost';
+CREATE USER 'lanzataxi_user'@'localhost' IDENTIFIED BY 'lanza_taxi';
+GRANT ALL PRIVILEGES ON lanzataxi_db.* TO 'lanzataxi_user'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
 ```
@@ -132,7 +135,7 @@ git clone https://github.com/Claudiagarcia05/lanzataxi.lan.git
 ```
 2. Accede a la carpeta:
 ```
-cd Proyecto-final-DAW
+cd lanzataxi.lan
 ```
 3. Otorga los permisos correspondientes:
 ```
@@ -150,18 +153,9 @@ npm run build
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=
-DB_USERNAME=
-DB_PASSWORD=
-
-MAIL_MAILER=
-MAIL_HOST=
-MAIL_PORT=
-MAIL_USERNAME=
-MAIL_PASSWORD=
-MAIL_ENCRYPTION=
-MAIL_FROM_ADDRESS=
-MAIL_FROM_NAME=" "
+DB_DATABASE=lanzataxi_db
+DB_USERNAME=lanzataxi_user
+DB_PASSWORD=lanza_taxi
 ```
 7. Genera la clave de encriptación:
 ```

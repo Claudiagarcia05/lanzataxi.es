@@ -23,6 +23,26 @@
         public function store(LoginRequest $solicitud): RedirectResponse {
             $solicitud->authenticate();
 
+            $usuario = $solicitud->user();
+            if (!empty($usuario?->is_disabled)) {
+                Auth::guard('web')->logout();
+
+                return back()->withErrors([
+                    'email' => 'Tu cuenta está desactivada.',
+                ]);
+            }
+
+            if (($usuario?->role ?? null) === 'conductor') {
+                $usuario->loadMissing('conductor');
+                if (($usuario->conductor?->approval_status ?? null) !== 'approved') {
+                    Auth::guard('web')->logout();
+
+                    return back()->withErrors([
+                        'email' => 'No tienes permiso de taxista',
+                    ]);
+                }
+            }
+
             $solicitud->session()->regenerate();
 
             return redirect()->intended(route('dashboard', absolute: false));

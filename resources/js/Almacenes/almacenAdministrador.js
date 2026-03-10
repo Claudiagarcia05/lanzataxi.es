@@ -8,13 +8,25 @@ export const useAdminStore = defineStore('admin', {
     taxis: [],
     conductoresPendientes: [],
     estadisticas: {
-      totalUsuarios: 2547,
-      conductoresActivos: 89,
-      totalTaxis: 150,
-      viajesHoy: 342,
-      ingresosHoy: 5234,
-      valoracionMedia: 4.7
+      totalUsuarios: 0,
+      conductoresActivos: 0,
+      totalTaxis: 0,
+      viajesHoy: 0,
+      ingresosHoy: 0,
+      valoracionMedia: 0,
     },
+    estadisticasMensuales: {
+      year: new Date().getFullYear(),
+      month: new Date().getMonth() + 1,
+      completedTrips: 0,
+      cancelledTrips: 0,
+      revenue: 0,
+      minYear: new Date().getFullYear(),
+      maxYear: new Date().getFullYear(),
+    },
+    modalPendientesAbierto: false,
+    pendientesNuevos: [],
+    pendientesVistosIds: [],
     cargando: false
   }),
 
@@ -23,7 +35,8 @@ export const useAdminStore = defineStore('admin', {
     totalconductores: (state) => state.conductores.length,
     taxisActivos: (state) => state.taxis.filter(t => t.estado === 'activo').length,
     solicitudesPendientes: (state) => state.conductoresPendientes.length,
-    ingresosHoyFormateado: (state) => `${state.estadisticas.ingresosHoy.toFixed(2)} €`
+    ingresosHoyFormateado: (state) => `${Number(state.estadisticas.ingresosHoy || 0).toFixed(2)} €`,
+    ingresosMensualesFormateado: (state) => `${Number(state.estadisticasMensuales.revenue || 0).toFixed(2)} €`,
   },
 
   actions: {
@@ -34,8 +47,12 @@ export const useAdminStore = defineStore('admin', {
           this.obtenerUsuarios(),
           this.obtenerConductores(),
           this.obtenerTaxis(),
-          this.obtenerConductoresPendientes(),
-          this.obtenerEstadisticas()
+          this.obtenerConductoresPendientes({ openModalOnNew: false }),
+          this.obtenerEstadisticas(),
+          this.obtenerEstadisticasMensuales({
+            year: this.estadisticasMensuales.year,
+            month: this.estadisticasMensuales.month,
+          }),
         ])
       } catch (error) {
         console.error('Error fetching admin data:', error)
@@ -51,7 +68,8 @@ export const useAdminStore = defineStore('admin', {
         name: usuario.name,
         email: usuario.email,
         role: usuario.role,
-        estado: 'activo',
+        is_disabled: Boolean(usuario.is_disabled),
+        estado: usuario.is_disabled ? 'inactivo' : 'activo',
         fechaRegistro: usuario.created_at?.split('T')[0],
         phone: usuario.phone,
       }))
@@ -61,13 +79,20 @@ export const useAdminStore = defineStore('admin', {
       const response = await axios.get('/api/conductors')
       this.conductores = response.data.map(conductor => ({
         id: conductor.id,
+        user_id: conductor.user_id,
         name: conductor.user?.name || 'Sin nombre',
         email: conductor.user?.email || '',
         phone: conductor.user?.phone || '',
+        is_disabled: Boolean(conductor.user?.is_disabled),
+        approval_status: conductor.approval_status,
+        approved_at: conductor.approved_at,
+        rejected_at: conductor.rejected_at,
+        license_number: conductor.license_number,
         vehiculo: conductor.taxi ? `${conductor.taxi.model} - ${conductor.taxi.plate}` : 'Sin taxi',
-        estado: conductor.is_active ? 'activo' : 'inactive',
+        estado: conductor.is_active ? 'activo' : 'inactivo',
         valoracion: Number(conductor.rating || 0),
         viajes: conductor.viajes_count || 0,
+        taxi: conductor.taxi || null,
       }))
     },
 
@@ -83,23 +108,37 @@ export const useAdminStore = defineStore('admin', {
       }))
     },
 
-    async obtenerConductoresPendientes() {
+    async obtenerConductoresPendientes({ openModalOnNew } = { openModalOnNew: true }) {
       const response = await axios.get('/api/admin/pending-conductors')
-      this.conductoresPendientes = response.data.map(conductor => ({
+
+      const pendientes = response.data.map(conductor => ({
         id: conductor.id,
+        user_id: conductor.user_id,
         name: conductor.user?.name || 'Sin nombre',
         email: conductor.user?.email || '',
         phone: conductor.user?.phone || '',
-        licencia: conductor.license_number,
-        fechaSolicitud: conductor.created_at?.split('T')[0],
+        is_disabled: Boolean(conductor.user?.is_disabled),
+        license_number: conductor.license_number,
+        created_at: conductor.created_at,
+        taxi: conductor.taxi || null,
       }))
+
+      const vistos = Array.isArray(this.pendientesVistosIds) ? this.pendientesVistosIds : []
+      const nuevos = pendientes.filter(p => !vistos.includes(p.id))
+      this.conductoresPendientes = pendientes
+      this.pendientesVistosIds = [...new Set([...vistos, ...pendientes.map(p => p.id)])]
+
+      if (openModalOnNew && nuevos.length > 0) {
+        this.pendientesNuevos = nuevos
+        this.modalPendientesAbierto = true
+      }
     },
 
     async obtenerEstadisticas() {
       const response = await axios.get('/api/admin/stats')
       this.estadisticas = {
         totalUsuarios: response.data.totalUsers,
-        conductoresActivos: response.data.activeDrivers,
+        conductoresActivos: response.data.activeConductors,
         totalTaxis: response.data.totalTaxis,
         viajesHoy: response.data.todayTrips,
         ingresosHoy: response.data.todayRevenue,
@@ -107,15 +146,51 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
+    async obtenerEstadisticasMensuales({ year, month } = {}) {
+      const params = {
+        year: year ?? this.estadisticasMensuales.year,
+        month: month ?? this.estadisticasMensuales.month,
+      }
+      const response = await axios.get('/api/admin/monthly-stats', { params })
+      this.estadisticasMensuales = {
+        year: response.data.year,
+        month: response.data.month,
+        completedTrips: response.data.completedTrips,
+        cancelledTrips: response.data.cancelledTrips,
+        revenue: response.data.revenue,
+        minYear: response.data.minYear,
+        maxYear: response.data.maxYear,
+      }
+    },
+
     async aprobarConductor(conductorId) {
-      await axios.put(`/api/conductors/${conductorId}`, { is_active: true })
+      await axios.post(`/api/admin/conductors/${conductorId}/approve`)
       this.conductoresPendientes = this.conductoresPendientes.filter(d => d.id !== conductorId)
-      await this.obtenerConductores()
+      this.pendientesNuevos = this.pendientesNuevos.filter(d => d.id !== conductorId)
+      await Promise.all([this.obtenerConductores(), this.obtenerConductoresPendientes({ openModalOnNew: false })])
     },
 
     async rechazarConductor(conductorId) {
-      await axios.delete(`/api/conductors/${conductorId}`)
+      await axios.post(`/api/admin/conductors/${conductorId}/reject`)
       this.conductoresPendientes = this.conductoresPendientes.filter(d => d.id !== conductorId)
+      this.pendientesNuevos = this.pendientesNuevos.filter(d => d.id !== conductorId)
+      await this.obtenerConductoresPendientes({ openModalOnNew: false })
+    },
+
+		async darDeBajaUsuario(userId) {
+      await axios.patch(`/api/admin/users/${userId}/disable`)
+      const usuario = this.usuarios.find(u => u.id === userId)
+      if (usuario) {
+        usuario.is_disabled = true
+        usuario.estado = 'inactivo'
+      }
+      const conductor = this.conductores.find(c => c.user_id === userId)
+      if (conductor) conductor.is_disabled = true
+    },
+
+		cerrarModalPendientes() {
+      this.modalPendientesAbierto = false
+      this.pendientesNuevos = []
     },
 
     async actualizarEstadoUsuario(usuarioId, estado) {

@@ -35,7 +35,7 @@
         ->name('auth.session-login');
 
     // Rutas protegidas por autenticación (sesión Laravel)
-    Route::middleware('auth')->group(function () {
+    Route::middleware(['auth', 'account.enabled'])->group(function () {
         // Dashboard genérico: redirige según el rol del usuario
         Route::get('/dashboard', function () {
 
@@ -89,7 +89,7 @@
         });
 
         // Rutas del CONDUCTOR
-        Route::middleware('role:conductor')->group(function () {
+        Route::middleware(['role:conductor', 'conductor.approved'])->group(function () {
             // Panel principal del conductor
             Route::get('/conductor/dashboard', function () {
 
@@ -118,13 +118,13 @@
         // Rutas del ADMIN
         Route::middleware('role:admin')->group(function () {
             // Home del panel de administración (URL canónica)
-            Route::get('/administradir/home', function () {
+            Route::get('/admin/dashboard', function () {
 
                 return Inertia::render('Administrador/Panel');
             })->name('admin.dashboard');
 
-            // Compatibilidad: antigua URL de dashboard
-            Route::get('/admin/dashboard', function () {
+            // Compatibilidad: URL anterior con typo
+            Route::get('/administradir/home', function () {
 
                 return redirect()->route('admin.dashboard');
             });
@@ -137,8 +137,23 @@
 
             Route::get('/admin/users', function () {
 
-                return Inertia::render('Administrador/Panel');
+                return redirect('/admin/usuarios');
             })->name('admin.users');
+
+            Route::get('/admin/usuarios', function () {
+
+                return redirect('/admin/taxistas');
+            })->name('admin.usuarios');
+
+            Route::get('/admin/taxistas', function () {
+
+                return Inertia::render('Administrador/Taxistas');
+            })->name('admin.taxistas');
+
+            Route::get('/admin/clientes', function () {
+
+                return Inertia::render('Administrador/Clientes');
+            })->name('admin.clientes');
 
             Route::get('/admin/taxis', function () {
 

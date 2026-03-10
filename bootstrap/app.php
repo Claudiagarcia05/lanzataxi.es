@@ -25,6 +25,8 @@
 
             $middleware->alias([
                 'role' => \App\Http\Middleware\RoleMiddleware::class,
+                'account.enabled' => \App\Http\Middleware\EnsureAccountEnabled::class,
+                'conductor.approved' => \App\Http\Middleware\EnsureConductorApproved::class,
             ]);
         })
         ->withExceptions(function (Exceptions $exceptions): void {
