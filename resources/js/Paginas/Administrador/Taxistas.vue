@@ -1,5 +1,5 @@
 <template>
-  <DisposicionTablero>
+  <DisposicionAdministrador>
     <div class="mb-8">
       <h2 class="text-2xl font-bold text-neutral-dark">Taxistas</h2>
       <p class="text-neutral-slate">Gestiona taxistas (datos personales solo lectura) y su vehículo (editable por admin).</p>
@@ -151,12 +151,12 @@
         </div>
       </div>
     </div>
-  </DisposicionTablero>
+  </DisposicionAdministrador>
 </template>
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
-import DisposicionTablero from '../../Disposiciones/DisposicionTablero.vue'
+import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 import axios from 'axios'
 import { jsPDF } from 'jspdf'

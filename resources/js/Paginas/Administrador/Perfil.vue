@@ -1,5 +1,5 @@
 <template>
-  <DisposicionTablero>
+  <DisposicionAdministrador>
     <div class="max-w-3xl mx-auto">
       <div class="bg-white rounded-xl shadow-sm p-8">
         <h1 class="text-2xl font-bold text-neutral-dark mb-6">Mi Perfil</h1>
@@ -164,13 +164,13 @@
         </div>
       </div>
     </div>
-  </DisposicionTablero>
+  </DisposicionAdministrador>
 </template>
 
 
 <script setup>
 import { ref, reactive, computed, watch, onMounted } from 'vue'
-import DisposicionTablero from '../../Disposiciones/DisposicionTablero.vue'
+import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import axios from 'axios'
 import { router } from '@inertiajs/vue3'
