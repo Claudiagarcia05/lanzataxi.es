@@ -1,5 +1,9 @@
 <div align="center">
-  <img src="public/img/logo.png" alt="LanzaTaxi" width="300" />
+  <h1>LanzaTaxi</h1>
+</div>
+
+<div align="center">
+  <img src="public\images\logo_sin_fondo.png" alt="LanzaTaxi" width="300" />
 
   <div>
     <img src="https://img.shields.io/badge/PHP-8.3-777BB4?style=for-the-badge&logo=php&logoColor=white" alt="PHP" />
@@ -146,18 +150,18 @@ npm run build
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
-DB_DATABASE=gymtinajo
-DB_USERNAME=gymtinajo
-DB_PASSWORD=gymtinajo
+DB_DATABASE=
+DB_USERNAME=
+DB_PASSWORD=
 
-MAIL_MAILER=smtp
-MAIL_HOST=sandbox.smtp.mailtrap.io
-MAIL_PORT=2525
-MAIL_USERNAME=4c2389d9e1f1e2
-MAIL_PASSWORD=8b504d67215918
-MAIL_ENCRYPTION=null
-MAIL_FROM_ADDRESS=gymtinajo@gmail.com
-MAIL_FROM_NAME="Gym Tinajo"
+MAIL_MAILER=
+MAIL_HOST=
+MAIL_PORT=
+MAIL_USERNAME=
+MAIL_PASSWORD=
+MAIL_ENCRYPTION=
+MAIL_FROM_ADDRESS=
+MAIL_FROM_NAME=" "
 ```
 7. Genera la clave de encriptación:
 ```
