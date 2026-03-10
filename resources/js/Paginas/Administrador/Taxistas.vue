@@ -5,6 +5,13 @@
       <p class="text-neutral-slate">Gestiona taxistas (datos personales solo lectura) y su vehículo (editable por admin).</p>
     </div>
 
+    <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
+      <p class="text-sm font-medium text-red-500">{{ errorMsg }}</p>
+    </div>
+    <div v-if="infoMsg" class="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg">
+      <p class="text-sm font-medium text-green-500">{{ infoMsg }}</p>
+    </div>
+
     <div class="bg-white rounded-xl shadow-sm">
       <div class="p-6 border-b border-neutral-volcanic">
         <h3 class="font-semibold text-neutral-dark">Listado</h3>
@@ -156,6 +163,9 @@ import { jsPDF } from 'jspdf'
 
 const adminStore = useAdminStore()
 
+const errorMsg = ref('')
+const infoMsg = ref('')
+
 const modalConductorAbierto = ref(false)
 const conductorSeleccionado = ref(null)
 
@@ -194,28 +204,48 @@ const cerrarModal = () => {
 
 const darDeBaja = async (userId) => {
   if (!userId) return
-  if (!confirm('¿Dar de baja a este usuario?')) return
-  await adminStore.darDeBajaUsuario(userId)
 
-  if (conductorSeleccionado.value?.user_id === userId) {
-    conductorSeleccionado.value.is_disabled = true
+  errorMsg.value = ''
+  infoMsg.value = ''
+
+  try {
+    await adminStore.darDeBajaUsuario(userId)
+    if (conductorSeleccionado.value?.user_id === userId) {
+      conductorSeleccionado.value.is_disabled = true
+    }
+    infoMsg.value = 'Taxista dado de baja correctamente'
+    setTimeout(() => { infoMsg.value = '' }, 4000)
+  } catch (error) {
+    errorMsg.value = error.response?.data?.message || 'No se pudo dar de baja al taxista'
+    setTimeout(() => { errorMsg.value = '' }, 4000)
   }
 }
 
 const guardarTaxi = async () => {
   if (!taxiForm.value.id) return
 
-  await axios.put(`/api/taxis/${taxiForm.value.id}`, {
-    plate: taxiForm.value.plate,
-    model: taxiForm.value.model,
-    capacity: taxiForm.value.capacity,
-    color: taxiForm.value.color,
-  })
+  errorMsg.value = ''
+  infoMsg.value = ''
 
-  await adminStore.obtenerConductores()
-  const updated = adminStore.conductores.find(c => c.id === conductorSeleccionado.value?.id)
-  if (updated) {
-    conductorSeleccionado.value = updated
+  try {
+    await axios.put(`/api/taxis/${taxiForm.value.id}`, {
+      plate: taxiForm.value.plate,
+      model: taxiForm.value.model,
+      capacity: taxiForm.value.capacity,
+      color: taxiForm.value.color,
+    })
+
+    await adminStore.obtenerConductores()
+    const updated = adminStore.conductores.find(c => c.id === conductorSeleccionado.value?.id)
+    if (updated) {
+      conductorSeleccionado.value = updated
+    }
+
+    infoMsg.value = 'Vehículo actualizado correctamente'
+    setTimeout(() => { infoMsg.value = '' }, 4000)
+  } catch (error) {
+    errorMsg.value = error.response?.data?.message || 'No se pudo actualizar el vehículo'
+    setTimeout(() => { errorMsg.value = '' }, 4000)
   }
 }
 

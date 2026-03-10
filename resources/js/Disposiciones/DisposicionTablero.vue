@@ -18,10 +18,7 @@
       </div>
 
       <div class="p-4 border-b border-neutral-volcanic">
-        <div class="flex items-center space-x-3">
-          <div class="w-12 h-12 rounded-full bg-lanzarote-blue text-white flex items-center justify-center font-bold text-lg">
-            {{ authStore.usuario?.name?.charAt(0) }}
-          </div>
+        <div class="flex items-center">
           <div v-if="isSidebarOpen" class="overflow-hidden">
             <p class="font-semibold text-neutral-dark truncate">{{ authStore.usuario?.name }}</p>
             <p class="text-xs text-neutral-slate">{{ getUserRoleText() }}</p>
@@ -73,7 +70,7 @@
             <p class="text-sm text-neutral-slate">{{ new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
           </div>
 
-          <div class="flex items-center space-x-4">
+          <div v-if="!authStore.isAdmin" class="flex items-center space-x-4">
             <div class="relative">
               <button @click="showNotifications = !showNotifications" class="p-2 rounded-lg hover:bg-neutral-soft relative">
                 <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -227,7 +224,7 @@ const getUserRoleText = () => {
 
 const getDashboardTitle = () => {
   if (rutaActual.value.includes('/conductor')) return 'Panel Taxista'
-  if (rutaActual.value.includes('/admin') || rutaActual.value.includes('/administradir')) return 'Panel Administración'
+  if (rutaActual.value.includes('/admin') || rutaActual.value.includes('/administradir')) return 'Panel Administrador'
 
   return 'Panel Pasajero'
 }
@@ -248,56 +245,52 @@ const navigateTo = (path) => {
 }
 
 const elementosMenu = computed(() => {
-  const items = [
-    {
-      label: 'Dashboard',
-      icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
-      path: authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard',
-      activo: rutaActual.value === (authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard') || rutaActual.value === '/administradir/home'
-    },
-    {
-      label: 'Perfil',
-      icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
-      path: '/perfil',
-      activo: rutaActual.value === '/perfil'
-    }
-  ]
-
-  if (!authStore.isAdmin) {
-    items.splice(1, 0, {
-      label: 'Mis viajes',
-      icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
-      path: authStore.ispasajero ? '/dashboard/viajes' : '/conductor/viajes',
-      activo: rutaActual.value.includes('viajes')
-    })
+  const inicio = {
+    label: 'Inicio',
+    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+    path: authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard',
+    activo: rutaActual.value === (authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard') || rutaActual.value === '/administradir/home'
   }
 
-  if (authStore.isconductor) {
-    items.splice(2, 0, {
-      label: 'Ganancias',
-      icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
-      path: '/conductor/ganancias',
-      activo: rutaActual.value.includes('earnings')
-    })
+  const miPerfil = {
+    label: 'Mi Perfil',
+    icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+    path: '/perfil',
+    activo: rutaActual.value === '/perfil'
   }
 
-  if (authStore.isAdmin) {
-    items.push(
-      {
-        label: 'Taxistas',
-        icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
-        path: '/admin/taxistas',
-        activo: rutaActual.value.includes('/admin/taxistas')
-      },
-      {
-        label: 'Clientes',
-        icon: 'M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3zM8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.29.84-2.4 2.1-3.25C11.2 13.29 9.56 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45v2h7v-2c0-2.66-5.33-4-8-4z',
-        path: '/admin/clientes',
-        activo: rutaActual.value.includes('/admin/clientes')
-      }
-    )
+  const misViajes = {
+    label: 'Mis viajes',
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+    path: authStore.ispasajero ? '/dashboard/viajes' : '/conductor/viajes',
+    activo: rutaActual.value.includes('viajes')
   }
 
-  return items
+  const ganancias = {
+    label: 'Ganancias',
+    icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+    path: '/conductor/ganancias',
+    activo: rutaActual.value.includes('/conductor/ganancias')
+  }
+
+  const taxistas = {
+    label: 'Taxistas',
+    icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+    path: '/admin/taxistas',
+    activo: rutaActual.value.includes('/admin/taxistas')
+  }
+
+  const clientes = {
+    label: 'Clientes',
+    icon: 'M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3zM8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.29.84-2.4 2.1-3.25C11.2 13.29 9.56 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45v2h7v-2c0-2.66-5.33-4-8-4z',
+    path: '/admin/clientes',
+    activo: rutaActual.value.includes('/admin/clientes')
+  }
+
+  if (authStore.isAdmin) return [inicio, taxistas, clientes, miPerfil]
+  if (authStore.isconductor) return [inicio, misViajes, ganancias, miPerfil]
+  if (authStore.ispasajero) return [inicio, misViajes, miPerfil]
+
+  return [inicio, miPerfil]
 })
 </script>

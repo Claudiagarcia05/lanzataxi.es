@@ -138,6 +138,30 @@
             </label>
           </div>
         </div>
+
+        <div class="flex justify-end pt-4">
+          <button @click="showDeleteConfirm = true" class="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+            <span>Eliminar mi Cuenta</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div class="bg-white rounded-2xl p-6 max-w-md w-full">
+        <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Eliminar cuenta?</h3>
+        <p class="text-neutral-slate mb-6">Esta acción es permanente y no se puede deshacer. Se eliminarán todos tus datos y viajes.</p>
+        <div class="flex space-x-3">
+          <button @click="deleteAccount" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+            Sí, eliminar
+          </button>
+          <button @click="showDeleteConfirm = false" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
+            Cancelar
+          </button>
+        </div>
       </div>
     </div>
   </DisposicionTablero>
@@ -149,6 +173,7 @@ import { ref, reactive, computed, watch, onMounted } from 'vue'
 import DisposicionTablero from '../../Disposiciones/DisposicionTablero.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import axios from 'axios'
+import { router } from '@inertiajs/vue3'
 
 const authStore = useAuthStore()
 const perfil = computed(() => authStore.usuario)
@@ -156,6 +181,7 @@ const perfil = computed(() => authStore.usuario)
 const errorMsg = ref('')
 const infoMsg = ref('')
 const avatarPreview = ref(null)
+const showDeleteConfirm = ref(false)
 
 const normalizeAvatarUrl = (avatar) => {
   if (typeof avatar !== 'string') return null
@@ -377,6 +403,16 @@ const changePassword = async () => {
     errorMsg.value = 'Error al actualizar la contraseña: ' + (error.response?.data?.message || 'Error desconocido');
     setTimeout(() => { errorMsg.value = ''; }, 4000);
   }
+}
+
+const deleteAccount = async () => {
+  try {
+    await axios.delete('/api/user')
+  } catch (error) {
+  }
+
+  await authStore.logout()
+  router.visit('/')
 }
 
 onMounted(async () => {

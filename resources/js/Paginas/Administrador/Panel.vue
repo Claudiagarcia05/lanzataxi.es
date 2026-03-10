@@ -1,7 +1,7 @@
 <template>
   <DisposicionTablero>
     <div class="mb-8">
-      <h2 class="text-2xl font-bold text-neutral-dark">Panel de Administración</h2>
+      <h2 class="text-2xl font-bold text-neutral-dark">Panel Administrador</h2>
       <p class="text-neutral-slate">Bienvenido, {{ authStore.usuario?.name }}. Aquí puedes ver el resumen mensual de la plataforma.</p>
     </div>
 
