@@ -180,18 +180,24 @@ const notificaciones = ref([
 ])
 
 onMounted(() => {
-  if (authStore.ispasajero) {
-    viajeStore.fetchTrips()
-  } else if (authStore.isconductor) {
-    viajeStore.fetchTrips()
-    conductorStore.obtenerPerfilConductor()
-  } else if (authStore.isAdmin) {
-    adminStore.fetchAllData()
+  ;(async () => {
+    if (!authStore.initialized || !authStore.usuario) {
+      await authStore.checkAuth()
+    }
 
-    pendingPollIntervalId = setInterval(() => {
-      adminStore.obtenerConductoresPendientes({ openModalOnNew: true })
-    }, 15000)
-  }
+    if (authStore.ispasajero) {
+      viajeStore.fetchTrips()
+    } else if (authStore.isconductor) {
+      viajeStore.fetchTrips()
+      conductorStore.obtenerPerfilConductor()
+    } else if (authStore.isAdmin) {
+      adminStore.fetchAllData()
+
+      pendingPollIntervalId = setInterval(() => {
+        adminStore.obtenerConductoresPendientes({ openModalOnNew: true })
+      }, 15000)
+    }
+  })()
 })
 
 onUnmounted(() => {
