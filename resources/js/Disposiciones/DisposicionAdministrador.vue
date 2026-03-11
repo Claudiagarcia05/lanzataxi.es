@@ -1,15 +1,15 @@
 <template>
   <div class="min-h-screen bg-neutral-soft">
     <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', isSidebarOpen ? 'w-64' : 'w-20' ]">
-      <div class="flex items-center justify-between p-4 border-b border-neutral-volcanic h-20">
-        <div v-if="isSidebarOpen" class="flex items-center space-x-2">
-          <img src="/images/logo.png" alt="LanzaTaxi" class="h-10 w-auto">
+      <div class="relative flex items-center p-4 border-b border-neutral-volcanic h-20">
+        <div v-if="isSidebarOpen" class="flex items-center space-x-2 flex-1 min-w-0">
+          <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-auto object-contain">
           <span class="font-bold text-lanzarote-blue text-lg">LanzaTaxi</span>
         </div>
-        <div v-else class="w-full flex justify-center">
-          <img src="/images/logo.png" alt="LanzaTaxi" class="h-10 w-auto">
+        <div v-else class="flex-1 min-w-0 flex justify-center">
+          <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-10 object-contain">
         </div>
-        <button @click="toggleSidebar" class="p-1.5 rounded-lg hover:bg-neutral-soft transition-colors">
+        <button @click="toggleSidebar" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors">
           <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path v-if="isSidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />

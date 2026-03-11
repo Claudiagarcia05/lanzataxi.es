@@ -24,6 +24,7 @@
             'role',
             'phone',
             'is_disabled',
+            'disabled_at',
             'avatar',
             'wallet_balance',
         ];
@@ -50,6 +51,7 @@
                 'password' => 'hashed',
                 'wallet_balance' => 'decimal:2',
                 'is_disabled' => 'boolean',
+                'disabled_at' => 'datetime',
             ];
         }
 

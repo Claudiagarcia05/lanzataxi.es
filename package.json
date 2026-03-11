@@ -24,6 +24,7 @@
     },
     "dependencies": {
         "bootstrap-icons": "^1.13.1",
+        "chart.js": "^4.5.0",
         "jspdf": "^4.2.0",
         "leaflet": "^1.9.4",
         "leaflet-control-geocoder": "^3.3.1",

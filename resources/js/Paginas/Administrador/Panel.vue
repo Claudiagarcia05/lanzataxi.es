@@ -1,7 +1,7 @@
 <template>
   <DisposicionAdministrador>
-    <div class="mb-8">
-      <h2 class="text-2xl font-bold text-neutral-dark">Panel Administrador</h2>
+    <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
+      <h2 class="text-2xl font-bold text-neutral-dark">Estadísticas</h2>
       <p class="text-neutral-slate">Bienvenido, {{ authStore.usuario?.name }}. Aquí puedes ver el resumen mensual de la plataforma.</p>
     </div>
 
@@ -38,19 +38,30 @@
           <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.ingresosMensualesFormateado }}</p>
         </div>
       </div>
+
+      <div class="mt-6 bg-neutral-soft rounded-xl p-4">
+        <p class="text-xs text-neutral-slate mb-3">Evolución diaria del mes</p>
+        <div class="h-64">
+          <canvas ref="chartCanvas"></canvas>
+        </div>
+      </div>
     </div>
   </DisposicionAdministrador>
 </template>
 
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
+import Chart from 'chart.js/auto'
 
 const authStore = useAuthStore()
 const adminStore = useAdminStore()
+
+const chartCanvas = ref(null)
+let chartInstance = null
 
 onMounted(async () => {
   await adminStore.obtenerEstadisticasMensuales({
@@ -59,6 +70,16 @@ onMounted(async () => {
   })
   selectedYear.value = adminStore.estadisticasMensuales.year
   selectedMonth.value = adminStore.estadisticasMensuales.month
+
+  await nextTick()
+  renderOrUpdateChart()
+})
+
+onBeforeUnmount(() => {
+  if (chartInstance) {
+    chartInstance.destroy()
+    chartInstance = null
+  }
 })
 
 const selectedYear = ref(adminStore.estadisticasMensuales.year)
@@ -74,5 +95,84 @@ const years = computed(() => {
 
 const cargarMensual = async () => {
   await adminStore.obtenerEstadisticasMensuales({ year: selectedYear.value, month: selectedMonth.value })
+  await nextTick()
+  renderOrUpdateChart()
+}
+
+const renderOrUpdateChart = () => {
+  const daily = adminStore.estadisticasMensuales.daily
+  const labels = daily?.labels || []
+  const completedTrips = daily?.completedTrips || []
+  const cancelledTrips = daily?.cancelledTrips || []
+  const revenue = daily?.revenue || []
+
+  const trips = labels.map((_, idx) => Number(completedTrips[idx] || 0) + Number(cancelledTrips[idx] || 0))
+
+  const canvas = chartCanvas.value
+  if (!canvas) return
+
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: 'Ganancias (€)',
+        data: revenue,
+        borderColor: '#244194',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 2,
+        yAxisID: 'yRevenue',
+      },
+      {
+        label: 'Viajes',
+        data: trips,
+        borderColor: '#64748B',
+        backgroundColor: 'transparent',
+        borderWidth: 2,
+        tension: 0.25,
+        pointRadius: 2,
+        yAxisID: 'yTrips',
+      },
+    ],
+  }
+
+  const options = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: 'index', intersect: false },
+    plugins: {
+      legend: { position: 'bottom' },
+    },
+    scales: {
+      x: {
+        grid: { display: false },
+      },
+      yTrips: {
+        position: 'left',
+        beginAtZero: true,
+        ticks: { precision: 0 },
+        title: { display: true, text: 'Viajes' },
+      },
+      yRevenue: {
+        position: 'right',
+        beginAtZero: true,
+        grid: { drawOnChartArea: false },
+        title: { display: true, text: '€' },
+      },
+    },
+  }
+
+  if (!chartInstance) {
+    chartInstance = new Chart(canvas, {
+      type: 'line',
+      data,
+      options,
+    })
+  } else {
+    chartInstance.data = data
+    chartInstance.options = options
+    chartInstance.update()
+  }
 }
 </script>

@@ -23,6 +23,7 @@ export const useAdminStore = defineStore('admin', {
       revenue: 0,
       minYear: new Date().getFullYear(),
       maxYear: new Date().getFullYear(),
+      daily: null,
     },
     modalPendientesAbierto: false,
     pendientesNuevos: [],
@@ -71,6 +72,7 @@ export const useAdminStore = defineStore('admin', {
         is_disabled: Boolean(usuario.is_disabled),
         estado: usuario.is_disabled ? 'inactivo' : 'activo',
         fechaRegistro: usuario.created_at?.split('T')[0],
+        fechaBaja: usuario.disabled_at?.split('T')[0] || null,
         phone: usuario.phone,
       }))
     },
@@ -160,6 +162,7 @@ export const useAdminStore = defineStore('admin', {
         revenue: response.data.revenue,
         minYear: response.data.minYear,
         maxYear: response.data.maxYear,
+        daily: response.data.daily || null,
       }
     },
 
@@ -183,6 +186,9 @@ export const useAdminStore = defineStore('admin', {
       if (usuario) {
         usuario.is_disabled = true
         usuario.estado = 'inactivo'
+        if (!usuario.fechaBaja) {
+          usuario.fechaBaja = new Date().toISOString().split('T')[0]
+        }
       }
       const conductor = this.conductores.find(c => c.user_id === userId)
       if (conductor) conductor.is_disabled = true
