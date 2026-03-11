@@ -1,8 +1,8 @@
 <template>
   <DisposicionAdministrador>
     <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-      <h2 class="text-2xl font-bold text-neutral-dark">Clientes</h2>
-      <p class="text-neutral-slate">Gestiona clientes, informe de viajes y baja por admin.</p>
+      <h1 class="text-3xl font-bold mb-2">Clientes</h1>
+      <p class="text-blue-100">Gestiona clientes, informe de viajes y baja por admin</p>
     </div>
 
     <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -65,7 +65,7 @@
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
             <h3 class="font-semibold text-neutral-dark">Cliente</h3>
-            <p class="text-sm text-neutral-slate">Datos personales no editables.</p>
+            <p class="text-sm text-neutral-slate">Datos personales.</p>
           </div>
           <button @click="cerrarModal" class="p-2 rounded-lg hover:bg-neutral-soft">
             <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>

@@ -1,8 +1,8 @@
 <template>
   <DisposicionAdministrador>
-    <div class="mb-8">
-      <h2 class="text-2xl font-bold text-neutral-dark">Taxistas</h2>
-      <p class="text-neutral-slate">Gestiona taxistas (datos personales solo lectura) y su vehículo (editable por admin).</p>
+    <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
+      <h1 class="text-3xl font-bold mb-2">Taxistas</h1>
+      <p class="text-blue-100">Gestiona taxistas y su vehículo</p>
     </div>
 
     <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">

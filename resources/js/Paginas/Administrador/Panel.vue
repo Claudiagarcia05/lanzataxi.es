@@ -1,8 +1,8 @@
 <template>
   <DisposicionAdministrador>
     <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-      <h2 class="text-2xl font-bold text-neutral-dark">Estadísticas</h2>
-      <p class="text-neutral-slate">Bienvenido, {{ authStore.usuario?.name }}. Aquí puedes ver el resumen mensual de la plataforma.</p>
+      <h1 class="text-3xl font-bold mb-2">Estadísticas</h1>
+      <p class="text-blue-100">Bienvenido, {{ authStore.usuario?.name }}. Aquí puedes ver el resumen mensual de la plataforma</p>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
@@ -127,7 +127,7 @@ const renderOrUpdateChart = () => {
       {
         label: 'Viajes',
         data: trips,
-        borderColor: '#64748B',
+        borderColor: '#FDD342',
         backgroundColor: 'transparent',
         borderWidth: 2,
         tension: 0.25,

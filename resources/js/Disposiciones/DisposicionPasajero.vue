@@ -9,21 +9,22 @@
         <div v-else class="flex-1 min-w-0 flex justify-center">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-10 object-contain">
         </div>
-        <button @click="toggleSidebar" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors">
+      </div>
+
+      <div class="relative p-4 border-b border-neutral-volcanic">
+        <div class="flex items-center space-x-3 pr-12">
+          <div v-if="isSidebarOpen" class="overflow-hidden">
+            <p class="font-semibold text-neutral-dark truncate">{{ authStore.usuario?.name }}</p>
+            <p class="text-xs text-neutral-slate">Pasajero</p>
+          </div>
+        </div>
+
+        <button @click="toggleSidebar" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="isSidebarOpen ? 'Contraer menú' : 'Expandir menú'">
           <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path v-if="isSidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
           </svg>
         </button>
-      </div>
-
-      <div v-if="isSidebarOpen" class="p-4 border-b border-neutral-volcanic">
-        <div class="flex items-center space-x-3">
-          <div class="overflow-hidden">
-            <p class="font-semibold text-neutral-dark truncate">{{ authStore.usuario?.name }}</p>
-            <p class="text-xs text-neutral-slate">Pasajero</p>
-          </div>
-        </div>
       </div>
 
       <nav class="p-4">
