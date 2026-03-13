@@ -162,22 +162,8 @@
 
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-sm p-6 sticky top-6">
-            <!-- Columna lateral: mapa y datos “cerca de ti” -->
-            <h3 class="font-semibold text-neutral-dark mb-4">Taxis cerca de ti</h3>
-            
-            <!-- Mapa: calcula distancia y permite fijar ubicación -->
+            <!-- Columna lateral: mapa -->
             <MapaTaxi :pickupLat="bookingForm.pickupLat" :pickupLng="bookingForm.pickupLng" :dropoffLat="bookingForm.dropoffLat" :dropoffLng="bookingForm.dropoffLng" @distance-calculated="(distance) => bookingForm.distance = Number.parseFloat(distance) || 0" @location-found="handleUserLocation"/>
-            
-            <div class="mt-4 space-y-2 text-sm">
-              <div class="flex justify-between items-center py-2 border-b border-neutral-volcanic">
-                <span class="text-neutral-slate">Taxis disponibles:</span>
-                <span class="font-semibold text-lanzarote-blue">8 vehículos</span>
-              </div>
-              <div class="flex justify-between items-center py-2">
-                <span class="text-neutral-slate">Tiempo estimado:</span>
-                <span class="font-semibold">3-5 minutos</span>
-              </div>
-            </div>
           </div>
         </div>
       </div>

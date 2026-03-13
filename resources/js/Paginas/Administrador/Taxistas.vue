@@ -62,7 +62,7 @@
     </div>
 
     <!-- Modal Conductor -->
-    <div v-if="modalConductorAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+    <div v-if="modalConductorAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
@@ -70,7 +70,7 @@
             <p class="text-sm text-neutral-slate">Datos personales no editables. Vehículo editable por admin.</p>
           </div>
           <button @click="cerrarModal" class="p-2 rounded-lg hover:bg-neutral-soft">
-            <span class="text-neutral-slate">Cerrar</span>
+            <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
           </button>
         </div>
 
@@ -98,18 +98,18 @@
 
             <div class="mt-5 flex flex-wrap gap-2">
               <button
-                @click="darDeBaja(conductorSeleccionado?.user_id)"
-                :disabled="!conductorSeleccionado || conductorSeleccionado.is_disabled"
-                class="bg-red-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
-              >
-                Dar de baja
-              </button>
-              <button
                 @click="descargarInformeConductor(conductorSeleccionado?.id)"
                 :disabled="!conductorSeleccionado"
                 class="bg-neutral-soft text-neutral-dark px-4 py-2 rounded-lg text-sm hover:bg-neutral-volcanic"
               >
                 Informe
+              </button>
+              <button
+                @click="guardarTaxi"
+                :disabled="!conductorSeleccionado || !taxiForm.id"
+                class="bg-lanzarote-blue disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black"
+              >
+                Guardar vehículo
               </button>
             </div>
           </div>
@@ -142,8 +142,13 @@
               </div>
 
               <div class="flex justify-end gap-2 pt-2">
-                <button type="submit" class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg text-sm hover:opacity-90">
-                  Guardar vehículo
+                <button
+                  type="button"
+                  @click="darDeBaja(conductorSeleccionado?.user_id)"
+                  :disabled="!conductorSeleccionado || conductorSeleccionado.is_disabled"
+                  class="bg-red-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
+                >
+                  Dar de baja
                 </button>
               </div>
             </form>
@@ -273,13 +278,16 @@ const descargarInformeConductor = async (conductorId) => {
   const response = await axios.get(`/api/admin/conductors/${conductorId}/earnings-report`)
   const { conductor, totals, months } = response.data
 
+  const PDF_FONT_FAMILY = 'helvetica'
   const doc = new jsPDF()
   let y = 14
 
+  doc.setFont(PDF_FONT_FAMILY, 'bold')
   doc.setFontSize(14)
   doc.text('Informe de conductor', 14, y)
   y += 8
 
+  doc.setFont(PDF_FONT_FAMILY, 'normal')
   doc.setFontSize(10)
   doc.text(`Nombre: ${conductor?.name || ''}`, 14, y); y += 5
   doc.text(`Email: ${conductor?.email || ''}`, 14, y); y += 5
@@ -288,13 +296,20 @@ const descargarInformeConductor = async (conductorId) => {
   doc.text(`Totales - Completados: ${totals.completedTrips} | Cancelados: ${totals.cancelledTrips} | Ganancias: ${Number(totals.revenue || 0).toFixed(2)} €`, 14, y)
   y += 8
 
+  doc.setFont(PDF_FONT_FAMILY, 'bold')
   doc.setFontSize(11)
   doc.text('Histórico por mes (YYYY-MM)', 14, y)
   y += 6
 
+  doc.setFont(PDF_FONT_FAMILY, 'normal')
   doc.setFontSize(10)
   months.forEach((m) => {
-    if (y > 285) { doc.addPage(); y = 14 }
+    if (y > 285) {
+      doc.addPage();
+      y = 14
+      doc.setFont(PDF_FONT_FAMILY, 'normal')
+      doc.setFontSize(10)
+    }
     doc.text(`${m.month}  -  Completados: ${m.completedTrips}  Cancelados: ${m.cancelledTrips}  Ganancias: ${Number(m.revenue || 0).toFixed(2)} €`, 14, y)
     y += 5
   })

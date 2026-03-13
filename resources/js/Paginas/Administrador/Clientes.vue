@@ -199,7 +199,10 @@ const descargarInformeCliente = async (userId) => {
       minute: '2-digit'
     })
 
+    const PDF_FONT_FAMILY = 'helvetica'
+
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
+    doc.setFont(PDF_FONT_FAMILY, 'normal')
     const marginX = 48
     const marginTop = 56
     const marginBottom = 48
@@ -232,7 +235,7 @@ const descargarInformeCliente = async (userId) => {
         y += h + 10
       }
 
-      doc.setFont('helvetica', 'normal')
+      doc.setFont(PDF_FONT_FAMILY, 'normal')
       doc.setFontSize(11)
       doc.setTextColor(80)
       doc.text('Informe de viajes · Cliente', marginX, y)
@@ -245,12 +248,12 @@ const descargarInformeCliente = async (userId) => {
       y += 18
 
       if (includeClientData) {
-        doc.setFont('helvetica', 'bold')
+        doc.setFont(PDF_FONT_FAMILY, 'bold')
         doc.setFontSize(12)
         doc.text('Datos del cliente', marginX, y)
         y += 14
 
-        doc.setFont('helvetica', 'normal')
+        doc.setFont(PDF_FONT_FAMILY, 'normal')
         doc.setFontSize(10)
         const labelW = 90
         const valueW = maxWidth - labelW
@@ -274,7 +277,7 @@ const descargarInformeCliente = async (userId) => {
         y += 18
       }
 
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(PDF_FONT_FAMILY, 'bold')
       doc.setFontSize(12)
       doc.text('Viajes (completados y cancelados)', marginX, y)
       y += 14
@@ -295,7 +298,7 @@ const descargarInformeCliente = async (userId) => {
       doc.setDrawColor(220)
       doc.rect(tableX, y, maxWidth, rowH, 'FD')
 
-      doc.setFont('helvetica', 'bold')
+      doc.setFont(PDF_FONT_FAMILY, 'bold')
       doc.setFontSize(10)
       doc.setTextColor(60)
 
@@ -306,7 +309,7 @@ const descargarInformeCliente = async (userId) => {
       doc.text('Ruta', tableX + colFechaW + colEstadoW + colPrecioW + 6, textY)
 
       doc.setTextColor(0)
-      doc.setFont('helvetica', 'normal')
+      doc.setFont(PDF_FONT_FAMILY, 'normal')
       return {
         y: y + rowH,
         widths: { colFechaW, colEstadoW, colPrecioW, colRutaW },

@@ -285,6 +285,7 @@ const exportInforme = async () => {
     ['Viajes completados', String(viajesCompletadosMes.value.length)],
   ]
 
+  const PDF_FONT_FAMILY = 'helvetica'
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const marginX = 48
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -311,7 +312,7 @@ const exportInforme = async () => {
     y += h + 10
   }
 
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(PDF_FONT_FAMILY, 'normal')
   doc.setFontSize(11)
   doc.setTextColor(80)
   doc.text(`Informe mensual · ${monthLabel}`, marginX, y)
@@ -323,12 +324,12 @@ const exportInforme = async () => {
   doc.line(marginX, y, pageWidth - marginX, y)
   y += 22
 
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(PDF_FONT_FAMILY, 'bold')
   doc.setFontSize(13)
   doc.text('Datos personales', marginX, y)
   y += 16
 
-  doc.setFont('helvetica', 'normal')
+  doc.setFont(PDF_FONT_FAMILY, 'normal')
   doc.setFontSize(11)
   const labelW = 110
   const valueW = pageWidth - marginX * 2 - labelW
@@ -346,7 +347,7 @@ const exportInforme = async () => {
   doc.line(marginX, y, pageWidth - marginX, y)
   y += 22
 
-  doc.setFont('helvetica', 'bold')
+  doc.setFont(PDF_FONT_FAMILY, 'bold')
   doc.setFontSize(13)
   doc.text('Métricas clave', marginX, y)
   y += 18
@@ -355,12 +356,12 @@ const exportInforme = async () => {
   const metricLabelWidth = 260
   const metricValueX = pageWidth - marginX
   for (const [label, value] of rows) {
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(PDF_FONT_FAMILY, 'normal')
     doc.text(String(label), marginX, y, { maxWidth: metricLabelWidth })
-    doc.setFont('helvetica', 'bold')
+    doc.setFont(PDF_FONT_FAMILY, 'bold')
     doc.text(String(value), metricValueX, y, { align: 'right' })
     y += 22
-    doc.setFont('helvetica', 'normal')
+    doc.setFont(PDF_FONT_FAMILY, 'normal')
     doc.setDrawColor(235)
     doc.line(marginX, y, pageWidth - marginX, y)
     y += 14
