@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.USERNAME }}
           key: ${{ secrets.SSH_KEY }}
           script: |
-            cd /var/www/lanzataxi
+            cd /var/www/lanzataxi/current
             git pull origin main
             composer install --no-dev --optimize-autoloader
             php artisan migrate --force
