@@ -33,6 +33,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
+    if: ${{ secrets.HOST != '' && secrets.USERNAME != '' && secrets.SSH_KEY != '' }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate deploy secrets
