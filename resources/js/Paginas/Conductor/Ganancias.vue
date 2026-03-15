@@ -209,7 +209,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import DisposicionConductor from '../../Disposiciones/DisposicionConductor.vue'
-import { useTripStore } from '../../Almacenes/almacenViaje.js'
+import { useViajeStore } from '../../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../../Almacenes/almacenConductor.js'
 import { jsPDF } from 'jspdf'
 
@@ -217,7 +217,7 @@ const filtroPeriodo = ref('all')
 
 const periodoGrafico = ref('7d')
 
-const viajeStore = useTripStore()
+const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
 
 const nowMs = ref(Date.now())
@@ -256,7 +256,7 @@ const loadPublicImagePng = async (url) => {
 
 const exportInforme = async () => {
   const now = new Date()
-  const monthLabel = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
+  const etiquetaMes = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
   const fechaLabel = now.toLocaleDateString('es-ES', {
     day: '2-digit',
     month: '2-digit',
@@ -268,13 +268,13 @@ const exportInforme = async () => {
   await conductorStore.obtenerPerfilConductor().catch(() => {})
 
   const perfil = conductorStore.perfil
-  const capacidad = perfil?.vehicle?.capacity
+  const capacidad = perfil?.vehiculo?.capacidad
   const datosPersonales = [
     ['Nombre', perfil?.name || '—'],
     ['Email', perfil?.email || '—'],
     ['Teléfono', perfil?.phone || '—'],
-    ['Vehículo', perfil?.vehicle?.model || '—'],
-    ['Matrícula', perfil?.vehicle?.plate || '—'],
+    ['Vehículo', perfil?.vehiculo?.modelo || '—'],
+    ['Matrícula', perfil?.vehiculo?.matricula || '—'],
     ['Capacidad', Number.isFinite(Number(capacidad)) ? `${Number(capacidad)} plazas` : '—'],
   ]
 
@@ -285,7 +285,7 @@ const exportInforme = async () => {
     ['Viajes completados', String(viajesCompletadosMes.value.length)],
   ]
 
-  const PDF_FONT_FAMILY = 'helvetica'
+  const FAMILIA_FUENTE_PDF = 'helvetica'
   const doc = new jsPDF({ unit: 'pt', format: 'a4' })
   const marginX = 48
   const pageWidth = doc.internal.pageSize.getWidth()
@@ -312,10 +312,10 @@ const exportInforme = async () => {
     y += h + 10
   }
 
-  doc.setFont(PDF_FONT_FAMILY, 'normal')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
   doc.setFontSize(11)
   doc.setTextColor(80)
-  doc.text(`Informe mensual · ${monthLabel}`, marginX, y)
+  doc.text(`Informe mensual · ${etiquetaMes}`, marginX, y)
   doc.text(`Generado: ${fechaLabel}`, pageWidth - marginX, y, { align: 'right' })
   doc.setTextColor(0)
   y += 22
@@ -324,12 +324,12 @@ const exportInforme = async () => {
   doc.line(marginX, y, pageWidth - marginX, y)
   y += 22
 
-  doc.setFont(PDF_FONT_FAMILY, 'bold')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
   doc.setFontSize(13)
   doc.text('Datos personales', marginX, y)
   y += 16
 
-  doc.setFont(PDF_FONT_FAMILY, 'normal')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
   doc.setFontSize(11)
   const labelW = 110
   const valueW = pageWidth - marginX * 2 - labelW
@@ -347,7 +347,7 @@ const exportInforme = async () => {
   doc.line(marginX, y, pageWidth - marginX, y)
   y += 22
 
-  doc.setFont(PDF_FONT_FAMILY, 'bold')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
   doc.setFontSize(13)
   doc.text('Métricas clave', marginX, y)
   y += 18
@@ -356,12 +356,12 @@ const exportInforme = async () => {
   const metricLabelWidth = 260
   const metricValueX = pageWidth - marginX
   for (const [label, value] of rows) {
-    doc.setFont(PDF_FONT_FAMILY, 'normal')
+    doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
     doc.text(String(label), marginX, y, { maxWidth: metricLabelWidth })
-    doc.setFont(PDF_FONT_FAMILY, 'bold')
+    doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
     doc.text(String(value), metricValueX, y, { align: 'right' })
     y += 22
-    doc.setFont(PDF_FONT_FAMILY, 'normal')
+    doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
     doc.setDrawColor(235)
     doc.line(marginX, y, pageWidth - marginX, y)
     y += 14
@@ -616,14 +616,14 @@ const mostrarEtiqueta = (idx) => {
 }
 
 onMounted(() => {
-  viajeStore.fetchTrips()
+  viajeStore.obtenerViajes()
   conductorStore.obtenerEstadoConductor().catch(() => {})
 
   tickIntervalId = setInterval(() => {
     nowMs.value = Date.now()
 
     const actual = mesActualKey()
-    if (conductorStore.onlineMonth && conductorStore.onlineMonth !== actual) {
+    if (conductorStore.mesEnLinea && conductorStore.mesEnLinea !== actual) {
       conductorStore.obtenerEstadoConductor().catch(() => {})
     }
   }, 1000)

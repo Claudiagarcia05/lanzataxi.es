@@ -4,16 +4,26 @@
 // - Aplica un guard global para proteger vistas con autenticación
 import { createRouter, createWebHistory } from 'vue-router';
 
-// Importaciones lazy: reducen el tamaño inicial y cargan la vista bajo demanda
-const Home = () => import('../Paginas/Inicio.vue');
-const PanelPasajero = () => import('../Paginas/Pasajero/Panel.vue');
-
 // Store de autenticación (Pinia): usado por el guard para comprobar sesión y redirecciones
 import { useAuthStore } from '../Almacenes/almacenAutenticacion';
 
+// Importaciones lazy: reducen el tamaño inicial y cargan la vista bajo demanda
+const Inicio = () => import('../Paginas/Inicio.vue');
+const Login = () => import('../Paginas/Auth/Login.vue');
+const Registro = () => import('../Paginas/Auth/Register.vue');
+const PanelPasajero = () => import('../Paginas/Pasajero/Panel.vue');
+const PanelConductor = () => import('../Paginas/Conductor/Panel.vue');
+const PanelAdministrador = () => import('../Paginas/Administrador/Panel.vue');
+
 // Definición de rutas
 // Nota: `meta.requiresAuth` se usa en el guard para bloquear acceso a usuarios no autenticados.
-const routes = [
+const rutas = [
+  {
+    // Inicio
+    path: '/',
+    name: 'inicio',
+    component: Inicio,
+  },
   {
     // Perfil del conductor
     path: '/conductor/perfil',
@@ -31,58 +41,63 @@ const routes = [
     // Registro
     path: '/register',
     name: 'register',
-    component: Register,
+    component: Registro,
   },
   {
-    // Dashboard (zona privada)
+    // Dashboard pasajero (zona privada)
     path: '/dashboard',
     name: 'pasajero-dashboard',
     component: PanelPasajero,
     meta: { requiresAuth: true },
-    component: conductorDashboard,
+  },
+  {
+    // Dashboard conductor (zona privada)
+    path: '/conductor/dashboard',
+    name: 'conductor-dashboard',
+    component: PanelConductor,
     meta: { requiresAuth: true },
   },
   {
-    // Panel de administración
+    // Panel de administración (zona privada)
     path: '/admin/dashboard',
     name: 'admin-dashboard',
-    component: AdminDashboard,
+    component: PanelAdministrador,
     meta: { requiresAuth: true },
   },
 ];
 
 // Instancia del router
-const router = createRouter({
+const enrutador = createRouter({
   history: createWebHistory(),
-  routes,
+  routes: rutas,
 });
 
 // Guard global: se ejecuta en cada navegación
 // - Inicializa/auth-check si aún no se ha hecho
 // - Redirige a /login si la ruta requiere autenticación
 // - Evita que usuarios logueados entren a /login o /register (los manda a su dashboard)
-router.beforeEach(async (to, from, next) => {
-  const auth = useAuthStore();
+enrutador.beforeEach(async (destino, origen) => {
+  const autenticacion = useAuthStore();
 
-  if (!auth.initialized) {
+  if (!autenticacion.inicializado) {
     // Comprueba si hay sesión válida (por ejemplo token/cookie)
-    await auth.checkAuth();
+    await autenticacion.verificarAutenticacion();
   }
 
-  if (to.meta.requiresAuth && !auth.isAuthenticated) {
+  if (destino.meta.requiresAuth && !autenticacion.estaAutenticado) {
     // Ruta privada sin sesión: ir a login
     return { path: '/login' };
   }
 
-  if (auth.isAuthenticated && (to.path === '/login' || to.path === '/register')) {
+  if (autenticacion.estaAutenticado && (destino.path === '/login' || destino.path === '/register')) {
     // Usuario con sesión intentando acceder a login/registro: redirigir según rol
-    const dashboardRoute = auth.getDashboardRoute();
+    const rutaDashboard = autenticacion.obtenerRutaDashboard();
 
-    return { path: dashboardRoute };
+    return { path: rutaDashboard };
   }
 
   // Permite la navegación
   return true;
 });
 
-export default router;
+export default enrutador;

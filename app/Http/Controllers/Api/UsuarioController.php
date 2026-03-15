@@ -8,7 +8,7 @@
     use Illuminate\Support\Facades\Storage;
     use Illuminate\Validation\Rules\Password;
 
-    class UserController extends Controller {
+    class UsuarioController extends Controller {
         public function updateProfile(Request $solicitud) {
             $usuario = $solicitud->user();
 
@@ -29,16 +29,16 @@
                 $rules['avatar'] = 'image|max:2048';
             }
 
-            $validated = $solicitud->validate($rules);
+            $validado = $solicitud->validate($rules);
 
-            if (isset($validated['name'])) {
-                $usuario->name = $validated['name'];
+            if (isset($validado['name'])) {
+                $usuario->name = $validado['name'];
             }
-            if (isset($validated['email'])) {
-                $usuario->email = $validated['email'];
+            if (isset($validado['email'])) {
+                $usuario->email = $validado['email'];
             }
-            if (isset($validated['phone'])) {
-                $usuario->phone = $validated['phone'];
+            if (isset($validado['phone'])) {
+                $usuario->phone = $validado['phone'];
             }
 
             if ($solicitud->hasFile('avatar')) {
@@ -46,15 +46,15 @@
                     Storage::disk('public')->delete($usuario->avatar);
                 }
                 
-                $path = $solicitud->file('avatar')->store('avatars', 'public');
-                $usuario->avatar = $path;
+                $ruta = $solicitud->file('avatar')->store('avatars', 'public');
+                $usuario->avatar = $ruta;
             }
 
             $usuario->save();
 
-            if ($usuario->PerfilPasajero && isset($validated['phone_alternative'])) {
+            if ($usuario->PerfilPasajero && isset($validado['phone_alternative'])) {
                 $usuario->PerfilPasajero->update([
-                    'phone_alternative' => $validated['phone_alternative'],
+                    'phone_alternative' => $validado['phone_alternative'],
                 ]);
             }
 
@@ -79,28 +79,28 @@
                 ], 422);
             }
 
-            $file = $solicitud->file('avatar');
+            $archivo = $solicitud->file('avatar');
 
-            if (!$file->isValid()) {
+            if (!$archivo->isValid()) {
 
                 return response()->json([
                     'success' => false,
                     'message' => 'El archivo no es válido',
-                    'error' => $file->getErrorMessage()
+                    'error' => $archivo->getErrorMessage()
                 ], 422);
             }
 
-            $allowedMimes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
-            if (!in_array($file->getMimeType(), $allowedMimes)) {
+            $mimesPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp', 'image/avif'];
+            if (!in_array($archivo->getMimeType(), $mimesPermitidos)) {
 
                 return response()->json([
                     'success' => false,
                     'message' => 'Tipo de archivo no permitido. Formatos aceptados: JPG, PNG, GIF, WEBP, AVIF',
-                    'mime_type' => $file->getMimeType()
+                    'mime_type' => $archivo->getMimeType()
                 ], 422);
             }
 
-            if ($file->getSize() > 2048 * 1024) {
+            if ($archivo->getSize() > 2048 * 1024) {
 
                 return response()->json([
                     'success' => false,
@@ -114,26 +114,26 @@
                 Storage::disk('public')->delete($usuario->avatar);
             }
 
-            $path = $file->store('avatars', 'public');
-            $usuario->avatar = $path;
+            $ruta = $archivo->store('avatars', 'public');
+            $usuario->avatar = $ruta;
             $usuario->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Avatar actualizado correctamente',
-                'avatar' => $path
+                'avatar' => $ruta
             ]);
         }
 
         public function updatePassword(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'new_password' => ['required', 'confirmed', Password::min(8)],
             ]);
 
             $usuario = $solicitud->user();
 
             $usuario->update([
-                'password' => Hash::make($validated['new_password'])
+                'password' => Hash::make($validado['new_password'])
             ]);
 
             return response()->json([
@@ -143,7 +143,7 @@
         }
 
         public function updatePreferences(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'preferences' => 'required|array',
             ]);
 
@@ -151,11 +151,11 @@
 
             if ($usuario->PerfilPasajero) {
                 $usuario->PerfilPasajero->update([
-                    'preferences' => json_encode($validated['preferences'])
+                    'preferences' => json_encode($validado['preferences'])
                 ]);
             } else {
                 $usuario->PerfilPasajero()->create([
-                    'preferences' => json_encode($validated['preferences'])
+                    'preferences' => json_encode($validado['preferences'])
                 ]);
             }
 

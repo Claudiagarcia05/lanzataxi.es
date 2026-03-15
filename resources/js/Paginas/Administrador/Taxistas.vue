@@ -5,11 +5,11 @@
       <p class="text-blue-100">Gestiona taxistas y su vehículo</p>
     </div>
 
-    <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
-      <p class="text-sm font-medium text-red-500">{{ errorMsg }}</p>
+    <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
+      <p class="text-sm font-medium text-red-500">{{ mensajeError }}</p>
     </div>
-    <div v-if="infoMsg" class="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg">
-      <p class="text-sm font-medium text-green-500">{{ infoMsg }}</p>
+    <div v-if="mensajeInfo" class="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg">
+      <p class="text-sm font-medium text-green-500">{{ mensajeInfo }}</p>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm">
@@ -37,8 +37,8 @@
               <td class="p-4 text-sm text-neutral-slate">{{ c.email }}</td>
               <td class="p-4 text-sm text-neutral-slate">{{ c.phone }}</td>
               <td class="p-4">
-                <span :class="['px-2 py-1 rounded-full text-xs', getApprovalClass(c.approval_status)]">
-                  {{ getApprovalText(c.approval_status) }}
+                <span :class="['px-2 py-1 rounded-full text-xs', obtenerClaseAprobacion(c.approval_status)]">
+                  {{ obtenerTextoAprobacion(c.approval_status) }}
                 </span>
               </td>
               <td class="p-4">
@@ -84,8 +84,8 @@
               <p><span class="text-neutral-slate">Licencia:</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.license_number || '—' }}</span></p>
               <p>
                 <span class="text-neutral-slate">Aprobación:</span>
-                <span :class="['ml-2 px-2 py-1 rounded-full text-xs', getApprovalClass(conductorSeleccionado?.approval_status)]">
-                  {{ getApprovalText(conductorSeleccionado?.approval_status) }}
+                <span :class="['ml-2 px-2 py-1 rounded-full text-xs', obtenerClaseAprobacion(conductorSeleccionado?.approval_status)]">
+                  {{ obtenerTextoAprobacion(conductorSeleccionado?.approval_status) }}
                 </span>
               </p>
               <p>
@@ -100,14 +100,14 @@
               <button
                 @click="descargarInformeConductor(conductorSeleccionado?.id)"
                 :disabled="!conductorSeleccionado"
-                class="bg-neutral-soft text-neutral-dark px-4 py-2 rounded-lg text-sm hover:bg-neutral-volcanic"
+                class="bg-lanzarote-blue disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black"
               >
                 Informe
               </button>
               <button
                 @click="guardarTaxi"
-                :disabled="!conductorSeleccionado || !taxiForm.id"
-                class="bg-lanzarote-blue disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black"
+                :disabled="!conductorSeleccionado || !formularioTaxi.id"
+                class="bg-lanzarote-yellow disabled:opacity-50 text-black px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-blue hover:text-white"
               >
                 Guardar vehículo
               </button>
@@ -117,27 +117,27 @@
           <div>
             <h4 class="font-semibold text-neutral-dark mb-3">Vehículo</h4>
 
-            <div v-if="!taxiForm.id" class="text-sm text-neutral-slate">
+            <div v-if="!formularioTaxi.id" class="text-sm text-neutral-slate">
               Este taxista no tiene taxi asociado.
             </div>
 
             <form v-else @submit.prevent="guardarTaxi" class="space-y-3">
               <div>
                 <label class="block text-xs text-neutral-slate mb-1">Matrícula</label>
-                <input v-model="taxiForm.plate" class="w-full rounded-lg border-neutral-volcanic" />
+                <input v-model="formularioTaxi.plate" class="w-full rounded-lg border-neutral-volcanic" />
               </div>
               <div>
                 <label class="block text-xs text-neutral-slate mb-1">Modelo</label>
-                <input v-model="taxiForm.model" class="w-full rounded-lg border-neutral-volcanic" />
+                <input v-model="formularioTaxi.model" class="w-full rounded-lg border-neutral-volcanic" />
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs text-neutral-slate mb-1">Capacidad</label>
-                  <input v-model.number="taxiForm.capacity" type="number" min="1" class="w-full rounded-lg border-neutral-volcanic" />
+                  <input v-model.number="formularioTaxi.capacity" type="number" min="1" class="w-full rounded-lg border-neutral-volcanic" />
                 </div>
                 <div>
                   <label class="block text-xs text-neutral-slate mb-1">Color</label>
-                  <input v-model="taxiForm.color" class="w-full rounded-lg border-neutral-volcanic" />
+                  <input v-model="formularioTaxi.color" class="w-full rounded-lg border-neutral-volcanic" />
                 </div>
               </div>
 
@@ -168,13 +168,13 @@ import { jsPDF } from 'jspdf'
 
 const adminStore = useAdminStore()
 
-const errorMsg = ref('')
-const infoMsg = ref('')
+const mensajeError = ref('')
+const mensajeInfo = ref('')
 
 const modalConductorAbierto = ref(false)
 const conductorSeleccionado = ref(null)
 
-const taxiForm = ref({
+const formularioTaxi = ref({
   id: null,
   plate: '',
   model: '',
@@ -183,7 +183,7 @@ const taxiForm = ref({
 })
 
 onMounted(async () => {
-  await adminStore.fetchAllData()
+  await adminStore.obtenerTodosLosDatos()
 })
 
 const conductores = computed(() => adminStore.conductores)
@@ -193,7 +193,7 @@ const abrirModalConductor = (conductor) => {
   modalConductorAbierto.value = true
 
   const taxi = conductor.taxi || null
-  taxiForm.value = {
+  formularioTaxi.value = {
     id: taxi?.id ?? null,
     plate: taxi?.plate ?? '',
     model: taxi?.model ?? '',
@@ -207,55 +207,55 @@ const cerrarModal = () => {
   conductorSeleccionado.value = null
 }
 
-const darDeBaja = async (userId) => {
-  if (!userId) return
+const darDeBaja = async (idUsuario) => {
+  if (!idUsuario) return
 
-  errorMsg.value = ''
-  infoMsg.value = ''
+  mensajeError.value = ''
+  mensajeInfo.value = ''
 
   try {
-    await adminStore.darDeBajaUsuario(userId)
-    if (conductorSeleccionado.value?.user_id === userId) {
+    await adminStore.darDeBajaUsuario(idUsuario)
+    if (conductorSeleccionado.value?.user_id === idUsuario) {
       conductorSeleccionado.value.is_disabled = true
     }
-    infoMsg.value = 'Taxista dado de baja correctamente'
-    setTimeout(() => { infoMsg.value = '' }, 4000)
+    mensajeInfo.value = 'Taxista dado de baja correctamente'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
   } catch (error) {
-    errorMsg.value = error.response?.data?.message || 'No se pudo dar de baja al taxista'
-    setTimeout(() => { errorMsg.value = '' }, 4000)
+    mensajeError.value = error.response?.data?.message || 'No se pudo dar de baja al taxista'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
 }
 
 const guardarTaxi = async () => {
-  if (!taxiForm.value.id) return
+  if (!formularioTaxi.value.id) return
 
-  errorMsg.value = ''
-  infoMsg.value = ''
+  mensajeError.value = ''
+  mensajeInfo.value = ''
 
   try {
-    await axios.put(`/api/taxis/${taxiForm.value.id}`, {
-      plate: taxiForm.value.plate,
-      model: taxiForm.value.model,
-      capacity: taxiForm.value.capacity,
-      color: taxiForm.value.color,
+    await axios.put(`/api/taxis/${formularioTaxi.value.id}`, {
+      plate: formularioTaxi.value.plate,
+      model: formularioTaxi.value.model,
+      capacity: formularioTaxi.value.capacity,
+      color: formularioTaxi.value.color,
     })
 
     await adminStore.obtenerConductores()
-    const updated = adminStore.conductores.find(c => c.id === conductorSeleccionado.value?.id)
-    if (updated) {
-      conductorSeleccionado.value = updated
+    const conductorActualizado = adminStore.conductores.find(c => c.id === conductorSeleccionado.value?.id)
+    if (conductorActualizado) {
+      conductorSeleccionado.value = conductorActualizado
     }
 
-    infoMsg.value = 'Vehículo actualizado correctamente'
-    setTimeout(() => { infoMsg.value = '' }, 4000)
+    mensajeInfo.value = 'Vehículo actualizado correctamente'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
   } catch (error) {
-    errorMsg.value = error.response?.data?.message || 'No se pudo actualizar el vehículo'
-    setTimeout(() => { errorMsg.value = '' }, 4000)
+    mensajeError.value = error.response?.data?.message || 'No se pudo actualizar el vehículo'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
 }
 
-const getApprovalText = (status) => {
-  switch (status) {
+const obtenerTextoAprobacion = (estadoAprobacion) => {
+  switch (estadoAprobacion) {
     case 'approved': return 'Aprobado'
     case 'rejected': return 'Rechazado'
     case 'pending':
@@ -263,8 +263,8 @@ const getApprovalText = (status) => {
   }
 }
 
-const getApprovalClass = (status) => {
-  switch (status) {
+const obtenerClaseAprobacion = (estadoAprobacion) => {
+  switch (estadoAprobacion) {
     case 'approved': return 'bg-green-100 text-green-800'
     case 'rejected': return 'bg-red-100 text-red-800'
     case 'pending':
@@ -272,48 +272,63 @@ const getApprovalClass = (status) => {
   }
 }
 
-const descargarInformeConductor = async (conductorId) => {
-  if (!conductorId) return
+const descargarInformeConductor = async (idConductor) => {
+  if (!idConductor) return
 
-  const response = await axios.get(`/api/admin/conductors/${conductorId}/earnings-report`)
-  const { conductor, totals, months } = response.data
+  const response = await axios.get(`/api/admin/conductors/${idConductor}/earnings-report`)
+  const { conductor: conductorInfo, totals: totalesApi, months: mesesApi } = response.data
 
-  const PDF_FONT_FAMILY = 'helvetica'
+  const totalesInforme = {
+    viajesCompletados: Number(totalesApi?.completedTrips || 0),
+    viajesCancelados: Number(totalesApi?.cancelledTrips || 0),
+    ingresos: Number(totalesApi?.revenue || 0),
+  }
+
+  const mesesInforme = Array.isArray(mesesApi)
+    ? mesesApi.map((m) => ({
+        mes: m.month,
+        viajesCompletados: Number(m.completedTrips || 0),
+        viajesCancelados: Number(m.cancelledTrips || 0),
+        ingresos: Number(m.revenue || 0),
+      }))
+    : []
+
+  const FAMILIA_FUENTE_PDF = 'helvetica'
   const doc = new jsPDF()
   let y = 14
 
-  doc.setFont(PDF_FONT_FAMILY, 'bold')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
   doc.setFontSize(14)
   doc.text('Informe de conductor', 14, y)
   y += 8
 
-  doc.setFont(PDF_FONT_FAMILY, 'normal')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
   doc.setFontSize(10)
-  doc.text(`Nombre: ${conductor?.name || ''}`, 14, y); y += 5
-  doc.text(`Email: ${conductor?.email || ''}`, 14, y); y += 5
-  doc.text(`Teléfono: ${conductor?.phone || ''}`, 14, y); y += 7
+  doc.text(`Nombre: ${conductorInfo?.name || ''}`, 14, y); y += 5
+  doc.text(`Email: ${conductorInfo?.email || ''}`, 14, y); y += 5
+  doc.text(`Teléfono: ${conductorInfo?.phone || ''}`, 14, y); y += 7
 
-  doc.text(`Totales - Completados: ${totals.completedTrips} | Cancelados: ${totals.cancelledTrips} | Ganancias: ${Number(totals.revenue || 0).toFixed(2)} €`, 14, y)
+  doc.text(`Totales - Completados: ${totalesInforme.viajesCompletados} | Cancelados: ${totalesInforme.viajesCancelados} | Ganancias: ${totalesInforme.ingresos.toFixed(2)} €`, 14, y)
   y += 8
 
-  doc.setFont(PDF_FONT_FAMILY, 'bold')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
   doc.setFontSize(11)
   doc.text('Histórico por mes (YYYY-MM)', 14, y)
   y += 6
 
-  doc.setFont(PDF_FONT_FAMILY, 'normal')
+  doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
   doc.setFontSize(10)
-  months.forEach((m) => {
+  mesesInforme.forEach((m) => {
     if (y > 285) {
       doc.addPage();
       y = 14
-      doc.setFont(PDF_FONT_FAMILY, 'normal')
+      doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
       doc.setFontSize(10)
     }
-    doc.text(`${m.month}  -  Completados: ${m.completedTrips}  Cancelados: ${m.cancelledTrips}  Ganancias: ${Number(m.revenue || 0).toFixed(2)} €`, 14, y)
+    doc.text(`${m.mes}  -  Completados: ${m.viajesCompletados}  Cancelados: ${m.viajesCancelados}  Ganancias: ${m.ingresos.toFixed(2)} €`, 14, y)
     y += 5
   })
 
-  doc.save(`informe-conductor-${conductorId}.pdf`)
+  doc.save(`informe-conductor-${idConductor}.pdf`)
 }
 </script>

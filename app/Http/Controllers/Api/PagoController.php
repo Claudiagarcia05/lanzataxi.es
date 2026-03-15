@@ -24,7 +24,7 @@
                 return response()->json(['message' => 'Este viaje ya ha sido pagado'], 400);
             }
 
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'method' => 'required|string|in:cash,card,app,stripe,paypal',
                 'amount' => 'required|numeric|min:0',
                 'transaction_id' => 'nullable|string|max:255',
@@ -32,10 +32,10 @@
 
             $pago = Pago::create([
                 'viaje_id' => $viaje->id,
-                'method' => $validated['method'],
-                'amount' => $validated['amount'],
+                'method' => $validado['method'],
+                'amount' => $validado['amount'],
                 'status' => 'paid',
-                'transaction_id' => $validated['transaction_id'] ?? null,
+                'transaction_id' => $validado['transaction_id'] ?? null,
             ]);
 
             return response()->json($pago->load('viaje'), 201);
@@ -58,7 +58,7 @@
         }
 
         public function processstripe(Request $solicitud, viaje $viaje) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'pago_method_id' => 'required|string',
                 'amount' => 'required|numeric|min:0',
             ]);
@@ -67,7 +67,7 @@
                 $pago = Pago::create([
                     'viaje_id' => $viaje->id,
                     'method' => 'stripe',
-                    'amount' => $validated['amount'],
+                    'amount' => $validado['amount'],
                     'status' => 'paid',
                     'transaction_id' => 'sim_' . uniqid(),
                 ]);
@@ -87,7 +87,7 @@
         }
 
         public function processPayPal(Request $solicitud, viaje $viaje) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'order_id' => 'required|string',
                 'amount' => 'required|numeric|min:0',
             ]);
@@ -96,9 +96,9 @@
                 $pago = Pago::create([
                     'viaje_id' => $viaje->id,
                     'method' => 'paypal',
-                    'amount' => $validated['amount'],
+                    'amount' => $validado['amount'],
                     'status' => 'paid',
-                    'transaction_id' => $validated['order_id'],
+                    'transaction_id' => $validado['order_id'],
                 ]);
 
                 return response()->json([

@@ -5,8 +5,10 @@
     use Illuminate\Database\Eloquent\Model;
     use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-    class Debt extends Model {
+    class Deuda extends Model {
         use HasFactory;
+
+        protected $table = 'debts';
 
         protected $fillable = ['user_id', 'trip_id', 'amount', 'status', 'reason'];
 

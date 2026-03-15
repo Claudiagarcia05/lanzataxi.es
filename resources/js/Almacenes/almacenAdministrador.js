@@ -16,14 +16,14 @@ export const useAdminStore = defineStore('admin', {
       valoracionMedia: 0,
     },
     estadisticasMensuales: {
-      year: new Date().getFullYear(),
-      month: new Date().getMonth() + 1,
-      completedTrips: 0,
-      cancelledTrips: 0,
-      revenue: 0,
-      minYear: new Date().getFullYear(),
-      maxYear: new Date().getFullYear(),
-      daily: null,
+      anio: new Date().getFullYear(),
+      mes: new Date().getMonth() + 1,
+      viajesCompletados: 0,
+      viajesCancelados: 0,
+      ingresos: 0,
+      anioMinimo: new Date().getFullYear(),
+      anioMaximo: new Date().getFullYear(),
+      diario: null,
     },
     modalPendientesAbierto: false,
     pendientesNuevos: [],
@@ -37,26 +37,26 @@ export const useAdminStore = defineStore('admin', {
     taxisActivos: (state) => state.taxis.filter(t => t.estado === 'activo').length,
     solicitudesPendientes: (state) => state.conductoresPendientes.length,
     ingresosHoyFormateado: (state) => `${Number(state.estadisticas.ingresosHoy || 0).toFixed(2)} €`,
-    ingresosMensualesFormateado: (state) => `${Number(state.estadisticasMensuales.revenue || 0).toFixed(2)} €`,
+    ingresosMensualesFormateado: (state) => `${Number(state.estadisticasMensuales.ingresos || 0).toFixed(2)} €`,
   },
 
   actions: {
-    async fetchAllData() {
+    async obtenerTodosLosDatos() {
       this.cargando = true
       try {
         await Promise.all([
           this.obtenerUsuarios(),
           this.obtenerConductores(),
           this.obtenerTaxis(),
-          this.obtenerConductoresPendientes({ openModalOnNew: false }),
+          this.obtenerConductoresPendientes({ abrirModalSiHayNuevos: false }),
           this.obtenerEstadisticas(),
           this.obtenerEstadisticasMensuales({
-            year: this.estadisticasMensuales.year,
-            month: this.estadisticasMensuales.month,
+            anio: this.estadisticasMensuales.anio,
+            mes: this.estadisticasMensuales.mes,
           }),
         ])
       } catch (error) {
-        console.error('Error fetching admin data:', error)
+        console.error('Error al obtener datos de admin:', error)
       } finally {
         this.cargando = false
       }
@@ -110,7 +110,7 @@ export const useAdminStore = defineStore('admin', {
       }))
     },
 
-    async obtenerConductoresPendientes({ openModalOnNew } = { openModalOnNew: true }) {
+    async obtenerConductoresPendientes({ abrirModalSiHayNuevos } = { abrirModalSiHayNuevos: true }) {
       const response = await axios.get('/api/admin/pending-conductors')
 
       const pendientes = response.data.map(conductor => ({
@@ -130,7 +130,7 @@ export const useAdminStore = defineStore('admin', {
       this.conductoresPendientes = pendientes
       this.pendientesVistosIds = [...new Set([...vistos, ...pendientes.map(p => p.id)])]
 
-      if (openModalOnNew && nuevos.length > 0) {
+      if (abrirModalSiHayNuevos && nuevos.length > 0) {
         this.pendientesNuevos = nuevos
         this.modalPendientesAbierto = true
       }
@@ -148,21 +148,30 @@ export const useAdminStore = defineStore('admin', {
       }
     },
 
-    async obtenerEstadisticasMensuales({ year, month } = {}) {
+    async obtenerEstadisticasMensuales({ anio, mes } = {}) {
       const params = {
-        year: year ?? this.estadisticasMensuales.year,
-        month: month ?? this.estadisticasMensuales.month,
+        year: anio ?? this.estadisticasMensuales.anio,
+        month: mes ?? this.estadisticasMensuales.mes,
       }
       const response = await axios.get('/api/admin/monthly-stats', { params })
+
+      const diarioApi = response.data.daily || null
       this.estadisticasMensuales = {
-        year: response.data.year,
-        month: response.data.month,
-        completedTrips: response.data.completedTrips,
-        cancelledTrips: response.data.cancelledTrips,
-        revenue: response.data.revenue,
-        minYear: response.data.minYear,
-        maxYear: response.data.maxYear,
-        daily: response.data.daily || null,
+        anio: response.data.year,
+        mes: response.data.month,
+        viajesCompletados: response.data.completedTrips,
+        viajesCancelados: response.data.cancelledTrips,
+        ingresos: response.data.revenue,
+        anioMinimo: response.data.minYear,
+        anioMaximo: response.data.maxYear,
+        diario: diarioApi
+          ? {
+              etiquetas: diarioApi.labels || [],
+              viajesCompletados: diarioApi.completedTrips || [],
+              viajesCancelados: diarioApi.cancelledTrips || [],
+              ingresos: diarioApi.revenue || [],
+            }
+          : null,
       }
     },
 
@@ -170,14 +179,14 @@ export const useAdminStore = defineStore('admin', {
       await axios.post(`/api/admin/conductors/${conductorId}/approve`)
       this.conductoresPendientes = this.conductoresPendientes.filter(d => d.id !== conductorId)
       this.pendientesNuevos = this.pendientesNuevos.filter(d => d.id !== conductorId)
-      await Promise.all([this.obtenerConductores(), this.obtenerConductoresPendientes({ openModalOnNew: false })])
+      await Promise.all([this.obtenerConductores(), this.obtenerConductoresPendientes({ abrirModalSiHayNuevos: false })])
     },
 
     async rechazarConductor(conductorId) {
       await axios.post(`/api/admin/conductors/${conductorId}/reject`)
       this.conductoresPendientes = this.conductoresPendientes.filter(d => d.id !== conductorId)
       this.pendientesNuevos = this.pendientesNuevos.filter(d => d.id !== conductorId)
-      await this.obtenerConductoresPendientes({ openModalOnNew: false })
+      await this.obtenerConductoresPendientes({ abrirModalSiHayNuevos: false })
     },
 
 		async darDeBajaUsuario(userId) {

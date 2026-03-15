@@ -5,11 +5,11 @@
       <p class="text-blue-100">Gestiona clientes, informe de viajes y baja por admin</p>
     </div>
 
-    <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
-      <p class="text-sm font-medium text-red-500">{{ errorMsg }}</p>
+    <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
+      <p class="text-sm font-medium text-red-500">{{ mensajeError }}</p>
     </div>
-    <div v-if="infoMsg" class="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg">
-      <p class="text-sm font-medium text-green-500">{{ infoMsg }}</p>
+    <div v-if="mensajeInfo" class="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg">
+      <p class="text-sm font-medium text-green-500">{{ mensajeInfo }}</p>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm">
@@ -116,14 +116,14 @@ import { jsPDF } from 'jspdf'
 
 const adminStore = useAdminStore()
 
-const errorMsg = ref('')
-const infoMsg = ref('')
+const mensajeError = ref('')
+const mensajeInfo = ref('')
 
 const modalClienteAbierto = ref(false)
 const clienteSeleccionado = ref(null)
 
 onMounted(async () => {
-  await adminStore.fetchAllData()
+  await adminStore.obtenerTodosLosDatos()
 })
 
 const clientes = computed(() => adminStore.usuarios.filter(u => u.role === 'pasajero'))
@@ -138,57 +138,57 @@ const cerrarModal = () => {
   clienteSeleccionado.value = null
 }
 
-const darDeBaja = async (userId) => {
-  if (!userId) return
+const darDeBaja = async (idUsuario) => {
+  if (!idUsuario) return
 
-  errorMsg.value = ''
-  infoMsg.value = ''
+  mensajeError.value = ''
+  mensajeInfo.value = ''
 
   try {
-    await adminStore.darDeBajaUsuario(userId)
-    if (clienteSeleccionado.value?.id === userId) {
+    await adminStore.darDeBajaUsuario(idUsuario)
+    if (clienteSeleccionado.value?.id === idUsuario) {
       clienteSeleccionado.value.is_disabled = true
     }
-    infoMsg.value = 'Cliente dado de baja correctamente'
-    setTimeout(() => { infoMsg.value = '' }, 4000)
+    mensajeInfo.value = 'Cliente dado de baja correctamente'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
   } catch (error) {
-    errorMsg.value = error.response?.data?.message || 'No se pudo dar de baja al cliente'
-    setTimeout(() => { errorMsg.value = '' }, 4000)
+    mensajeError.value = error.response?.data?.message || 'No se pudo dar de baja al cliente'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
 }
 
-const fileToDataUrl = (file) => new Promise((resolve, reject) => {
+const archivoADataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader()
   reader.onload = () => resolve(reader.result)
   reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
   reader.readAsDataURL(file)
 })
 
-const loadPublicImagePng = async (url) => {
-  const res = await fetch(url, { cache: 'no-store' })
-  if (!res.ok) return null
-  const blob = await res.blob()
-  const dataUrl = await fileToDataUrl(blob)
+const cargarImagenPublicaPng = async (url) => {
+  const respuesta = await fetch(url, { cache: 'no-store' })
+  if (!respuesta.ok) return null
+  const blob = await respuesta.blob()
+  const dataUrl = await archivoADataUrl(blob)
 
-  const dims = await new Promise((resolve) => {
+  const dimensiones = await new Promise((resolve) => {
     const img = new Image()
     img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
     img.onerror = () => resolve(null)
     img.src = dataUrl
   })
 
-  return { dataUrl, dims }
+  return { dataUrl, dims: dimensiones }
 }
 
-const descargarInformeCliente = async (userId) => {
-  if (!userId) return
+const descargarInformeCliente = async (idUsuario) => {
+  if (!idUsuario) return
 
-  errorMsg.value = ''
-  infoMsg.value = ''
+  mensajeError.value = ''
+  mensajeInfo.value = ''
 
   try {
-    const response = await axios.get(`/api/admin/clients/${userId}/trips-report`)
-    const { client, trips } = response.data
+    const response = await axios.get(`/api/admin/clients/${idUsuario}/trips-report`)
+    const { client: cliente, trips: viajes } = response.data
 
     const now = new Date()
     const fechaLabel = now.toLocaleString('es-ES', {
@@ -199,10 +199,10 @@ const descargarInformeCliente = async (userId) => {
       minute: '2-digit'
     })
 
-    const PDF_FONT_FAMILY = 'helvetica'
+    const FAMILIA_FUENTE_PDF = 'helvetica'
 
     const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
-    doc.setFont(PDF_FONT_FAMILY, 'normal')
+    doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
     const marginX = 48
     const marginTop = 56
     const marginBottom = 48
@@ -210,9 +210,9 @@ const descargarInformeCliente = async (userId) => {
     const pageHeight = doc.internal.pageSize.getHeight()
     const maxWidth = pageWidth - marginX * 2
 
-    const logo = await loadPublicImagePng('/images/logo.png').catch(() => null)
+    const logo = await cargarImagenPublicaPng('/images/logo.png').catch(() => null)
 
-    const renderHeader = ({ includeClientData } = { includeClientData: true }) => {
+    const renderizarEncabezado = ({ incluirDatosCliente } = { incluirDatosCliente: true }) => {
       let y = marginTop
 
       if (logo?.dataUrl) {
@@ -235,7 +235,7 @@ const descargarInformeCliente = async (userId) => {
         y += h + 10
       }
 
-      doc.setFont(PDF_FONT_FAMILY, 'normal')
+      doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
       doc.setFontSize(11)
       doc.setTextColor(80)
       doc.text('Informe de viajes · Cliente', marginX, y)
@@ -247,20 +247,20 @@ const descargarInformeCliente = async (userId) => {
       doc.line(marginX, y, pageWidth - marginX, y)
       y += 18
 
-      if (includeClientData) {
-        doc.setFont(PDF_FONT_FAMILY, 'bold')
+      if (incluirDatosCliente) {
+        doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
         doc.setFontSize(12)
         doc.text('Datos del cliente', marginX, y)
         y += 14
 
-        doc.setFont(PDF_FONT_FAMILY, 'normal')
+        doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
         doc.setFontSize(10)
         const labelW = 90
         const valueW = maxWidth - labelW
         const datos = [
-          ['Nombre', client?.name || '—'],
-          ['Email', client?.email || '—'],
-          ['Teléfono', client?.phone || '—'],
+          ['Nombre', cliente?.name || '—'],
+          ['Email', cliente?.email || '—'],
+          ['Teléfono', cliente?.phone || '—'],
         ]
 
         for (const [label, value] of datos) {
@@ -277,7 +277,7 @@ const descargarInformeCliente = async (userId) => {
         y += 18
       }
 
-      doc.setFont(PDF_FONT_FAMILY, 'bold')
+      doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
       doc.setFontSize(12)
       doc.text('Viajes (completados y cancelados)', marginX, y)
       y += 14
@@ -285,7 +285,7 @@ const descargarInformeCliente = async (userId) => {
       return y
     }
 
-    const renderTableHeader = (y) => {
+    const renderizarEncabezadoTabla = (y) => {
       const tableX = marginX
       const rowH = 18
 
@@ -298,7 +298,7 @@ const descargarInformeCliente = async (userId) => {
       doc.setDrawColor(220)
       doc.rect(tableX, y, maxWidth, rowH, 'FD')
 
-      doc.setFont(PDF_FONT_FAMILY, 'bold')
+      doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
       doc.setFontSize(10)
       doc.setTextColor(60)
 
@@ -309,7 +309,7 @@ const descargarInformeCliente = async (userId) => {
       doc.text('Ruta', tableX + colFechaW + colEstadoW + colPrecioW + 6, textY)
 
       doc.setTextColor(0)
-      doc.setFont(PDF_FONT_FAMILY, 'normal')
+      doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
       return {
         y: y + rowH,
         widths: { colFechaW, colEstadoW, colPrecioW, colRutaW },
@@ -318,55 +318,55 @@ const descargarInformeCliente = async (userId) => {
       }
     }
 
-    let y = renderHeader({ includeClientData: true })
-    let rowsOnPage = 0
-    let table = renderTableHeader(y)
-    y = table.y
+    let y = renderizarEncabezado({ incluirDatosCliente: true })
+    let filasEnPagina = 0
+    let tabla = renderizarEncabezadoTabla(y)
+    y = tabla.y
 
-    const safePageBottom = pageHeight - marginBottom
-    const lineHeight = 12
+    const limiteInferiorSeguro = pageHeight - marginBottom
+    const alturaLinea = 12
 
-    const list = Array.isArray(trips) ? trips : []
-    for (const t of list) {
-      const fecha = String(t.created_at || '').split('T')[0]
-      const estado = t.status === 'completed' ? 'completado' : t.status === 'cancelled' ? 'cancelado' : (t.status || '—')
-      const precio = `${Number(t.price || 0).toFixed(2)} €`
-      const ruta = `${t.pickup_address || ''} - ${t.dropoff_address || ''}`.trim()
+    const listaViajes = Array.isArray(viajes) ? viajes : []
+    for (const viaje of listaViajes) {
+      const fecha = String(viaje.created_at || '').split('T')[0]
+      const estado = viaje.status === 'completed' ? 'completado' : viaje.status === 'cancelled' ? 'cancelado' : (viaje.status || '—')
+      const precio = `${Number(viaje.price || 0).toFixed(2)} €`
+      const ruta = `${viaje.pickup_address || ''} - ${viaje.dropoff_address || ''}`.trim()
 
-      const rutaLines = doc.splitTextToSize(ruta || '—', table.widths.colRutaW - 12)
-      const contentH = Math.max(table.rowH, rutaLines.length * lineHeight + 6)
+      const lineasRuta = doc.splitTextToSize(ruta || '—', tabla.widths.colRutaW - 12)
+      const altoContenido = Math.max(tabla.rowH, lineasRuta.length * alturaLinea + 6)
 
-      const needsNewPageByCount = rowsOnPage >= 7
-      const needsNewPageBySpace = y + contentH > safePageBottom
-      if (needsNewPageByCount || needsNewPageBySpace) {
+      const necesitaNuevaPaginaPorCantidad = filasEnPagina >= 7
+      const necesitaNuevaPaginaPorEspacio = y + altoContenido > limiteInferiorSeguro
+      if (necesitaNuevaPaginaPorCantidad || necesitaNuevaPaginaPorEspacio) {
         doc.addPage()
-        y = renderHeader({ includeClientData: false })
-        rowsOnPage = 0
-        table = renderTableHeader(y)
-        y = table.y
+        y = renderizarEncabezado({ incluirDatosCliente: false })
+        filasEnPagina = 0
+        tabla = renderizarEncabezadoTabla(y)
+        y = tabla.y
       }
 
       doc.setDrawColor(220)
-      doc.rect(table.tableX, y, maxWidth, contentH)
-      doc.line(table.tableX + table.widths.colFechaW, y, table.tableX + table.widths.colFechaW, y + contentH)
-      doc.line(table.tableX + table.widths.colFechaW + table.widths.colEstadoW, y, table.tableX + table.widths.colFechaW + table.widths.colEstadoW, y + contentH)
-      doc.line(table.tableX + table.widths.colFechaW + table.widths.colEstadoW + table.widths.colPrecioW, y, table.tableX + table.widths.colFechaW + table.widths.colEstadoW + table.widths.colPrecioW, y + contentH)
+      doc.rect(tabla.tableX, y, maxWidth, altoContenido)
+      doc.line(tabla.tableX + tabla.widths.colFechaW, y, tabla.tableX + tabla.widths.colFechaW, y + altoContenido)
+      doc.line(tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW, y, tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW, y + altoContenido)
+      doc.line(tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + tabla.widths.colPrecioW, y, tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + tabla.widths.colPrecioW, y + altoContenido)
 
       const textY = y + 12
       doc.setFontSize(10)
-      doc.text(String(fecha || '—'), table.tableX + 6, textY)
-      doc.text(String(estado || '—'), table.tableX + table.widths.colFechaW + 6, textY)
-      doc.text(String(precio || '—'), table.tableX + table.widths.colFechaW + table.widths.colEstadoW + 6, textY)
-      doc.text(rutaLines, table.tableX + table.widths.colFechaW + table.widths.colEstadoW + table.widths.colPrecioW + 6, textY)
+      doc.text(String(fecha || '—'), tabla.tableX + 6, textY)
+      doc.text(String(estado || '—'), tabla.tableX + tabla.widths.colFechaW + 6, textY)
+      doc.text(String(precio || '—'), tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + 6, textY)
+      doc.text(lineasRuta, tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + tabla.widths.colPrecioW + 6, textY)
 
-      y += contentH
-      rowsOnPage += 1
+      y += altoContenido
+      filasEnPagina += 1
     }
 
-    doc.save(`informe-cliente-${userId}.pdf`)
+    doc.save(`informe-cliente-${idUsuario}.pdf`)
   } catch (error) {
-    errorMsg.value = error.response?.data?.message || 'No se pudo generar el informe del cliente'
-    setTimeout(() => { errorMsg.value = '' }, 4000)
+    mensajeError.value = error.response?.data?.message || 'No se pudo generar el informe del cliente'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
 }
 </script>

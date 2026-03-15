@@ -4,7 +4,7 @@
 
     use Closure;
 
-    class SecurityHeaders {
+    class EncabezadosSeguridad {
         public function handle($solicitud, Closure $next) {
             $respuesta = $next($solicitud);
 

@@ -82,9 +82,9 @@
             return $this->hasMany(RutaFavorita::class);
         }
 
-        public function debts() {
+        public function deudas() {
 
-            return $this->hasMany(Debt::class);
+            return $this->hasMany(Deuda::class);
         }
 
         public function PerfilPasajero() {

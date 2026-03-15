@@ -3,86 +3,86 @@
     namespace App\Http\Controllers\Api;
 
     use App\Http\Controllers\Controller;
-    use App\Models\Debt;
+    use App\Models\Deuda;
     use App\Models\User;
     use App\Models\Viaje;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
 
-    class WalletController extends Controller {
-        private function settlePendingDebtsIfPossible(User $usuario): array
+    class CarteraController extends Controller {
+        private function liquidarDeudasPendientesSiEsPosible(User $usuario): array
         {
-            $result = [
+            $resultado = [
                 'had_debt' => false,
                 'settled' => false,
                 'pending_debt' => 0.0,
             ];
 
-            $debts = Debt::query()
+            $deudas = Deuda::query()
                 ->where('user_id', $usuario->id)
                 ->where('status', 'pending')
                 ->orderBy('id')
                 ->lockForUpdate()
                 ->get();
 
-            $totalDebt = (float) $debts->sum('amount');
-            $result['pending_debt'] = $totalDebt;
-            if ($totalDebt <= 0) {
-                return $result;
+            $deudaTotal = (float) $deudas->sum('amount');
+            $resultado['pending_debt'] = $deudaTotal;
+            if ($deudaTotal <= 0) {
+                return $resultado;
             }
 
-            $result['had_debt'] = true;
-            $balance = (float) ($usuario->wallet_balance ?? 0);
-            if ($balance < $totalDebt) {
-                return $result;
+            $resultado['had_debt'] = true;
+            $saldo = (float) ($usuario->wallet_balance ?? 0);
+            if ($saldo < $deudaTotal) {
+                return $resultado;
             }
 
-            $usuario->wallet_balance = $balance - $totalDebt;
+            $usuario->wallet_balance = $saldo - $deudaTotal;
             $usuario->save();
 
-            foreach ($debts as $debt) {
-                $debt->status = 'paid';
-                $debt->save();
+            foreach ($deudas as $deuda) {
+                $deuda->status = 'paid';
+                $deuda->save();
 
-                if (!$debt->trip_id) {
+                if (!$deuda->trip_id) {
                     continue;
                 }
 
-                $trip = Viaje::query()->with(['conductor', 'pago'])->find($debt->trip_id);
-                if (!$trip || !$trip->conductor) {
+                $viaje = Viaje::query()->with(['conductor', 'pago'])->find($deuda->trip_id);
+                if (!$viaje || !$viaje->conductor) {
                     continue;
                 }
 
-                $conductorUser = User::query()
-                    ->whereKey($trip->conductor->user_id)
+                $usuarioConductor = User::query()
+                    ->whereKey($viaje->conductor->user_id)
                     ->lockForUpdate()
                     ->first();
 
-                if ($conductorUser) {
-                    $conductorUser->wallet_balance = (float) ($conductorUser->wallet_balance ?? 0) + (float) ($debt->amount ?? 0);
-                    $conductorUser->save();
+                if ($usuarioConductor) {
+                    $usuarioConductor->wallet_balance = (float) ($usuarioConductor->wallet_balance ?? 0) + (float) ($deuda->amount ?? 0);
+                    $usuarioConductor->save();
                 }
 
-                if ($trip->pago && ($trip->pago->status ?? null) !== 'paid') {
-                    $trip->pago->status = 'paid';
-                    $trip->pago->transaction_id = $trip->pago->transaction_id ?: ('debt_settlement_' . $trip->id);
-                    $trip->pago->save();
+                if ($viaje->pago && ($viaje->pago->status ?? null) !== 'paid') {
+                    $viaje->pago->status = 'paid';
+                    $viaje->pago->transaction_id = $viaje->pago->transaction_id ?: ('debt_settlement_' . $viaje->id);
+                    $viaje->pago->save();
                 }
             }
 
-            $result['settled'] = true;
-            $result['pending_debt'] = 0.0;
-            return $result;
+            $resultado['settled'] = true;
+            $resultado['pending_debt'] = 0.0;
+            return $resultado;
         }
 
         public function getBalance() {
             $usuario = Auth::user();
             
-            $balance = $usuario->wallet_balance ?? 0;
+            $saldo = $usuario->wallet_balance ?? 0;
             
             return response()->json([
-                'balance' => floatval($balance),
+                'balance' => floatval($saldo),
                 'currency' => 'EUR'
             ]);
         }
@@ -95,12 +95,12 @@
 
         public function getDebtSummary() {
             $usuario = Auth::user();
-            $pendingDebt = Debt::where('user_id', $usuario->id)
+            $deudaPendiente = Deuda::where('user_id', $usuario->id)
                 ->where('status', 'pending')
                 ->sum('amount');
 
             return response()->json([
-                'pending_debt' => floatval($pendingDebt),
+                'pending_debt' => floatval($deudaPendiente),
                 'currency' => 'EUR'
             ]);
         }
@@ -111,31 +111,31 @@
             ]);
 
             $usuario = Auth::user();
-            $amount = floatval($solicitud->amount);
+            $monto = floatval($solicitud->amount);
 
-            $newBalance = null;
-            DB::transaction(function () use ($usuario, $amount, &$newBalance) {
-                $lockedUser = User::query()->whereKey($usuario->id)->lockForUpdate()->first();
-                if (!$lockedUser) {
+            $saldoNuevo = null;
+            DB::transaction(function () use ($usuario, $monto, &$saldoNuevo) {
+                $usuarioBloqueado = User::query()->whereKey($usuario->id)->lockForUpdate()->first();
+                if (!$usuarioBloqueado) {
                     throw new \RuntimeException('Usuario no encontrado');
                 }
 
-                $currentBalance = (float) ($lockedUser->wallet_balance ?? 0);
-                $lockedUser->wallet_balance = $currentBalance + $amount;
-                $lockedUser->save();
+                $saldoActual = (float) ($usuarioBloqueado->wallet_balance ?? 0);
+                $usuarioBloqueado->wallet_balance = $saldoActual + $monto;
+                $usuarioBloqueado->save();
 
-                $this->settlePendingDebtsIfPossible($lockedUser);
-                $newBalance = (float) ($lockedUser->fresh()->wallet_balance ?? 0);
+                $this->liquidarDeudasPendientesSiEsPosible($usuarioBloqueado);
+                $saldoNuevo = (float) ($usuarioBloqueado->fresh()->wallet_balance ?? 0);
             }, 3);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Saldo añadido correctamente',
-                'new_balance' => $newBalance,
+                'new_balance' => $saldoNuevo,
                 'transaction' => [
                     'id' => rand(1000, 9999),
                     'type' => 'credit',
-                    'amount' => $amount,
+                    'amount' => $monto,
                     'description' => 'Recarga de saldo',
                     'created_at' => now()->toISOString()
                 ]
@@ -149,31 +149,31 @@
             ]);
 
             $usuario = Auth::user();
-            $amount = floatval($solicitud->amount);
-            $currentBalance = $usuario->wallet_balance ?? 0;
+            $monto = floatval($solicitud->amount);
+            $saldoActual = $usuario->wallet_balance ?? 0;
 
-            if ($currentBalance < $amount) {
+            if ($saldoActual < $monto) {
 
                 return response()->json([
                     'success' => false,
                     'message' => 'Saldo insuficiente',
-                    'current_balance' => $currentBalance,
-                    'required_amount' => $amount
+                    'current_balance' => $saldoActual,
+                    'required_amount' => $monto
                 ], 400);
             }
 
-            $newBalance = $currentBalance - $amount;
-            $usuario->wallet_balance = $newBalance;
+            $saldoNuevo = $saldoActual - $monto;
+            $usuario->wallet_balance = $saldoNuevo;
             $usuario->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Pago procesado correctamente',
-                'new_balance' => $newBalance,
+                'new_balance' => $saldoNuevo,
                 'transaction' => [
                     'id' => rand(1000, 9999),
                     'type' => 'debit',
-                    'amount' => $amount,
+                    'amount' => $monto,
                     'description' => 'Pago de viaje #' . $solicitud->viaje_id,
                     'created_at' => now()->toISOString()
                 ]
@@ -186,31 +186,31 @@
             ]);
 
             $usuario = Auth::user();
-            $amount = floatval($solicitud->amount);
-            $currentBalance = $usuario->wallet_balance ?? 0;
+            $monto = floatval($solicitud->amount);
+            $saldoActual = $usuario->wallet_balance ?? 0;
 
-            if ($currentBalance < $amount) {
+            if ($saldoActual < $monto) {
 
                 return response()->json([
                     'success' => false,
                     'message' => 'Saldo insuficiente para retirar',
-                    'current_balance' => $currentBalance,
-                    'requested_amount' => $amount
+                    'current_balance' => $saldoActual,
+                    'requested_amount' => $monto
                 ], 400);
             }
 
-            $newBalance = $currentBalance - $amount;
-            $usuario->wallet_balance = $newBalance;
+            $saldoNuevo = $saldoActual - $monto;
+            $usuario->wallet_balance = $saldoNuevo;
             $usuario->save();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Solicitud de retirada procesada',
-                'new_balance' => $newBalance,
+                'new_balance' => $saldoNuevo,
                 'transaction' => [
                     'id' => rand(1000, 9999),
                     'type' => 'debit',
-                    'amount' => $amount,
+                    'amount' => $monto,
                     'description' => 'Retiro de fondos',
                     'created_at' => now()->toISOString()
                 ]

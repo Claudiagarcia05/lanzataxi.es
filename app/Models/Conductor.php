@@ -82,6 +82,6 @@
 
         public function ubicacions() {
 
-            return $this->hasMany(ubicacion::class);
+            return $this->hasMany(Ubicacion::class);
         }
     }

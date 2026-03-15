@@ -1,6 +1,6 @@
 ﻿import { defineStore } from 'pinia'
 import { useAuthStore } from './almacenAutenticacion'
-import { useTripStore } from './almacenViaje'
+import { useViajeStore } from './almacenViaje'
 import axios from 'axios'
 
 export const useConductorStore = defineStore('conductor', {
@@ -9,8 +9,8 @@ export const useConductorStore = defineStore('conductor', {
     estaEnLinea: false,
     tiempoConectadoSegundos: 0,
     tiempoConectadoMesSegundos: 0,
-    onlineSince: null,
-    onlineMonth: null,
+    enLineaDesde: null,
+    mesEnLinea: null,
     estadoActualizadoEnMs: null,
     estadisticas: {
       viajesHoy: 0,
@@ -28,9 +28,7 @@ export const useConductorStore = defineStore('conductor', {
   getters: {
     valoracionFormateada: (state) => state.estadisticas.valoracion.toFixed(2),
     gananciasHoyFormateadas: (state) => `${state.estadisticas.gananciasHoy.toFixed(2)} €`,
-    estaDisponible: (state) => state.estaEnLinea && state.perfil?.verified,
-    formattedRating: (state) => state.estadisticas.valoracion.toFixed(2),
-    todayEarningsFormatted: (state) => `${state.estadisticas.gananciasHoy.toFixed(2)} €`,
+    estaDisponible: (state) => state.estaEnLinea && state.perfil?.verificado,
     horasConectado: (state) => (Number(state.tiempoConectadoMesSegundos || 0) / 3600),
   },
 
@@ -45,8 +43,8 @@ export const useConductorStore = defineStore('conductor', {
       }
       this.tiempoConectadoSegundos = Number(respuestaEstado.data.connected_seconds || 0)
       this.tiempoConectadoMesSegundos = Number(respuestaEstado.data.connected_seconds_month || 0)
-      this.onlineMonth = respuestaEstado.data.online_month || null
-      this.onlineSince = respuestaEstado.data.online_since || null
+      this.mesEnLinea = respuestaEstado.data.online_month || null
+      this.enLineaDesde = respuestaEstado.data.online_since || null
       this.estadoActualizadoEnMs = Date.now()
 
       return respuestaEstado.data
@@ -82,15 +80,15 @@ export const useConductorStore = defineStore('conductor', {
           email: datosPerfil.user?.email || auth.usuario?.email,
           phone: datosPerfil.user?.phone || '',
           avatar: avatar,
-          licenseNumber: datosPerfil.license_number,
-          vehicle: {
-            model: taxi.model || 'Sin modelo',
-            plate: taxi.plate || 'Sin matrícula',
-            year: taxi.year || new Date().getFullYear(),
+          numeroLicencia: datosPerfil.license_number,
+          vehiculo: {
+            modelo: taxi.model || 'Sin modelo',
+            matricula: taxi.plate || 'Sin matricula',
+            anio: taxi.year || new Date().getFullYear(),
             color: taxi.color || 'Sin color',
-            capacity: taxi.capacity || 4
+            capacidad: taxi.capacity || 4
           },
-          verified: true,
+          verificado: true,
           fechaRegistro: datosPerfil.created_at?.split('T')[0] || null
         }
 
@@ -102,11 +100,11 @@ export const useConductorStore = defineStore('conductor', {
 
         this.tiempoConectadoSegundos = Number(respuestaEstado.data.connected_seconds || 0)
         this.tiempoConectadoMesSegundos = Number(respuestaEstado.data.connected_seconds_month || 0)
-        this.onlineMonth = respuestaEstado.data.online_month || null
-        this.onlineSince = respuestaEstado.data.online_since || null
+        this.mesEnLinea = respuestaEstado.data.online_month || null
+        this.enLineaDesde = respuestaEstado.data.online_since || null
         this.estadoActualizadoEnMs = Date.now()
       } catch (error) {
-        console.error('Error fetching conductor perfil:', error)
+        console.error('Error al obtener perfil de conductor:', error)
       } finally {
         this.cargando = false
       }
@@ -130,10 +128,10 @@ export const useConductorStore = defineStore('conductor', {
             this.tiempoConectadoMesSegundos = Number(respuesta.data.connected_seconds_month || 0)
           }
           if (respuesta.data.online_month !== undefined) {
-            this.onlineMonth = respuesta.data.online_month || null
+            this.mesEnLinea = respuesta.data.online_month || null
           }
           if (respuesta.data.online_since !== undefined) {
-            this.onlineSince = respuesta.data.online_since || null
+            this.enLineaDesde = respuesta.data.online_since || null
           }
 
           this.estadoActualizadoEnMs = Date.now()
@@ -163,7 +161,7 @@ export const useConductorStore = defineStore('conductor', {
               lng: this.ubicacionActual.lng,
             }).catch(() => {})
           },
-          (error) => console.error('Error getting ubicacion:', error),
+            (error) => console.error('Error al obtener ubicacion:', error),
           { enableHighAccuracy: true, timeout: 10000 }
         )
       }
@@ -177,10 +175,10 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     async actualizarEstadisticas() {
-      const storeViaje = useTripStore()
+      const storeViaje = useViajeStore()
       const auth = useAuthStore()
-      const conductorUserId = this.perfil?.id || auth.usuario?.id
-      const viajesHoy = storeViaje.viajesHoy.filter(t => t.conductorId === conductorUserId)
+      const idUsuarioConductor = this.perfil?.id || auth.usuario?.id
+      const viajesHoy = storeViaje.viajesHoy.filter(t => t.conductorId === idUsuarioConductor)
       const gananciasHoy = viajesHoy.reduce((suma, viaje) => suma + (viaje.price || 0), 0)
 
       this.estadisticas = {
@@ -192,15 +190,9 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     async aceptarViaje(viajeId) {
-      const storeViaje = useTripStore()
+      const storeViaje = useViajeStore()
       await storeViaje.aceptarViaje(viajeId)
       this.actualizarEstadisticas()
     },
-
-    async setOnlineStatus(valor) { return this.establecerEstadoEnLinea(valor) },
-    startubicacionTracking() { return this.iniciarSeguimientoUbicacion() },
-    stopubicacionTracking() { return this.detenerSeguimientoUbicacion() }
   }
 })
-
-export const useDriverStore = useConductorStore

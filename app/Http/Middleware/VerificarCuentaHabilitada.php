@@ -7,22 +7,22 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureAccountEnabled
+class VerificarCuentaHabilitada
 {
-    public function handle(Request $request, Closure $next): Response
+    public function handle(Request $solicitud, Closure $next): Response
     {
-        $user = $request->user();
+        $usuario = $solicitud->user();
 
-        if (!$user) {
-            return $next($request);
+        if (!$usuario) {
+            return $next($solicitud);
         }
 
-        if (!empty($user->is_disabled)) {
+        if (!empty($usuario->is_disabled)) {
             // Si está desactivado, forzamos cierre de sesión en web.
-            if (!$request->is('api/*') && !$request->expectsJson()) {
+            if (!$solicitud->is('api/*') && !$solicitud->expectsJson()) {
                 Auth::guard('web')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
+                $solicitud->session()->invalidate();
+                $solicitud->session()->regenerateToken();
 
                 return redirect('/')->with('error', 'Tu cuenta está desactivada.');
             }
@@ -30,6 +30,6 @@ class EnsureAccountEnabled
             return response()->json(['message' => 'Tu cuenta está desactivada.'], 403);
         }
 
-        return $next($request);
+        return $next($solicitud);
     }
 }

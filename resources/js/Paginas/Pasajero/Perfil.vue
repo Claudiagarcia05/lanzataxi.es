@@ -5,18 +5,18 @@
       <div class="bg-white rounded-xl shadow-sm p-8">
         <h1 class="text-2xl font-bold text-neutral-dark mb-6">Mi Perfil</h1>
         <!-- Mensajes de estado (errores e información) -->
-        <div v-if="errorMsg" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
-          <p class="text-sm font-medium text-red-500">{{ errorMsg }}</p>
+        <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
+          <p class="text-sm font-medium text-red-500">{{ mensajeError }}</p>
         </div>
-        <div v-if="infoMsg" class="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg">
-          <p class="text-sm font-medium text-green-500">{{ infoMsg }}</p>
+        <div v-if="mensajeInfo" class="mb-6 bg-green-50 border border-green-200 p-4 rounded-lg">
+          <p class="text-sm font-medium text-green-500">{{ mensajeInfo }}</p>
         </div>
 
         <!-- Avatar: previsualización, carga y fallback con inicial -->
         <div class="flex justify-center mb-8">
           <div class="relative">
             <div class="w-32 h-32 rounded-full overflow-hidden border-4 border-lanzarote-blue/20">
-              <img v-if="avatarPreview || userAvatar" :src="avatarPreview || userAvatar" :alt="authStore.usuario?.name" class="w-full h-full object-cover" @error="handleImageError" key="avatar-image">
+              <img v-if="vistaPreviaAvatar || avatarUsuario" :src="vistaPreviaAvatar || avatarUsuario" :alt="authStore.usuario?.name" class="w-full h-full object-cover" @error="manejarErrorImagen" key="avatar-image">
               <div v-else class="w-full h-full bg-lanzarote-blue text-white flex items-center justify-center text-4xl font-bold">
                 {{ authStore.usuario?.name?.charAt(0) || 'U' }}
               </div>
@@ -27,7 +27,7 @@
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
-              <input type="file" class="hidden" accept="image/*" @change="handleAvatarUpload">
+              <input type="file" class="hidden" accept="image/*" @change="manejarSubidaAvatar">
             </label>
           </div>
         </div>
@@ -36,7 +36,7 @@
           <!-- Datos personales: modo lectura y modo edición -->
           <div class="flex justify-between items-center mb-4">
             <h3 class="font-semibold text-neutral-dark">Información personal</h3>
-            <button v-if="!editingPersonal" @click="startEditingPersonal" class="text-sm text-lanzarote-blue flex items-center space-x-1">
+            <button v-if="!editandoPersonal" @click="iniciarEdicionPersonal" class="text-sm text-lanzarote-blue flex items-center space-x-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
@@ -44,7 +44,7 @@
             </button>
           </div>
           
-          <div v-if="!editingPersonal" class="space-y-3">
+          <div v-if="!editandoPersonal" class="space-y-3">
             <div class="flex">
               <span class="w-32 text-sm text-neutral-slate">Nombre:</span>
               <span class="text-neutral-dark font-medium">{{ authStore.usuario?.name }}</span>
@@ -59,7 +59,7 @@
             </div>
           </div>
 
-          <div v-if="editingPersonal" class="space-y-4">
+          <div v-if="editandoPersonal" class="space-y-4">
             <!-- En edición: el nombre se mantiene como solo lectura -->
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Nombre</label>
@@ -68,19 +68,19 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Email</label>
-              <input v-model="form.email" type="email" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': emailError }">
-              <p v-if="emailError" class="text-xs text-red-500 mt-1">{{ emailError }}</p>
+              <input v-model="formulario.email" type="email" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': errorCorreo }">
+              <p v-if="errorCorreo" class="text-xs text-red-500 mt-1">{{ errorCorreo }}</p>
             </div>
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Teléfono</label>
-              <input v-model="form.phone" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="9" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: 628123456" :class="{ 'border-red-500': phoneError }" @input="form.phone = form.phone.replace(/\D/g, '').slice(0, 9)">
-              <p v-if="phoneError" class="text-xs text-red-500 mt-1">{{ phoneError }}</p>
+              <input v-model="formulario.phone" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="9" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: 628123456" :class="{ 'border-red-500': errorTelefono }" @input="formulario.phone = formulario.phone.replace(/\D/g, '').slice(0, 9)">
+              <p v-if="errorTelefono" class="text-xs text-red-500 mt-1">{{ errorTelefono }}</p>
             </div>
             <div class="flex space-x-3 pt-2">
-              <button @click="savePersonalInfo" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black">
+              <button @click="guardarInfoPersonal" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black">
                 Guardar cambios
               </button>
-              <button @click="cancelEditingPersonal" class="px-4 py-2 border border-neutral-volcanic rounded-lg hover:bg-neutral-soft">
+              <button @click="cancelarEdicionPersonal" class="px-4 py-2 border border-neutral-volcanic rounded-lg hover:bg-neutral-soft">
                 Cancelar
               </button>
             </div>
@@ -94,32 +94,32 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Nueva contraseña</label>
-              <input v-model="password.new" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': password.new && !isPasswordStrong }" @input="checkPasswordStrength">
+              <input v-model="contrasena.nueva" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.nueva && !esContrasenaFuerte }" @input="comprobarFuerzaContrasena">
               
-              <div v-if="password.new" class="mt-2">
+              <div v-if="contrasena.nueva" class="mt-2">
                 <div class="flex space-x-1 h-1 mb-2">
-                  <div class="flex-1 h-full rounded" :class="strengthColor(1)"></div>
-                  <div class="flex-1 h-full rounded" :class="strengthColor(2)"></div>
-                  <div class="flex-1 h-full rounded" :class="strengthColor(3)"></div>
-                  <div class="flex-1 h-full rounded" :class="strengthColor(4)"></div>
+                  <div class="flex-1 h-full rounded" :class="colorFuerza(1)"></div>
+                  <div class="flex-1 h-full rounded" :class="colorFuerza(2)"></div>
+                  <div class="flex-1 h-full rounded" :class="colorFuerza(3)"></div>
+                  <div class="flex-1 h-full rounded" :class="colorFuerza(4)"></div>
                 </div>
-                <p class="text-xs" :class="strengthTextColor">{{ strengthMessage }}</p>
+                <p class="text-xs" :class="colorTextoFuerza">{{ mensajeFuerza }}</p>
               </div>
 
               <div class="mt-2 space-y-1">
-                <p class="text-xs" :class="password.new?.length >= 8 ? 'text-success-jable' : 'text-neutral-slate'">
+                <p class="text-xs" :class="contrasena.nueva?.length >= 8 ? 'text-success-jable' : 'text-neutral-slate'">
                   ✓ Mínimo 8 caracteres
                 </p>
-                <p class="text-xs" :class="/[A-Z]/.test(password.new) ? 'text-success-jable' : 'text-neutral-slate'">
+                <p class="text-xs" :class="/[A-Z]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
                   ✓ Al menos una mayúscula
                 </p>
-                <p class="text-xs" :class="/[a-z]/.test(password.new) ? 'text-success-jable' : 'text-neutral-slate'">
+                <p class="text-xs" :class="/[a-z]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
                   ✓ Al menos una minúscula
                 </p>
-                <p class="text-xs" :class="/[0-9]/.test(password.new) ? 'text-success-jable' : 'text-neutral-slate'">
+                <p class="text-xs" :class="/[0-9]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
                   ✓ Al menos un número
                 </p>
-                <p class="text-xs" :class="/[!@#$%^&*]/.test(password.new) ? 'text-success-jable' : 'text-neutral-slate'">
+                <p class="text-xs" :class="/[!@#$%^&*]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
                   ✓ Al menos un carácter especial (!@#$%^&*)
                 </p>
               </div>
@@ -127,13 +127,13 @@
 
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Confirmar nueva contraseña</label>
-              <input v-model="password.confirm" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': password.confirm && password.new !== password.confirm }">
-              <p v-if="password.confirm && password.new !== password.confirm" class="text-xs text-red-500 mt-1">
+              <input v-model="contrasena.confirmacion" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion }">
+              <p v-if="contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion" class="text-xs text-red-500 mt-1">
                 Las contraseñas no coinciden
               </p>
             </div>
 
-            <button @click="changePassword" :disabled="!canChangePassword" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
+            <button @click="cambiarContrasena" :disabled="!puedeCambiarContrasena" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
               Actualizar contraseña
             </button>
           </div>
@@ -145,7 +145,7 @@
             <h3 class="font-semibold text-neutral-dark">Cartera Virtual</h3>
             <div class="text-right">
               <p class="text-sm text-neutral-slate">Saldo disponible</p>
-              <p class="text-3xl font-bold text-lanzarote-blue">{{ formatCurrency(walletBalance) }}</p>
+              <p class="text-3xl font-bold text-lanzarote-blue">{{ formatearMoneda(saldoCartera) }}</p>
             </div>
           </div>
 
@@ -154,42 +154,42 @@
             <h4 class="font-medium text-neutral-dark mb-3">Añadir saldo</h4>
             <div class="space-y-4">
               <div class="flex gap-2">
-                <button v-for="amount in [10, 20, 50, 100]" :key="amount" @click="walletTopUp = amount; customAmount = ''" :class="['flex-1 py-2 rounded-lg border transition-colors', walletTopUp === amount && !customAmount ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic hover:bg-lanzarote-blue/10']">
-                  {{ amount }} €
+                <button v-for="monto in [10, 20, 50, 100]" :key="monto" @click="recargaCartera = monto; montoPersonalizado = ''" :class="['flex-1 py-2 rounded-lg border transition-colors', recargaCartera === monto && !montoPersonalizado ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic hover:bg-lanzarote-blue/10']">
+                  {{ monto }} €
                 </button>
               </div>
               
               <div class="flex space-x-3">
-                <input v-model="customAmount" type="number" min="5" step="1" placeholder="Otra cantidad" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" @input="walletTopUp = null">
+                <input v-model="montoPersonalizado" type="number" min="5" step="1" placeholder="Otra cantidad" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" @input="recargaCartera = null">
               </div>
 
-              <div v-if="showpagoForm" class="border-t border-neutral-volcanic pt-4 mt-4">
+              <div v-if="mostrarFormularioPago" class="border-t border-neutral-volcanic pt-4 mt-4">
                 <!-- Formulario de tarjeta (solo se muestra tras pulsar “Añadir saldo”) -->
                 <h5 class="font-medium text-neutral-dark mb-3">Datos de pago</h5>
                 <div class="space-y-3">
                   <div>
                     <label class="block text-sm text-neutral-slate mb-1">Número de tarjeta</label>
-                    <input v-model="card.number" type="text" maxlength="19" placeholder="1234 5678 9012 3456" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': card.number && !isValidCardNumber }" @input="formatCardNumber">
+                    <input v-model="tarjeta.numero" type="text" maxlength="19" placeholder="1234 5678 9012 3456" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.numero && !esNumeroTarjetaValido }" @input="formatearNumeroTarjeta">
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <div>
                       <label class="block text-sm text-neutral-slate mb-1">Fecha</label>
-                      <input v-model="card.expiry" type="text" maxlength="5" placeholder="MM/AA" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': card.expiry && !isValidExpiry }" @input="formatExpiry">
+                      <input v-model="tarjeta.caducidad" type="text" maxlength="5" placeholder="MM/AA" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.caducidad && !esCaducidadValida }" @input="formatearCaducidad">
                     </div>
                     <div>
                       <label class="block text-sm text-neutral-slate mb-1">CVV</label>
-                      <input v-model="card.cvv" type="text" maxlength="3" placeholder="123" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': card.cvv && !isValidCVV }" @input="validateCVV">
+                      <input v-model="tarjeta.cvv" type="text" maxlength="3" placeholder="123" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.cvv && !esCvvValido }" @input="validarCvv">
                     </div>
                   </div>
                   <div>
                     <label class="block text-sm text-neutral-slate mb-1">Nombre en la tarjeta</label>
-                    <input v-model="card.name" type="text" placeholder="Como aparece en la tarjeta" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': card.name && !isValidCardName }" @input="validateCardName">
+                    <input v-model="tarjeta.nombre" type="text" placeholder="Como aparece en la tarjeta" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.nombre && !esNombreTarjetaValido }" @input="validarNombreTarjeta">
                   </div>
                 </div>
               </div>
 
-              <button @click="processAddToWallet" :disabled="!canAddToWallet" class="w-full bg-lanzarote-blue text-white py-3 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-                {{ showpagoForm ? 'Confirmar pago' : 'Añadir saldo' }}
+              <button @click="procesarAgregarACartera" :disabled="!puedeAgregarACartera" class="w-full bg-lanzarote-blue text-white py-3 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed">
+                {{ mostrarFormularioPago ? 'Confirmar pago' : 'Añadir saldo' }}
               </button>
             </div>
           </div>
@@ -198,12 +198,12 @@
             <!-- Retirada: se confirma en un modal antes de enviar -->
             <h4 class="font-medium text-neutral-dark mb-3">Retirar dinero</h4>
             <div class="flex space-x-3">
-              <input v-model="withdrawAmount" type="number" min="5" :max="walletBalance" step="1" placeholder="Cantidad a retirar" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue">
-              <button @click="processWithdraw" :disabled="!canWithdraw" class="px-6 py-2 bg-neutral-dark text-white rounded-lg hover:bg-neutral-slate disabled:opacity-50 disabled:cursor-not-allowed">
+              <input v-model="montoRetiro" type="number" min="5" :max="saldoCartera" step="1" placeholder="Cantidad a retirar" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue">
+              <button @click="procesarRetiro" :disabled="!puedeRetirar" class="px-6 py-2 bg-neutral-dark text-white rounded-lg hover:bg-neutral-slate disabled:opacity-50 disabled:cursor-not-allowed">
                 Retirar
               </button>
             </div>
-            <p class="text-xs text-neutral-slate mt-2">Mínimo 5€ - Máximo {{ formatCurrency(walletBalance) }}</p>
+            <p class="text-xs text-neutral-slate mt-2">Mínimo 5€ - Máximo {{ formatearMoneda(saldoCartera) }}</p>
           </div>
         </div>
 
@@ -212,11 +212,11 @@
           <h3 class="font-semibold text-neutral-dark mb-4">Preferencias y notificaciones</h3>
           <div class="space-y-3">
             <label class="flex items-center space-x-3">
-              <input type="checkbox" v-model="preferences.email_notifications" class="w-4 h-4 text-lanzarote-blue">
+              <input type="checkbox" v-model="preferencias.email_notifications" class="w-4 h-4 text-lanzarote-blue">
               <span class="text-neutral-dark">Recibir notificaciones por email</span>
             </label>
             <label class="flex items-center space-x-3">
-              <input type="checkbox" v-model="preferences.sms_notifications" class="w-4 h-4 text-lanzarote-blue">
+              <input type="checkbox" v-model="preferencias.sms_notifications" class="w-4 h-4 text-lanzarote-blue">
               <span class="text-neutral-dark">Recibir notificaciones por SMS</span>
             </label>
           </div>
@@ -224,7 +224,7 @@
 
         <div class="flex justify-end pt-4">
           <!-- Acción destructiva: eliminación de cuenta (con confirmación) -->
-          <button @click="showDeleteConfirm = true" class="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2">
+          <button @click="mostrarConfirmacionEliminacion = true" class="text-red-600 hover:text-red-800 text-sm flex items-center space-x-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
@@ -235,15 +235,15 @@
     </div>
 
     <!-- Modal de confirmación de eliminación de cuenta -->
-    <div v-if="showDeleteConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div v-if="mostrarConfirmacionEliminacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Eliminar cuenta?</h3>
         <p class="text-neutral-slate mb-6">Esta acción es permanente y no se puede deshacer. Se eliminarán todos tus datos y viajes.</p>
         <div class="flex space-x-3">
-          <button @click="deleteAccount" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
+          <button @click="eliminarCuenta" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
             Sí, eliminar
           </button>
-          <button @click="showDeleteConfirm = false" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
+          <button @click="mostrarConfirmacionEliminacion = false" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
             Cancelar
           </button>
         </div>
@@ -251,15 +251,15 @@
     </div>
   </DisposicionPasajero>
     <!-- Modal de confirmación de retirada (evita confirm/alert nativos) -->
-    <div v-if="showWithdrawConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div v-if="mostrarConfirmacionRetiro" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Confirmar retirada?</h3>
-        <p class="text-neutral-slate mb-6">¿Confirmas la retirada de {{ formatCurrency(withdrawAmount) }} de tu cartera virtual?</p>
+        <p class="text-neutral-slate mb-6">¿Confirmas la retirada de {{ formatearMoneda(montoRetiro) }} de tu cartera virtual?</p>
         <div class="flex space-x-3">
-          <button @click="confirmWithdraw" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">
+          <button @click="confirmarRetiro" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">
             Sí, retirar
           </button>
-          <button @click="cancelWithdraw" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
+          <button @click="cancelarRetiro" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
             Cancelar
           </button>
         </div>
@@ -269,119 +269,122 @@
 
 
 <script setup>
-const errorMsg = ref('')
-const infoMsg = ref('')
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import DisposicionPasajero from '../../Disposiciones/DisposicionPasajero.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
-import { useWalletStore } from '../../Almacenes/almacenCartera.js'
+import { useCarteraStore } from '../../Almacenes/almacenCartera.js'
+import axios from 'axios'
+import { router } from '@inertiajs/vue3'
+
+const mensajeError = ref('')
+const mensajeInfo = ref('')
 const authStore = useAuthStore()
-const walletStore = useWalletStore()
+const carteraStore = useCarteraStore()
 
 // Estado del avatar (previsualización local y URL persistida)
 
-const avatarPreview = ref(null)
-const userAvatar = ref(null)
-const showDeleteConfirm = ref(false)
-const editingPersonal = ref(false)
-const showWithdrawConfirm = ref(false)
+const vistaPreviaAvatar = ref(null)
+const avatarUsuario = ref(null)
+const mostrarConfirmacionEliminacion = ref(false)
+const editandoPersonal = ref(false)
+const mostrarConfirmacionRetiro = ref(false)
 
-const walletTopUp = ref(10)
-const customAmount = ref('')
-const withdrawAmount = ref('')
-const showpagoForm = ref(false)
+const recargaCartera = ref(10)
+const montoPersonalizado = ref('')
+const montoRetiro = ref('')
+const mostrarFormularioPago = ref(false)
 
-const emailError = ref('')
-const phoneError = ref('')
+const errorCorreo = ref('')
+const errorTelefono = ref('')
 
-const card = reactive({
-  number: '',
-  expiry: '',
+const tarjeta = reactive({
+  numero: '',
+  caducidad: '',
   cvv: '',
-  name: ''
+  nombre: ''
 })
 
-const form = reactive({
-  name: '',
+const formulario = reactive({
+  nombre: '',
   email: '',
   phone: ''
 })
 
-const password = reactive({
-  new: '',
-  confirm: ''
+const contrasena = reactive({
+  nueva: '',
+  confirmacion: ''
 })
 
-const passwordStrength = ref(0)
+const fuerzaContrasena = ref(0)
 
-const preferences = reactive({
+const preferencias = reactive({
   email_notifications: true,
   sms_notifications: false,
   marketing_emails: false
 })
 
-const isValidCardNumber = computed(() => {
-  const numbers = card.number.replace(/\s/g, '')
+const esNumeroTarjetaValido = computed(() => {
+  const numeros = tarjeta.numero.replace(/\s/g, '')
 
-  return /^\d{16}$/.test(numbers)
+  return /^\d{16}$/.test(numeros)
 })
 
-const isValidExpiry = computed(() => {
+const esCaducidadValida = computed(() => {
 
-  return /^(0[1-9]|1[0-2])\/([0-9]{2})$/.test(card.expiry)
+  return /^(0[1-9]|1[0-2])\/([0-9]{2})$/.test(tarjeta.caducidad)
 })
 
-const isValidCVV = computed(() => {
+const esCvvValido = computed(() => {
 
-  return /^\d{3}$/.test(card.cvv)
+  return /^\d{3}$/.test(tarjeta.cvv)
 })
 
-const isValidCardName = computed(() => {
+const esNombreTarjetaValido = computed(() => {
 
-  return /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(card.name)
+  return /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/.test(tarjeta.nombre)
 })
 
-const canAddToWallet = computed(() => {
+const puedeAgregarACartera = computed(() => {
   // Habilita “Añadir saldo” si el importe es válido; si hay formulario, valida tarjeta
-  const amount = customAmount.value ? parseFloat(customAmount.value) : walletTopUp.value
-  if (!amount || amount < 5) return false
+  const monto = montoPersonalizado.value ? parseFloat(montoPersonalizado.value) : recargaCartera.value
+  if (!monto || monto < 5) return false
   
-  if (!showpagoForm.value) return true
+  if (!mostrarFormularioPago.value) return true
   
-  return isValidCardNumber.value && isValidExpiry.value && isValidCVV.value && isValidCardName.value
+  return esNumeroTarjetaValido.value && esCaducidadValida.value && esCvvValido.value && esNombreTarjetaValido.value
 })
 
-const canWithdraw = computed(() => {
+const puedeRetirar = computed(() => {
   // Retirada permitida: mínimo 5€ y no superar el saldo
-  const amount = parseFloat(withdrawAmount.value)
+  const monto = parseFloat(montoRetiro.value)
 
-  return amount >= 5 && amount <= walletStore.balance
+  return monto >= 5 && monto <= carteraStore.saldo
 })
 
-const isPasswordStrong = computed(() => {
+const esContrasenaFuerte = computed(() => {
 
-  return password.new?.length >= 8 &&
-         /[A-Z]/.test(password.new) &&
-         /[a-z]/.test(password.new) &&
-         /[0-9]/.test(password.new) &&
-         /[!@#$%^&*]/.test(password.new)
+  return contrasena.nueva?.length >= 8 &&
+         /[A-Z]/.test(contrasena.nueva) &&
+         /[a-z]/.test(contrasena.nueva) &&
+         /[0-9]/.test(contrasena.nueva) &&
+         /[!@#$%^&*]/.test(contrasena.nueva)
 })
 
-const canChangePassword = computed(() => {
+const puedeCambiarContrasena = computed(() => {
 
-  return isPasswordStrong.value &&
-         password.new === password.confirm
+  return esContrasenaFuerte.value &&
+         contrasena.nueva === contrasena.confirmacion
 })
 
-const walletBalance = computed(() => walletStore.balance)
-const recentTransactions = computed(() => walletStore.transactions.slice(0, 5))
+const saldoCartera = computed(() => carteraStore.saldo)
+const transaccionesRecientes = computed(() => carteraStore.transacciones.slice(0, 5))
 
-const formatCurrency = (value) => {
+const formatearMoneda = (value) => {
 
   return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(value)
 }
 
-const formatDate = (date) => {
+const formatearFecha = (date) => {
 
   return new Date(date).toLocaleDateString('es-ES', {
     day: '2-digit',
@@ -392,202 +395,202 @@ const formatDate = (date) => {
   })
 }
 
-const loadUserAvatar = async () => {
+const cargarAvatarUsuario = async () => {
   // Normaliza la URL del avatar (soporta rutas relativas y absolutas)
   try {
     if (authStore.usuario?.avatar) {
       const avatar = authStore.usuario.avatar
-      userAvatar.value = avatar.startsWith('/storage') || avatar.startsWith('http') 
+      avatarUsuario.value = avatar.startsWith('/storage') || avatar.startsWith('http') 
         ? avatar 
         : `/storage/${avatar}`
       
-      console.log('Avatar cargado:', userAvatar.value)
+      console.log('Avatar cargado:', avatarUsuario.value)
     }
   } catch (error) {
     console.error('Error cargando avatar:', error)
-    userAvatar.value = null
+    avatarUsuario.value = null
   }
 }
 
-const handleAvatarUpload = async (event) => {
+const manejarSubidaAvatar = async (event) => {
   // Validaciones básicas del archivo antes de subir (tamaño y tipo)
-  const file = event.target.files[0]
-  if (file) {
-    if (file.size > 2 * 1024 * 1024) {
-      errorMsg.value = 'La imagen no puede superar los 2MB';
-      setTimeout(() => { errorMsg.value = ''; }, 4000);
+  const archivo = event.target.files[0]
+  if (archivo) {
+    if (archivo.size > 2 * 1024 * 1024) {
+      mensajeError.value = 'La imagen no puede superar los 2MB'
+      setTimeout(() => { mensajeError.value = '' }, 4000)
 
       return
     }
 
-    if (!file.type.startsWith('image/')) {
-      errorMsg.value = 'Solo se permiten imágenes';
-      setTimeout(() => { errorMsg.value = ''; }, 4000);
+    if (!archivo.type.startsWith('image/')) {
+      mensajeError.value = 'Solo se permiten imágenes'
+      setTimeout(() => { mensajeError.value = '' }, 4000)
 
       return
     }
 
-    const reader = new FileReader()
-    reader.onload = async (e) => {
-      avatarPreview.value = e.target.result
-      await saveAvatar(file)
+    const lector = new FileReader()
+    lector.onload = async (e) => {
+      vistaPreviaAvatar.value = e.target.result
+      await guardarAvatar(archivo)
     }
-    reader.readAsDataURL(file)
+    lector.readAsDataURL(archivo)
   }
 }
 
-const saveAvatar = async (file) => {
+const guardarAvatar = async (archivo) => {
   // Subida del avatar y sincronización local (store + localStorage)
-  if (!file) return
+  if (!archivo) return
   
   try {
-    const formData = new FormData()
-    formData.append('avatar', file)
+    const datosFormulario = new FormData()
+    datosFormulario.append('avatar', archivo)
 
-    const response = await axios.post('/api/user/avatar', formData, {
+    const respuesta = await axios.post('/api/user/avatar', datosFormulario, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }
     })
 
-    console.log('Respuesta del servidor:', response.data)
+    console.log('Respuesta del servidor:', respuesta.data)
 
-    const avatarUrl = `/storage/${response.data.avatar}`
-    console.log('Avatar URL generada:', avatarUrl)
+    const urlAvatar = `/storage/${respuesta.data.avatar}`
+    console.log('Avatar URL generada:', urlAvatar)
     
-    userAvatar.value = avatarUrl
+    avatarUsuario.value = urlAvatar
     
     if (authStore.usuario) {
-      authStore.usuario.avatar = avatarUrl
+      authStore.usuario.avatar = urlAvatar
     }
     
-    const storedUserData = localStorage.getItem('usuario')
-    if (storedUserData) {
+    const datosUsuarioAlmacenados = localStorage.getItem('usuario')
+    if (datosUsuarioAlmacenados) {
       try {
-        const storedUser = JSON.parse(storedUserData)
-        storedUser.avatar = avatarUrl
-        localStorage.setItem('usuario', JSON.stringify(storedUser))
+        const usuarioAlmacenado = JSON.parse(datosUsuarioAlmacenados)
+        usuarioAlmacenado.avatar = urlAvatar
+        localStorage.setItem('usuario', JSON.stringify(usuarioAlmacenado))
       } catch (e) {
         console.warn('Error al actualizar localStorage:', e)
       }
     }
     
     setTimeout(() => {
-      avatarPreview.value = null
+      vistaPreviaAvatar.value = null
     }, 500)
     
   } catch (error) {
     console.error('Error al guardar avatar:', error)
     console.error('Respuesta del servidor:', error.response?.data)
     
-    const errorMessage = error.response?.data?.message || 'Error al subir la imagen'
-    const debugInfo = error.response?.data?.debug
+    const mensajeErrorServidor = error.response?.data?.message || 'Error al subir la imagen'
+    const infoDepuracion = error.response?.data?.debug
     
-    if (debugInfo) {
-      console.log('Debug info:', debugInfo)
+    if (infoDepuracion) {
+      console.log('Debug info:', infoDepuracion)
     }
     
-    errorMsg.value = errorMessage;
-    setTimeout(() => { errorMsg.value = ''; }, 4000);
-    avatarPreview.value = null
+    mensajeError.value = mensajeErrorServidor
+    setTimeout(() => { mensajeError.value = '' }, 4000)
+    vistaPreviaAvatar.value = null
   }
 }
 
-const handleImageError = (event) => {
+const manejarErrorImagen = (event) => {
   // Fallback si la imagen del avatar falla (reintento con URL del store una vez)
   console.error('Error al cargar la imagen:', event?.target?.src)
 
-  const authAvatar = authStore.usuario?.avatar
-  const absoluteAuthAvatar = authAvatar
-    ? new URL(authAvatar, window.location.origin).href
+  const avatarAuth = authStore.usuario?.avatar
+  const avatarAuthAbsoluto = avatarAuth
+    ? new URL(avatarAuth, window.location.origin).href
     : null
 
   // Reintentar una sola vez si la URL actual no coincide con la del store
-  if (absoluteAuthAvatar && event?.target?.src && event.target.src !== absoluteAuthAvatar) {
-    event.target.src = absoluteAuthAvatar
+  if (avatarAuthAbsoluto && event?.target?.src && event.target.src !== avatarAuthAbsoluto) {
+    event.target.src = avatarAuthAbsoluto
     return
   }
 
-  userAvatar.value = null
-  avatarPreview.value = null
+  avatarUsuario.value = null
+  vistaPreviaAvatar.value = null
 }
 
-const startEditingPersonal = () => {
-  form.name = authStore.usuario?.name || ''
-  form.email = authStore.usuario?.email || ''
-  form.phone = authStore.usuario?.phone || ''
-  editingPersonal.value = true
+const iniciarEdicionPersonal = () => {
+  formulario.nombre = authStore.usuario?.name || ''
+  formulario.email = authStore.usuario?.email || ''
+  formulario.phone = authStore.usuario?.phone || ''
+  editandoPersonal.value = true
 }
 
-const cancelEditingPersonal = () => {
-  editingPersonal.value = false
-  emailError.value = ''
-  phoneError.value = ''
+const cancelarEdicionPersonal = () => {
+  editandoPersonal.value = false
+  errorCorreo.value = ''
+  errorTelefono.value = ''
 }
 
-const validateEmail = (email) => {
+const validarCorreo = (email) => {
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   return re.test(email)
 }
 
-const validatePhone = (phone) => {
+const validarTelefono = (phone) => {
   const re = /^[0-9]{9}$/
 
   return re.test(phone)
 }
 
-const savePersonalInfo = async () => {
+const guardarInfoPersonal = async () => {
   // Guarda email/teléfono con validaciones de formato
-  emailError.value = ''
-  phoneError.value = ''
+  errorCorreo.value = ''
+  errorTelefono.value = ''
   
-  if (!validateEmail(form.email)) {
-    emailError.value = 'Email no válido'
+  if (!validarCorreo(formulario.email)) {
+    errorCorreo.value = 'Email no válido'
 
     return
   }
   
-  if (form.phone && !validatePhone(form.phone)) {
-    phoneError.value = 'Teléfono debe tener 9 dígitos'
+  if (formulario.phone && !validarTelefono(formulario.phone)) {
+    errorTelefono.value = 'Teléfono debe tener 9 dígitos'
 
     return
   }
   
   try {
     await axios.put('/api/user/profile', {
-      email: form.email,
-      phone: form.phone
+      email: formulario.email,
+      phone: formulario.phone
     })
     
-    authStore.usuario.email = form.email
-    authStore.usuario.phone = form.phone
+    authStore.usuario.email = formulario.email
+    authStore.usuario.phone = formulario.phone
     
-    editingPersonal.value = false
-    infoMsg.value = 'Información actualizada correctamente';
-    setTimeout(() => { infoMsg.value = ''; }, 4000);
+    editandoPersonal.value = false
+    mensajeInfo.value = 'Información actualizada correctamente'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
   } catch (error) {
-    errorMsg.value = 'Error al actualizar la información: ' + (error.response?.data?.message || 'Error desconocido');
-    setTimeout(() => { errorMsg.value = ''; }, 4000);
+    mensajeError.value = 'Error al actualizar la información: ' + (error.response?.data?.message || 'Error desconocido')
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
 }
 
-const checkPasswordStrength = () => {
+const comprobarFuerzaContrasena = () => {
   // Calcula un nivel simple de fortaleza basado en reglas mínimas
-  let strength = 0
-  if (password.new?.length >= 8) strength++
-  if (/[A-Z]/.test(password.new)) strength++
-  if (/[a-z]/.test(password.new)) strength++
-  if (/[0-9]/.test(password.new)) strength++
-  if (/[!@#$%^&*]/.test(password.new)) strength++
-  passwordStrength.value = strength
+  let fuerza = 0
+  if (contrasena.nueva?.length >= 8) fuerza++
+  if (/[A-Z]/.test(contrasena.nueva)) fuerza++
+  if (/[a-z]/.test(contrasena.nueva)) fuerza++
+  if (/[0-9]/.test(contrasena.nueva)) fuerza++
+  if (/[!@#$%^&*]/.test(contrasena.nueva)) fuerza++
+  fuerzaContrasena.value = fuerza
 }
 
-const strengthColor = (level) => {
-  if (!password.new) return 'bg-neutral-volcanic'
-  if (passwordStrength.value >= level) {
-    if (passwordStrength.value <= 2) return 'bg-red-500'
-    if (passwordStrength.value <= 3) return 'bg-yellow-500'
+const colorFuerza = (nivel) => {
+  if (!contrasena.nueva) return 'bg-neutral-volcanic'
+  if (fuerzaContrasena.value >= nivel) {
+    if (fuerzaContrasena.value <= 2) return 'bg-red-500'
+    if (fuerzaContrasena.value <= 3) return 'bg-yellow-500'
 
     return 'bg-success-jable'
   }
@@ -595,44 +598,44 @@ const strengthColor = (level) => {
   return 'bg-neutral-volcanic'
 }
 
-const strengthMessage = computed(() => {
-  if (!password.new) return ''
-  if (passwordStrength.value <= 2) return 'Contraseña débil'
-  if (passwordStrength.value <= 3) return 'Contraseña media'
+const mensajeFuerza = computed(() => {
+  if (!contrasena.nueva) return ''
+  if (fuerzaContrasena.value <= 2) return 'Contraseña débil'
+  if (fuerzaContrasena.value <= 3) return 'Contraseña media'
 
   return 'Contraseña fuerte'
 })
 
-const strengthTextColor = computed(() => {
-  if (!password.new) return ''
-  if (passwordStrength.value <= 2) return 'text-red-500'
-  if (passwordStrength.value <= 3) return 'text-yellow-600'
+const colorTextoFuerza = computed(() => {
+  if (!contrasena.nueva) return ''
+  if (fuerzaContrasena.value <= 2) return 'text-red-500'
+  if (fuerzaContrasena.value <= 3) return 'text-yellow-600'
 
   return 'text-success-jable'
 })
 
-const changePassword = async () => {
+const cambiarContrasena = async () => {
   // Llama al endpoint de cambio de contraseña si es válida
-  if (!canChangePassword.value) return
+  if (!puedeCambiarContrasena.value) return
   
   try {
     await axios.put('/api/user/password', {
-      new_password: password.new,
-      new_password_confirmation: password.confirm
+      new_password: contrasena.nueva,
+      new_password_confirmation: contrasena.confirmacion
     })
     
-    password.new = ''
-    password.confirm = ''
+    contrasena.nueva = ''
+    contrasena.confirmacion = ''
     
-    infoMsg.value = 'Contraseña actualizada correctamente';
-    setTimeout(() => { infoMsg.value = ''; }, 4000);
+    mensajeInfo.value = 'Contraseña actualizada correctamente'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
   } catch (error) {
-    errorMsg.value = 'Error al actualizar la contraseña: ' + (error.response?.data?.message || 'Error desconocido');
-    setTimeout(() => { errorMsg.value = ''; }, 4000);
+    mensajeError.value = 'Error al actualizar la contraseña: ' + (error.response?.data?.message || 'Error desconocido')
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
 }
 
-const formatCardNumber = (e) => {
+const formatearNumeroTarjeta = (e) => {
   let value = e.target.value.replace(/\D/g, '')
   value = value.substring(0, 16)
   
@@ -640,124 +643,124 @@ const formatCardNumber = (e) => {
   for (let i = 0; i < value.length; i += 4) {
     parts.push(value.substring(i, i + 4))
   }
-  card.number = parts.join(' ')
+  tarjeta.numero = parts.join(' ')
 }
 
-const formatExpiry = (e) => {
+const formatearCaducidad = (e) => {
   let value = e.target.value.replace(/\D/g, '')
   value = value.substring(0, 4)
   
   if (value.length >= 2) {
-    card.expiry = value.substring(0, 2) + '/' + value.substring(2)
+    tarjeta.caducidad = value.substring(0, 2) + '/' + value.substring(2)
   } else {
-    card.expiry = value
+    tarjeta.caducidad = value
   }
 }
 
-const validateCVV = (e) => {
-  card.cvv = e.target.value.replace(/\D/g, '').substring(0, 3)
+const validarCvv = (e) => {
+  tarjeta.cvv = e.target.value.replace(/\D/g, '').substring(0, 3)
 }
 
-const validateCardName = (e) => {
-  card.name = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
+const validarNombreTarjeta = (e) => {
+  tarjeta.nombre = e.target.value.replace(/[^a-zA-ZáéíóúÁÉÍÓÚñÑ\s]/g, '')
 }
 
-const processAddToWallet = async () => {
+const procesarAgregarACartera = async () => {
   // Flujo en dos pasos: 1) mostrar formulario 2) confirmar pago y recargar saldo
-  const amount = customAmount.value ? parseFloat(customAmount.value) : walletTopUp.value
+  const monto = montoPersonalizado.value ? parseFloat(montoPersonalizado.value) : recargaCartera.value
   
-  if (amount < 5) {
-    errorMsg.value = 'El mínimo para añadir es 5€';
-    setTimeout(() => { errorMsg.value = ''; }, 4000);
+  if (monto < 5) {
+    mensajeError.value = 'El mínimo para añadir es 5€'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
 
     return
   }
 
-  if (!showpagoForm.value) {
-    showpagoForm.value = true
+  if (!mostrarFormularioPago.value) {
+    mostrarFormularioPago.value = true
 
     return
   }
 
-  const result = await walletStore.addFunds(amount)
+  const resultado = await carteraStore.anadirFondos(monto)
   
-  if (result.success) {
-    infoMsg.value = `Se han añadido ${formatCurrency(amount)} a tu cartera`;
-    setTimeout(() => { infoMsg.value = ''; }, 4000);
-    showpagoForm.value = false
-    card.number = ''
-    card.expiry = ''
-    card.cvv = ''
-    card.name = ''
-    customAmount.value = ''
-    walletTopUp.value = 10
+  if (resultado.success) {
+    mensajeInfo.value = `Se han añadido ${formatearMoneda(monto)} a tu cartera`
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
+    mostrarFormularioPago.value = false
+    tarjeta.numero = ''
+    tarjeta.caducidad = ''
+    tarjeta.cvv = ''
+    tarjeta.nombre = ''
+    montoPersonalizado.value = ''
+    recargaCartera.value = 10
   } else {
-    errorMsg.value = 'Error al procesar el pago';
-    setTimeout(() => { errorMsg.value = ''; }, 4000);
+    mensajeError.value = 'Error al procesar el pago'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
 }
 
-const processWithdraw = async () => {
+const procesarRetiro = async () => {
   // Abre confirmación de retirada (no retira directamente)
-  const amount = parseFloat(withdrawAmount.value)
+  const monto = parseFloat(montoRetiro.value)
   
-  if (amount < 5) {
-    errorMsg.value = 'El mínimo para retirar es 5€';
-    setTimeout(() => { errorMsg.value = ''; }, 4000);
+  if (monto < 5) {
+    mensajeError.value = 'El mínimo para retirar es 5€'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
 
     return
   }
 
-  if (amount > walletStore.balance) {
-    errorMsg.value = 'No tienes suficiente saldo';
-    setTimeout(() => { errorMsg.value = ''; }, 4000);
+  if (monto > carteraStore.saldo) {
+    mensajeError.value = 'No tienes suficiente saldo'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
 
     return
   }
 
-  showWithdrawConfirm.value = true
+  mostrarConfirmacionRetiro.value = true
 }
 
-const confirmWithdraw = async () => {
+const confirmarRetiro = async () => {
   // Ejecuta la retirada tras confirmar
-  const amount = parseFloat(withdrawAmount.value)
-  const result = await walletStore.withdrawFunds(amount)
-  if (result.success) {
-    infoMsg.value = 'Solicitud de retirada procesada. El dinero se transferirá a tu cuenta en 2-3 días hábiles.';
-    setTimeout(() => { infoMsg.value = ''; }, 4000);
-    withdrawAmount.value = ''
+  const monto = parseFloat(montoRetiro.value)
+  const resultado = await carteraStore.retirarFondos(monto)
+  if (resultado.success) {
+    mensajeInfo.value = 'Solicitud de retirada procesada. El dinero se transferirá a tu cuenta en 2-3 días hábiles.'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
+    montoRetiro.value = ''
   }
-  showWithdrawConfirm.value = false
+  mostrarConfirmacionRetiro.value = false
 }
 
-const cancelWithdraw = () => {
-  showWithdrawConfirm.value = false
+const cancelarRetiro = () => {
+  mostrarConfirmacionRetiro.value = false
 }
 
 
-const deleteAccount = async () => {
+const eliminarCuenta = async () => {
   // Elimina la cuenta y fuerza logout
   try {
     await axios.delete('/api/user')
   } catch (error) {
   }
-  await authStore.logout()
+  await authStore.cerrarSesion()
   router.visit('/')
 }
 
 onMounted(async () => {
   // Carga inicial: sincroniza usuario, avatar y datos de cartera
-  await authStore.syncUser()
+  await authStore.sincronizarUsuario()
   if (authStore.usuario) {
-    form.name = authStore.usuario.name || ''
-    form.email = authStore.usuario.email || ''
-    form.phone = authStore.usuario.phone || ''
+    formulario.nombre = authStore.usuario.name || ''
+    formulario.email = authStore.usuario.email || ''
+    formulario.phone = authStore.usuario.phone || ''
   }
-  loadUserAvatar()
-  walletStore.fetchBalance()
-  walletStore.fetchTransactions()
+  cargarAvatarUsuario()
+  carteraStore.obtenerSaldo()
+  carteraStore.obtenerTransacciones()
   if (authStore.usuario?.preferences) {
-    Object.assign(preferences, authStore.usuario.preferences)
+    Object.assign(preferencias, authStore.usuario.preferences)
   }
 })
 </script>

@@ -10,7 +10,7 @@
             <p class="text-blue-100">Sigue tu taxi en tiempo real por las carreteras de Lanzarote</p>
           </div>
           <span class="bg-white/20 px-4 py-2 rounded-full text-sm">
-            {{ getEstadoText(viaje?.estado) }}
+            {{ obtenerTextoEstado(viaje?.estado) }}
           </span>
         </div>
       </div>
@@ -21,7 +21,7 @@
             <!-- Mapa de seguimiento -->
             <div class="h-[500px] rounded-lg overflow-hidden">
               <div v-if="puedeRenderMapa" class="h-full">
-                <MapaSeguimiento ref="mapRef" :pickupLat="viaje.pickupLat" :pickupLng="viaje.pickupLng" :dropoffLat="viaje.dropoffLat" :dropoffLng="viaje.dropoffLng" :taxiLat="taxiLocation?.lat" :taxiLng="taxiLocation?.lng" :estado="viaje.estado" />
+                <MapaSeguimiento ref="referenciaMapa" :pickupLat="viaje.pickupLat" :pickupLng="viaje.pickupLng" :dropoffLat="viaje.dropoffLat" :dropoffLng="viaje.dropoffLng" :taxiLat="ubicacionTaxi?.lat" :taxiLng="ubicacionTaxi?.lng" :estado="viaje.estado" />
               </div>
               <div v-else class="h-full flex items-center justify-center bg-neutral-soft">
                 <p class="text-sm text-neutral-slate">Cargando mapa…</p>
@@ -34,7 +34,7 @@
           <div class="bg-white rounded-xl shadow-sm p-6">
             <!-- Línea de tiempo del estado del viaje -->
             <h3 class="font-semibold text-neutral-dark mb-4 flex items-center gap-2">
-              <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="taxiIconSvg"></svg>
+              <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="svgIconoTaxi"></svg>
               Estado del viaje
             </h3>
             
@@ -46,7 +46,7 @@
                   <div class="absolute left-0 w-4 h-4 rounded-full" :class="viaje?.estado === 'pendiente' ? 'bg-yellow-500 ring-4 ring-yellow-100' : 'bg-green-500'">
                   </div>
                   <p class="text-sm font-medium">Solicitud enviada</p>
-                  <p class="text-xs text-neutral-slate">{{ formatDate(viaje?.created_at) }}</p>
+                  <p class="text-xs text-neutral-slate">{{ formatearFecha(viaje?.created_at) }}</p>
                 </div>
 
                 <div class="relative pl-8 pb-4">
@@ -63,7 +63,7 @@
                   </div>
                   <p class="text-sm font-medium">Viaje en curso</p>
                   <p v-if="viaje?.estado === 'in_progress'" class="text-xs text-neutral-slate">
-                    {{ taxiLocation ? 'Taxi en movimiento' : 'Esperando al taxi' }}
+                    {{ ubicacionTaxi ? 'Taxi en movimiento' : 'Esperando al taxi' }}
                   </p>
                 </div>
 
@@ -118,13 +118,13 @@
     </div>
 
     <!-- Modal de confirmación de cancelación (evita confirm/alert nativos) -->
-    <div v-if="showCancelConfirm" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div v-if="mostrarConfirmacionCancelacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Confirmar cancelación?</h3>
         <p class="text-neutral-slate mb-6">¿Confirmas la cancelación de este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera virtual, se generará una deuda.</p>
         <div class="flex space-x-3">
-          <button @click="confirmCancelTrip" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">Sí, cancelar</button>
-          <button @click="cancelCancelTrip" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">Cancelar</button>
+          <button @click="confirmarCancelacionViaje" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">Sí, cancelar</button>
+          <button @click="cancelarCancelacionViaje" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">Cancelar</button>
         </div>
       </div>
     </div>
@@ -137,7 +137,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { router as inertiaRouter } from '@inertiajs/vue3'
 import DisposicionPasajero from '../../Disposiciones/DisposicionPasajero.vue'
 import MapaSeguimiento from '../../Componentes/MapaSeguimiento.vue'
-import { useTripStore } from '../../Almacenes/almacenViaje.js'
+import { useViajeStore } from '../../Almacenes/almacenViaje.js'
 import axios from 'axios'
 import '../../../css/seguimiento.css'
 
@@ -150,21 +150,21 @@ const props = defineProps({
   }
 })
 
-const viajeStore = useTripStore()
-const mapRef = ref(null)
+const viajeStore = useViajeStore()
+const referenciaMapa = ref(null)
 
 // Normaliza el SVG (bootstrap-icons) para poder inyectarlo con v-html
-const innerSvg = (raw) => raw
+const extraerInteriorSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
   .replace(/<\/svg>\s*$/i, '')
   .trim()
 
-const taxiIconSvg = innerSvg(svgTaxiFront)
+const svgIconoTaxi = extraerInteriorSvg(svgTaxiFront)
 
 const viaje = ref(null)
-const taxiLocation = ref(null)
-let intervalId = null
-const showCancelConfirm = ref(false)
+const ubicacionTaxi = ref(null)
+let idIntervaloActualizacion = null
+const mostrarConfirmacionCancelacion = ref(false)
 
 const puedeRenderMapa = computed(() => {
   // Evita renderizar el mapa si faltan coordenadas
@@ -181,13 +181,13 @@ const viajeFromStore = computed(() => {
   return viajeStore.viajesPasajero.find(t => t.id === viajeIdNumber.value) || null
 })
 
-const loadViaje = async () => {
+const cargarViaje = async () => {
   // Carga el viaje desde el store; si no existe, refresca y redirige si sigue sin encontrarse
   viaje.value = viajeFromStore.value
 
   if (!viaje.value) {
     try {
-      await viajeStore.fetchTrips()
+      await viajeStore.obtenerViajes()
       viaje.value = viajeFromStore.value
     } catch (error) {
       console.error('Error cargando viajes:', error)
@@ -199,7 +199,7 @@ const loadViaje = async () => {
   }
 }
 
-const getEstadoText = (estado) => {
+const obtenerTextoEstado = (estado) => {
   const estados = {
     'pendiente': 'Buscando taxista',
     'accepted': 'Taxista en camino',
@@ -210,7 +210,7 @@ const getEstadoText = (estado) => {
   return estados[estado] || estado
 }
 
-const formatDate = (dateString) => {
+const formatearFecha = (dateString) => {
   if (!dateString) return ''
   return new Date(dateString).toLocaleString('es-ES', {
     hour: '2-digit',
@@ -220,52 +220,52 @@ const formatDate = (dateString) => {
   })
 }
 
-const refreshTaxiLocation = async () => {
+const refrescarUbicacionTaxi = async () => {
   // Consulta periódica de la ubicación del taxi (solo cuando tiene sentido)
   if (!viaje.value) return
   if (!['accepted', 'in_progress'].includes(viaje.value.estado)) return
 
   try {
     const response = await axios.get(`/api/viajes/${viaje.value.id}/track`)
-    taxiLocation.value = response.data?.ubicacion || null
+    ubicacionTaxi.value = response.data?.ubicacion || null
   } catch (error) {
   }
 }
 
 const abrirConfirmacionCancelacion = () => {
   // Abre el modal de confirmación
-  showCancelConfirm.value = true
+  mostrarConfirmacionCancelacion.value = true
 }
 
-const confirmCancelTrip = async () => {
+const confirmarCancelacionViaje = async () => {
   // Confirma la cancelación y vuelve al listado
   try {
-    await viajeStore.cancelTrip(viaje.value.id)
-    showCancelConfirm.value = false
+    await viajeStore.cancelarViaje(viaje.value.id)
+    mostrarConfirmacionCancelacion.value = false
     inertiaRouter.visit('/pasajero/reservas')
   } catch (error) {
     console.error('Error cancelando viaje:', error)
   }
 }
 
-const cancelCancelTrip = () => {
-  showCancelConfirm.value = false
+const cancelarCancelacionViaje = () => {
+  mostrarConfirmacionCancelacion.value = false
 }
 
 onMounted(() => {
   // Carga inicial + polling de estado/ubicación
-  loadViaje()
+  cargarViaje()
 
-  intervalId = setInterval(() => {
+  idIntervaloActualizacion = setInterval(() => {
     viaje.value = viajeFromStore.value
-    refreshTaxiLocation()
+    refrescarUbicacionTaxi()
   }, 3000)
 })
 
 onUnmounted(() => {
   // Limpieza del intervalo al salir de la página
-  if (intervalId) {
-    clearInterval(intervalId)
+  if (idIntervaloActualizacion) {
+    clearInterval(idIntervaloActualizacion)
   }
 })
 

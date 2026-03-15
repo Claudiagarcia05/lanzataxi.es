@@ -8,15 +8,15 @@
 
     use App\Http\Controllers\Api\ConductorController;
     use App\Http\Controllers\Api\UbicacionController;
-    use App\Http\Controllers\Api\AuthController;
-    use App\Http\Controllers\Api\AdminController;
+    use App\Http\Controllers\Api\AutenticacionController;
+    use App\Http\Controllers\Api\AdministradorController;
     use App\Http\Controllers\Api\PagoController;
     use App\Http\Controllers\Api\TaxiController;
     use App\Http\Controllers\Api\ViajeController;
-    use App\Http\Controllers\Api\UserController;
+    use App\Http\Controllers\Api\UsuarioController;
     use App\Http\Controllers\Api\RutaFavoritaController;
-    use App\Http\Controllers\Api\NotificationController;
-    use App\Http\Controllers\Api\WalletController;
+    use App\Http\Controllers\Api\NotificacionController;
+    use App\Http\Controllers\Api\CarteraController;
     use Illuminate\Support\Facades\Route;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Http\Request;
@@ -24,8 +24,8 @@
 
     // --- Público (sin sesión) ---
     // Registro e inicio de sesión
-    Route::post('/register', [AuthController::class, 'register']);
-    Route::post('/login', [AuthController::class, 'login']);
+    Route::post('/register', [AutenticacionController::class, 'register']);
+    Route::post('/login', [AutenticacionController::class, 'login']);
 
     // Datos de disponibilidad (lectura pública)
     Route::get('/available-taxis', [TaxiController::class, 'available']);
@@ -34,24 +34,24 @@
     // --- Protegido (requiere token Sanctum) ---
     Route::middleware(['auth:sanctum', 'account.enabled'])->group(function () {
         // Sesión API
-        Route::get('/me', [AuthController::class, 'me']);
-        Route::post('/logout', [AuthController::class, 'logout']);
+        Route::get('/me', [AutenticacionController::class, 'me']);
+        Route::post('/logout', [AutenticacionController::class, 'logout']);
 
         // Perfil / usuario
-        Route::post('/user/profile', [UserController::class, 'updateProfile']);
-        Route::put('/user/profile', [UserController::class, 'updateProfile']);
-        Route::post('/user/avatar', [UserController::class, 'uploadAvatar']);
-        Route::put('/user/password', [UserController::class, 'updatePassword']);
-        Route::put('/user/preferences', [UserController::class, 'updatePreferences']);
-        Route::delete('/user', [UserController::class, 'deleteAccount']);
+        Route::post('/user/profile', [UsuarioController::class, 'updateProfile']);
+        Route::put('/user/profile', [UsuarioController::class, 'updateProfile']);
+        Route::post('/user/avatar', [UsuarioController::class, 'uploadAvatar']);
+        Route::put('/user/password', [UsuarioController::class, 'updatePassword']);
+        Route::put('/user/preferences', [UsuarioController::class, 'updatePreferences']);
+        Route::delete('/user', [UsuarioController::class, 'deleteAccount']);
 
         // Cartera virtual
-        Route::get('/wallet/balance', [WalletController::class, 'getBalance']);
-        Route::get('/wallet/debts', [WalletController::class, 'getDebtSummary']);
-        Route::get('/wallet/transactions', [WalletController::class, 'getTransactions']);
-        Route::post('/wallet/add', [WalletController::class, 'addFunds']);
-        Route::post('/wallet/use', [WalletController::class, 'useFunds']);
-        Route::post('/wallet/withdraw', [WalletController::class, 'withdrawFunds']);
+        Route::get('/wallet/balance', [CarteraController::class, 'getBalance']);
+        Route::get('/wallet/debts', [CarteraController::class, 'getDebtSummary']);
+        Route::get('/wallet/transactions', [CarteraController::class, 'getTransactions']);
+        Route::post('/wallet/add', [CarteraController::class, 'addFunds']);
+        Route::post('/wallet/use', [CarteraController::class, 'useFunds']);
+        Route::post('/wallet/withdraw', [CarteraController::class, 'withdrawFunds']);
 
         // Rutas favoritas
         Route::get('/favorites', [RutaFavoritaController::class, 'index']);
@@ -61,10 +61,10 @@
         Route::post('/favorites/reorder', [RutaFavoritaController::class, 'reorder']);
 
         // Notificaciones
-        Route::get('/notifications', [NotificationController::class, 'index']);
-        Route::post('/notifications/{notification}/read', [NotificationController::class, 'markAsRead']);
-        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
-        Route::delete('/notifications/{notification}', [NotificationController::class, 'destroy']);
+        Route::get('/notifications', [NotificacionController::class, 'index']);
+        Route::post('/notifications/{notification}/read', [NotificacionController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificacionController::class, 'markAllAsRead']);
+        Route::delete('/notifications/{notification}', [NotificacionController::class, 'destroy']);
 
         // Viajes del usuario (pasajero)
         Route::get('/user/viajes', [ViajeController::class, 'userviajes']);
@@ -99,22 +99,22 @@
         // --- Admin (solo rol admin) ---
         Route::middleware('role:admin')->group(function () {
             // Gestión/consulta de usuarios y viajes
-            Route::get('/admin/users', [AdminController::class, 'users']);
-            Route::get('/admin/viajes', [AdminController::class, 'viajes']);
-            Route::get('/admin/pending-conductors', [AdminController::class, 'pendingconductors']);
-            Route::get('/admin/stats', [AdminController::class, 'stats']);
-            Route::get('/admin/monthly-stats', [AdminController::class, 'monthlyStats']);
+            Route::get('/admin/users', [AdministradorController::class, 'users']);
+            Route::get('/admin/viajes', [AdministradorController::class, 'viajes']);
+            Route::get('/admin/pending-conductors', [AdministradorController::class, 'pendingconductors']);
+            Route::get('/admin/stats', [AdministradorController::class, 'stats']);
+            Route::get('/admin/monthly-stats', [AdministradorController::class, 'monthlyStats']);
 
             // Aprobación / rechazo de taxistas
-            Route::post('/admin/conductors/{conductor}/approve', [AdminController::class, 'approveConductor']);
-            Route::post('/admin/conductors/{conductor}/reject', [AdminController::class, 'rejectConductor']);
+            Route::post('/admin/conductors/{conductor}/approve', [AdministradorController::class, 'approveConductor']);
+            Route::post('/admin/conductors/{conductor}/reject', [AdministradorController::class, 'rejectConductor']);
 
             // Bajas (desactivar cuentas)
-            Route::patch('/admin/users/{user}/disable', [AdminController::class, 'disableUser']);
+            Route::patch('/admin/users/{user}/disable', [AdministradorController::class, 'disableUser']);
 
             // Informes
-            Route::get('/admin/conductors/{conductor}/earnings-report', [AdminController::class, 'conductorEarningsReport']);
-            Route::get('/admin/clients/{user}/trips-report', [AdminController::class, 'clientTripsReport']);
+            Route::get('/admin/conductors/{conductor}/earnings-report', [AdministradorController::class, 'conductorEarningsReport']);
+            Route::get('/admin/clients/{user}/trips-report', [AdministradorController::class, 'clientTripsReport']);
 
             // CRUDs expuestos como API Resources
             Route::apiResource('conductors', ConductorController::class);

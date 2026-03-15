@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-neutral-soft">
-    <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', isSidebarOpen ? 'w-64' : 'w-20' ]">
+    <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', barraLateralAbierta ? 'w-64' : 'w-20' ]">
       <div class="relative flex items-center p-4 border-b border-neutral-volcanic h-20">
-        <div v-if="isSidebarOpen" class="flex items-center space-x-2 flex-1 min-w-0">
+        <div v-if="barraLateralAbierta" class="flex items-center space-x-2 flex-1 min-w-0">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-auto object-contain">
           <span class="font-bold text-lanzarote-blue text-lg">LanzaTaxi</span>
         </div>
@@ -13,17 +13,17 @@
 
       <div class="relative p-4 border-b border-neutral-volcanic">
         <div class="flex items-center pr-12">
-          <div v-if="isSidebarOpen" class="overflow-hidden">
+          <div v-if="barraLateralAbierta" class="overflow-hidden">
             <p class="font-semibold text-neutral-dark truncate">{{ authStore.usuario?.name }}</p>
-            <p class="text-xs text-neutral-slate">{{ getUserRoleText() }}</p>
+            <p class="text-xs text-neutral-slate">{{ obtenerTextoRolUsuario() }}</p>
             <p v-if="authStore.isconductor" class="text-xs mt-1">
             </p>
           </div>
         </div>
 
-        <button @click="toggleSidebar" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="isSidebarOpen ? 'Contraer menú' : 'Expandir menú'">
+        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? 'Contraer menú' : 'Expandir menú'">
           <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path v-if="isSidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            <path v-if="barraLateralAbierta" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
           </svg>
         </button>
@@ -33,19 +33,19 @@
         <ul class="space-y-1">
           <li v-for="item in elementosMenu" :key="item.label">
             <button
-              @click="navigateTo(item.path)"
+              @click="navegarA(item.path)"
               :class="[ 'flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark hover:bg-neutral-soft' ]"
             >
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
               </svg>
-              <span v-if="isSidebarOpen" class="text-sm font-medium">{{ item.label }}</span>
+              <span v-if="barraLateralAbierta" class="text-sm font-medium">{{ item.label }}</span>
             </button>
           </li>
         </ul>
       </nav>
 
-      <div v-if="authStore.isconductor && isSidebarOpen" class="px-4 mt-4">
+      <div v-if="authStore.isconductor && barraLateralAbierta" class="px-4 mt-4">
         <button
           :class="[ 'w-full py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2', ]"
         >
@@ -54,41 +54,41 @@
       </div>
 
       <div class="absolute bottom-0 w-full p-4 border-t border-neutral-volcanic">
-        <button @click="logout" class="flex items-center space-x-3 p-3 rounded-lg text-neutral-dark hover:bg-red-50 hover:text-red-600 w-full transition-colors">
+        <button @click="cerrarSesion" class="flex items-center space-x-3 p-3 rounded-lg text-neutral-dark hover:bg-red-50 hover:text-red-600 w-full transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span v-if="isSidebarOpen" class="text-sm font-medium">Cerrar sesión</span>
+          <span v-if="barraLateralAbierta" class="text-sm font-medium">Cerrar sesión</span>
         </button>
       </div>
     </aside>
 
-    <div :class="['transition-all duration-300', isSidebarOpen ? 'ml-64' : 'ml-20']">
+    <div :class="['transition-all duration-300', barraLateralAbierta ? 'ml-64' : 'ml-20']">
       <header class="bg-white shadow-sm sticky top-0 z-30">
         <div class="flex justify-between items-center px-6 py-4">
           <div>
-            <h1 class="text-xl font-semibold text-neutral-dark">{{ getDashboardTitle() }}</h1>
+            <h1 class="text-xl font-semibold text-neutral-dark">{{ obtenerTituloPanel() }}</h1>
             <p class="text-sm text-neutral-slate">{{ new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
           </div>
 
           <div v-if="!authStore.isAdmin" class="flex items-center space-x-4">
             <div class="relative">
-              <button @click="showNotifications = !showNotifications" class="p-2 rounded-lg hover:bg-neutral-soft relative">
+              <button @click="mostrarNotificaciones = !mostrarNotificaciones" class="p-2 rounded-lg hover:bg-neutral-soft relative">
                 <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span v-if="unreadNotifications > 0" class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                  {{ unreadNotifications }}
+                <span v-if="notificacionesNoLeidas > 0" class="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                  {{ notificacionesNoLeidas }}
                 </span>
               </button>
 
-              <div v-if="showNotifications" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-volcanic">
+              <div v-if="mostrarNotificaciones" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-volcanic">
                 <div class="p-3 border-b border-neutral-volcanic">
                   <h3 class="font-semibold text-neutral-dark">Notificaciones</h3>
                 </div>
                 <div class="max-h-96 overflow-y-auto">
                   <div v-for="notif in notificaciones" :key="notif.id"
-                       @click="markAsRead(notif.id)"
+                       @click="marcarComoLeida(notif.id)"
                        :class="['p-3 border-b border-neutral-volcanic last:border-0 cursor-pointer hover:bg-neutral-soft', !notif.read && 'bg-lanzarote-blue/5']">
                     <p class="text-sm text-neutral-dark">{{ notif.text }}</p>
                     <p class="text-xs text-neutral-slate mt-1">{{ notif.time }}</p>
@@ -100,7 +100,7 @@
             <div class="flex items-center space-x-3">
               <div class="text-right hidden md:block">
                 <p class="text-sm font-medium text-neutral-dark">{{ authStore.usuario?.name }}</p>
-                <p class="text-xs text-neutral-slate">{{ getUserRoleText() }}</p>
+                <p class="text-xs text-neutral-slate">{{ obtenerTextoRolUsuario() }}</p>
               </div>
               <div class="w-10 h-10 rounded-full bg-lanzarote-blue text-white flex items-center justify-center font-bold">
                 {{ authStore.usuario?.name?.charAt(0) }}
@@ -159,21 +159,21 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useAuthStore } from '../Almacenes/almacenAutenticacion.js'
-import { useTripStore } from '../Almacenes/almacenViaje.js'
+import { useViajeStore } from '../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../Almacenes/almacenConductor.js'
 import { useAdminStore } from '../Almacenes/almacenAdministrador.js'
 import { router as inertiaRouter, usePage } from '@inertiajs/vue3'
 
 const authStore = useAuthStore()
-const viajeStore = useTripStore()
+const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
 const adminStore = useAdminStore()
 const page = usePage()
 
-let pendingPollIntervalId = null
+let idIntervaloSondeoPendientes = null
 
-const isSidebarOpen = ref(true)
-const showNotifications = ref(false)
+const barraLateralAbierta = ref(true)
+const mostrarNotificaciones = ref(false)
 const notificaciones = ref([
   { id: 1, text: 'Nueva solicitud de viaje', time: 'hace 2 min', read: false },
   { id: 2, text: 'Viaje completado con éxito', time: 'hace 15 min', read: false },
@@ -182,37 +182,37 @@ const notificaciones = ref([
 
 onMounted(() => {
   ;(async () => {
-    if (!authStore.initialized || !authStore.usuario) {
-      await authStore.checkAuth()
+    if (!authStore.inicializado || !authStore.usuario) {
+      await authStore.verificarAutenticacion()
     }
 
     if (authStore.ispasajero) {
-      viajeStore.fetchTrips()
+      viajeStore.obtenerViajes()
     } else if (authStore.isconductor) {
-      viajeStore.fetchTrips()
+      viajeStore.obtenerViajes()
       conductorStore.obtenerPerfilConductor()
     } else if (authStore.isAdmin) {
-      adminStore.fetchAllData()
+      adminStore.obtenerTodosLosDatos()
 
-      pendingPollIntervalId = setInterval(() => {
-        adminStore.obtenerConductoresPendientes({ openModalOnNew: true })
+      idIntervaloSondeoPendientes = setInterval(() => {
+        adminStore.obtenerConductoresPendientes({ abrirModalSiHayNuevos: true })
       }, 15000)
     }
   })()
 })
 
 onUnmounted(() => {
-  if (pendingPollIntervalId) clearInterval(pendingPollIntervalId)
+  if (idIntervaloSondeoPendientes) clearInterval(idIntervaloSondeoPendientes)
 })
 
-const logout = async () => {
+const cerrarSesion = async () => {
   // Eliminado control de estado en línea para conductor (excepto Mi Perfil)
-  authStore.logout()
+  authStore.cerrarSesion()
   inertiaRouter.visit('/')
 }
 
-const toggleSidebar = () => {
-  isSidebarOpen.value = !isSidebarOpen.value
+const alternarBarraLateral = () => {
+  barraLateralAbierta.value = !barraLateralAbierta.value
 }
 
 const rutaActual = computed(() => {
@@ -220,7 +220,7 @@ const rutaActual = computed(() => {
   return String(url).split('?')[0]
 })
 
-const getUserRoleText = () => {
+const obtenerTextoRolUsuario = () => {
   switch(authStore.usuario?.role) {
     case 'pasajero': return 'Pasajero'
     case 'conductor': return 'Taxista'
@@ -229,7 +229,7 @@ const getUserRoleText = () => {
   }
 }
 
-const getDashboardTitle = () => {
+const obtenerTituloPanel = () => {
   if (authStore.isAdmin) return 'Panel Administrador'
   if (authStore.isconductor) return 'Panel Taxista'
   if (authStore.ispasajero) return 'Panel Pasajero'
@@ -240,19 +240,19 @@ const getDashboardTitle = () => {
   return 'Panel Pasajero'
 }
 
-const unreadNotifications = computed(() => {
+const notificacionesNoLeidas = computed(() => {
   
   return notificaciones.value.filter(n => !n.read).length
 })
 
-const markAsRead = (id) => {
+const marcarComoLeida = (id) => {
   const notif = notificaciones.value.find(n => n.id === id)
   if (notif) notif.read = true
 }
 
-const navigateTo = (path) => {
+const navegarA = (path) => {
   inertiaRouter.visit(path)
-  if (!isSidebarOpen.value) toggleSidebar()
+  if (!barraLateralAbierta.value) alternarBarraLateral()
 }
 
 const elementosMenu = computed(() => {

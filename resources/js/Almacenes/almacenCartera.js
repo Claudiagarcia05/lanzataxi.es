@@ -1,111 +1,111 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-export const useWalletStore = defineStore('wallet', {
+export const useCarteraStore = defineStore('cartera', {
   state: () => ({
-    balance: 0,
-    transactions: [],
+    saldo: 0,
+    transacciones: [],
     cargando: false,
-    pendingDebt: 0
+    deudaPendiente: 0
   }),
 
   getters: {
-    formattedBalance: (state) => {
+    saldoFormateado: (state) => {
 
-      return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(state.balance)
+      return new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR' }).format(state.saldo)
     }
   },
 
   actions: {
-    async fetchBalance() {
+    async obtenerSaldo() {
       try {
-        const response = await axios.get('/api/wallet/balance')
-        this.balance = parseFloat(response.data.balance) || 0
-      } catch (error) {
-        console.error('Error fetching wallet balance:', error)
+        const respuesta = await axios.get('/api/wallet/balance')
+        this.saldo = parseFloat(respuesta.data.balance) || 0
+      } catch (errorCapturado) {
+        console.error('Error al obtener saldo de cartera:', errorCapturado)
       }
     },
 
-    async fetchDebtSummary() {
+    async obtenerResumenDeuda() {
       try {
-        const response = await axios.get('/api/wallet/debts')
-        this.pendingDebt = parseFloat(response.data.pending_debt) || 0
-      } catch (error) {
-        console.error('Error fetching debt summary:', error)
+        const respuesta = await axios.get('/api/wallet/debts')
+        this.deudaPendiente = parseFloat(respuesta.data.pending_debt) || 0
+      } catch (errorCapturado) {
+        console.error('Error al obtener resumen de deuda:', errorCapturado)
       }
     },
 
-    async fetchTransactions() {
+    async obtenerTransacciones() {
       try {
-        const response = await axios.get('/api/wallet/transactions')
-        this.transactions = response.data.map(t => ({
-          ...t,
-          amount: parseFloat(t.amount)
+        const respuesta = await axios.get('/api/wallet/transactions')
+        this.transacciones = respuesta.data.map((transaccion) => ({
+          ...transaccion,
+          amount: parseFloat(transaccion.amount)
         }))
-      } catch (error) {
-        console.error('Error fetching transactions:', error)
+      } catch (errorCapturado) {
+        console.error('Error al obtener transacciones:', errorCapturado)
       }
     },
 
-    async addFunds(amount) {
+    async anadirFondos(monto) {
       this.cargando = true
       try {
-        const response = await axios.post('/api/wallet/add', { 
-          amount: parseFloat(amount) 
+        const respuesta = await axios.post('/api/wallet/add', { 
+          amount: parseFloat(monto) 
         })
-        this.balance = parseFloat(response.data.new_balance)
-        this.transactions.unshift({
-          ...response.data.transaction,
-          amount: parseFloat(response.data.transaction.amount)
+        this.saldo = parseFloat(respuesta.data.new_balance)
+        this.transacciones.unshift({
+          ...respuesta.data.transaction,
+          amount: parseFloat(respuesta.data.transaction.amount)
         })
 
         return { success: true }
-      } catch (error) {
+      } catch (errorCapturado) {
 
         return { 
           success: false, 
-          error: error.response?.data?.message || 'Error al añadir fondos' 
+          error: errorCapturado.response?.data?.message || 'Error al anadir fondos' 
         }
       } finally {
         this.cargando = false
       }
     },
 
-    async withdrawFunds(amount) {
+    async retirarFondos(monto) {
       try {
-        const response = await axios.post('/api/wallet/withdraw', { 
-          amount: parseFloat(amount) 
+        const respuesta = await axios.post('/api/wallet/withdraw', { 
+          amount: parseFloat(monto) 
         })
-        this.balance = parseFloat(response.data.new_balance)
-        this.transactions.unshift({
-          ...response.data.transaction,
-          amount: parseFloat(response.data.transaction.amount)
+        this.saldo = parseFloat(respuesta.data.new_balance)
+        this.transacciones.unshift({
+          ...respuesta.data.transaction,
+          amount: parseFloat(respuesta.data.transaction.amount)
         })
 
         return { success: true }
-      } catch (error) {
+      } catch (errorCapturado) {
 
         return { 
           success: false, 
-          error: error.response?.data?.message || 'Error al retirar fondos' 
+          error: errorCapturado.response?.data?.message || 'Error al retirar fondos' 
         }
       }
     },
 
-    async useFunds(amount, viajeId) {
+    async usarFondos(monto, viajeId) {
       try {
-        const response = await axios.post('/api/wallet/use', { 
-          amount: parseFloat(amount), 
+        const respuesta = await axios.post('/api/wallet/use', { 
+          amount: parseFloat(monto), 
           viaje_id: viajeId 
         })
-        this.balance = parseFloat(response.data.new_balance)
+        this.saldo = parseFloat(respuesta.data.new_balance)
 
         return { success: true }
-      } catch (error) {
+      } catch (errorCapturado) {
 
         return { 
           success: false, 
-          error: error.response?.data?.message || 'Error al usar fondos' 
+          error: errorCapturado.response?.data?.message || 'Error al usar fondos' 
         }
       }
     }

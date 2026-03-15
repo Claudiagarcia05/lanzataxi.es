@@ -16,11 +16,11 @@
 
                 $usuario = $solicitud->user();
                 
-                $favorites = $usuario->rutaFavoritas()
+                $favoritos = $usuario->rutaFavoritas()
                     ->orderBy('order')
                     ->get();
 
-                return response()->json($favorites);
+                return response()->json($favoritos);
             } catch (\Exception $e) {
                 \Log::error('Error al cargar favoritos: ' . $e->getMessage(), [
                     'exception' => $e,
@@ -32,18 +32,18 @@
         }
 
         public function store(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
                 'address' => 'required|string|max:255',
                 'lat' => 'required|numeric',
                 'lng' => 'required|numeric',
             ]);
 
-            $maxOrder = $solicitud->user()->rutaFavoritas()->max('order') ?? -1;
+            $ordenMaximo = $solicitud->user()->rutaFavoritas()->max('order') ?? -1;
 
             $favorite = $solicitud->user()->rutaFavoritas()->create([
-                ...$validated,
-                'order' => $maxOrder + 1,
+                ...$validado,
+                'order' => $ordenMaximo + 1,
             ]);
 
             return response()->json($favorite, 201);
@@ -55,7 +55,7 @@
                 return response()->json(['message' => 'No autorizado'], 403);
             }
 
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'name' => 'sometimes|string|max:255',
                 'address' => 'sometimes|string|max:255',
                 'lat' => 'sometimes|numeric',
@@ -63,7 +63,7 @@
                 'order' => 'sometimes|integer|min:0',
             ]);
 
-            $favorite->update($validated);
+            $favorite->update($validado);
 
             return response()->json($favorite);
         }
@@ -80,13 +80,13 @@
         }
 
         public function reorder(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'favorites' => 'required|array',
                 'favorites.*.id' => 'required|exists:rutas_favoritas,id',
                 'favorites.*.order' => 'required|integer|min:0',
             ]);
 
-            foreach ($validated['favorites'] as $item) {
+            foreach ($validado['favorites'] as $item) {
                 RutaFavorita::where('id', $item['id'])
                     ->where('user_id', $solicitud->user()->id)
                     ->update(['order' => $item['order']]);

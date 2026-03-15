@@ -16,8 +16,8 @@
                 return response()->json(['message' => 'conductor profile not found'], 404);
             }
 
-            $taxiStatus = $conductor->is_active ? 'available' : 'offline';
-            $taxi = $conductor->ensureTaxiExists($taxiStatus);
+            $estadoTaxi = $conductor->is_active ? 'available' : 'offline';
+            $taxi = $conductor->ensureTaxiExists($estadoTaxi);
             if ($conductor->is_active && $taxi->status === 'offline') {
                 $taxi->update(['status' => 'available']);
             }
@@ -35,16 +35,16 @@
         }
 
         public function store(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'user_id' => 'required|exists:users,id',
                 'license_number' => 'required|string|unique:conductors,license_number',
                 'rating' => 'nullable|numeric|min:0|max:5',
                 'is_active' => 'nullable|boolean',
             ]);
 
-            $conductor = conductor::create($validated);
+            $conductor = conductor::create($validado);
 
-            if (($validated['is_active'] ?? false) === true) {
+            if (($validado['is_active'] ?? false) === true) {
                 $conductor->ensureTaxiExists('available');
             }
 
@@ -57,13 +57,13 @@
         }
 
         public function update(Request $solicitud, conductor $conductor) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'license_number' => 'sometimes|string|unique:conductors,license_number,' . $conductor->id,
                 'rating' => 'sometimes|numeric|min:0|max:5',
                 'is_active' => 'sometimes|boolean',
             ]);
 
-            $conductor->update($validated);
+            $conductor->update($validado);
 
             return response()->json($conductor);
         }
@@ -89,41 +89,41 @@
                 }
             }
 
-            $now = Carbon::now();
+            $ahora = Carbon::now();
 
-            $monthKey = $now->format('Y-m');
-            if (($conductor->online_month ?? null) !== $monthKey) {
-                $conductor->online_month = $monthKey;
+            $claveMes = $ahora->format('Y-m');
+            if (($conductor->online_month ?? null) !== $claveMes) {
+                $conductor->online_month = $claveMes;
                 $conductor->online_seconds_month = 0;
                 if ($conductor->is_active) {
-                    $conductor->online_since = $now;
+                    $conductor->online_since = $ahora;
                 }
                 $conductor->save();
             }
 
             if ($conductor->is_active && !$conductor->online_since) {
-                $conductor->online_since = $now;
+                $conductor->online_since = $ahora;
                 $conductor->save();
             }
 
-            $connectedSeconds = (int) ($conductor->online_seconds ?? 0);
+            $segundosConectado = (int) ($conductor->online_seconds ?? 0);
             if ($conductor->is_active && $conductor->online_since) {
-                $connectedSeconds += $conductor->online_since->diffInSeconds($now);
+                $segundosConectado += $conductor->online_since->diffInSeconds($ahora);
             }
 
-            $connectedSecondsMonth = (int) ($conductor->online_seconds_month ?? 0);
+            $segundosConectadoMes = (int) ($conductor->online_seconds_month ?? 0);
             if ($conductor->is_active && $conductor->online_since) {
-                $connectedSecondsMonth += $conductor->online_since->diffInSeconds($now);
+                $segundosConectadoMes += $conductor->online_since->diffInSeconds($ahora);
             }
 
             return response()->json([
                 'is_active' => (bool) $conductor->is_active,
                 'rating' => $conductor->rating,
                 'taxi' => $conductor->taxi,
-                'connected_seconds' => $connectedSeconds,
-                'connected_hours' => round($connectedSeconds / 3600, 2),
-                'connected_seconds_month' => $connectedSecondsMonth,
-                'connected_hours_month' => round($connectedSecondsMonth / 3600, 2),
+                'connected_seconds' => $segundosConectado,
+                'connected_hours' => round($segundosConectado / 3600, 2),
+                'connected_seconds_month' => $segundosConectadoMes,
+                'connected_hours_month' => round($segundosConectadoMes / 3600, 2),
                 'online_month' => $conductor->online_month,
                 'online_since' => $conductor->online_since?->toIso8601String(),
             ]);
@@ -137,13 +137,13 @@
                 return response()->json(['message' => 'conductor profile not found'], 404);
             }
 
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'is_active' => 'required|boolean',
             ]);
 
-            $conductor->update(['is_active' => $validated['is_active']]);
+            $conductor->update(['is_active' => $validado['is_active']]);
 
-            if ($validated['is_active'] === true) {
+            if ($validado['is_active'] === true) {
                 $taxi = $conductor->ensureTaxiExists('available');
                 if ($taxi->status === 'offline') {
                     $taxi->update(['status' => 'available']);
@@ -159,16 +159,16 @@
         }
 
         public function nearbyconductors(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'lat' => 'required|numeric',
                 'lng' => 'required|numeric',
                 'radius' => 'nullable|numeric|min:1|max:50',
             ]);
 
-            $radius = $validated['radius'] ?? 5;
+            $radio = $validado['radius'] ?? 5;
 
             try {
-                $conductors = conductor::with(['user:id,name', 'taxi:id,conductor_id,plate,model,status'])
+                $conductores = conductor::with(['user:id,name', 'taxi:id,conductor_id,plate,model,status'])
                     ->where('is_active', true)
                     ->whereHas('user')
                     ->whereHas('taxi', function ($query) {
@@ -193,7 +193,7 @@
                     })
                     ->values();
 
-                return response()->json($conductors);
+                return response()->json($conductores);
             } catch (\Exception $e) {
                 \Log::error('Error en nearbyconductors: ' . $e->getMessage());
                 

@@ -1,8 +1,8 @@
 <template>
   <div class="min-h-screen bg-neutral-soft">
-    <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', isSidebarOpen ? 'w-64' : 'w-20' ]">
+    <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', barraLateralAbierta ? 'w-64' : 'w-20' ]">
       <div class="relative flex items-center p-4 border-b border-neutral-volcanic h-20">
-        <div v-if="isSidebarOpen" class="flex items-center space-x-2 flex-1 min-w-0">
+        <div v-if="barraLateralAbierta" class="flex items-center space-x-2 flex-1 min-w-0">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-auto object-contain">
           <span class="font-bold text-lanzarote-blue text-lg">LanzaTaxi</span>
         </div>
@@ -13,15 +13,15 @@
 
       <div class="relative p-4 border-b border-neutral-volcanic">
         <div class="flex items-center space-x-3 pr-12">
-          <div v-if="isSidebarOpen" class="overflow-hidden">
+          <div v-if="barraLateralAbierta" class="overflow-hidden">
             <p class="font-semibold text-neutral-dark truncate">{{ conductorStore.perfil?.name || authStore.usuario?.name }}</p>
             <p class="text-xs text-neutral-slate">Taxista</p>
           </div>
         </div>
 
-        <button @click="toggleSidebar" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="isSidebarOpen ? 'Contraer menú' : 'Expandir menú'">
+        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? 'Contraer menú' : 'Expandir menú'">
           <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path v-if="isSidebarOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+            <path v-if="barraLateralAbierta" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
           </svg>
         </button>
@@ -30,27 +30,27 @@
       <nav class="p-4">
         <ul class="space-y-1">
           <li v-for="item in elementosMenu" :key="item.label">
-            <button @click="navigateTo(item.path)" :class="['flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark']">
+            <button @click="navegarA(item.path)" :class="['flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark']">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
               </svg>
-              <span v-if="isSidebarOpen" class="text-sm font-medium">{{ item.label }}</span>
+              <span v-if="barraLateralAbierta" class="text-sm font-medium">{{ item.label }}</span>
             </button>
           </li>
         </ul>
       </nav>
 
       <div class="absolute bottom-0 w-full p-4 border-t border-neutral-volcanic">
-        <button @click="logout" class="flex items-center space-x-3 p-3 rounded-lg text-neutral-dark hover:bg-red-50 hover:text-red-600 w-full transition-colors">
+        <button @click="cerrarSesion" class="flex items-center space-x-3 p-3 rounded-lg text-neutral-dark hover:bg-red-50 hover:text-red-600 w-full transition-colors">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span v-if="isSidebarOpen" class="text-sm font-medium">Cerrar sesión</span>
+          <span v-if="barraLateralAbierta" class="text-sm font-medium">Cerrar sesión</span>
         </button>
       </div>
     </aside>
 
-    <div :class="['transition-all duration-300', isSidebarOpen ? 'ml-64' : 'ml-20']">
+    <div :class="['transition-all duration-300', barraLateralAbierta ? 'ml-64' : 'ml-20']">
       <header class="bg-white shadow-sm sticky top-0 z-30">
         <div class="flex justify-between items-center px-6 py-4">
           <div>
@@ -72,37 +72,37 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { router as inertiaRouter, usePage } from '@inertiajs/vue3'
 import { useAuthStore } from '../Almacenes/almacenAutenticacion.js'
-import { useTripStore } from '../Almacenes/almacenViaje.js'
+import { useViajeStore } from '../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../Almacenes/almacenConductor.js'
 
 const authStore = useAuthStore()
-const viajeStore = useTripStore()
+const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
 const page = usePage()
 
-const isSidebarOpen = ref(true)
+const barraLateralAbierta = ref(true)
 
-const toggleSidebar = () => {
-  isSidebarOpen.value = !isSidebarOpen.value
+const alternarBarraLateral = () => {
+  barraLateralAbierta.value = !barraLateralAbierta.value
 }
 
 const rutaActual = computed(() => page.url)
 
 onMounted(() => {
-  if (!authStore.initialized) {
-    authStore.checkAuth().finally(() => {
-      viajeStore.fetchTrips()
-      viajeStore.startPolling(5000)
+  if (!authStore.inicializado) {
+    authStore.verificarAutenticacion().finally(() => {
+      viajeStore.obtenerViajes()
+      viajeStore.iniciarSondeo(5000)
     })
   } else {
-    viajeStore.fetchTrips()
-    viajeStore.startPolling(5000)
+    viajeStore.obtenerViajes()
+    viajeStore.iniciarSondeo(5000)
   }
   conductorStore.obtenerPerfilConductor()
 })
 
 onUnmounted(() => {
-  viajeStore.stopPolling()
+  viajeStore.detenerSondeo()
 })
 
 const elementosMenu = computed(() => [
@@ -126,15 +126,15 @@ const elementosMenu = computed(() => [
   },
 ])
 
-const navigateTo = (path) => {
+const navegarA = (path) => {
   inertiaRouter.visit(path)
 }
 
-const logout = async () => {
+const cerrarSesion = async () => {
   if (conductorStore.estaEnLinea) {
-    await conductorStore.setOnlineStatus(false)
+    await conductorStore.establecerEstadoEnLinea(false)
   }
-  await authStore.logout()
+  await authStore.cerrarSesion()
   inertiaRouter.visit('/')
 }
 </script>

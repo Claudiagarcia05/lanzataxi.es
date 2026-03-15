@@ -1,31 +1,31 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
-const normalizeAvatarUrl = (avatar) => {
+const normalizarUrlAvatar = (avatar) => {
     if (typeof avatar !== 'string') return avatar
 
-    const trimmed = avatar.trim()
-    if (!trimmed) return null
+    const avatarRecortado = avatar.trim()
+    if (!avatarRecortado) return null
 
-    if (/^https?:\/\//i.test(trimmed)) return trimmed
-    if (trimmed.startsWith('/storage/')) return trimmed
-    if (trimmed.startsWith('storage/')) return `/${trimmed}`
+    if (/^https?:\/\//i.test(avatarRecortado)) return avatarRecortado
+    if (avatarRecortado.startsWith('/storage/')) return avatarRecortado
+    if (avatarRecortado.startsWith('storage/')) return `/${avatarRecortado}`
 
-    if (trimmed.startsWith('/avatars/')) return `/storage${trimmed}`
+    if (avatarRecortado.startsWith('/avatars/')) return `/storage${avatarRecortado}`
 
-    if (!trimmed.startsWith('/')) return `/storage/${trimmed}`
+    if (!avatarRecortado.startsWith('/')) return `/storage/${avatarRecortado}`
 
-    return trimmed
+    return avatarRecortado
 }
 
-const normalizeUser = (user) => {
-    if (!user || typeof user !== 'object') return user
+const normalizarUsuario = (usuario) => {
+    if (!usuario || typeof usuario !== 'object') return usuario
 
-    if (!('avatar' in user)) return user
+    if (!('avatar' in usuario)) return usuario
 
     return {
-        ...user,
-        avatar: normalizeAvatarUrl(user.avatar),
+        ...usuario,
+        avatar: normalizarUrlAvatar(usuario.avatar),
     }
 }
 
@@ -35,11 +35,11 @@ export const useAuthStore = defineStore('auth', {
         token: localStorage.getItem('token') || null,
         cargando: false,
         error: null,
-        initialized: false 
+        inicializado: false 
     }),
 
     getters: {
-        isAuthenticated: (state) => !!state.token,
+        estaAutenticado: (state) => !!state.token,
         ispasajero: (state) => state.usuario?.role === 'pasajero',
         isconductor: (state) => state.usuario?.role === 'conductor',
         isAdmin: (state) => state.usuario?.role === 'admin',
@@ -48,32 +48,32 @@ export const useAuthStore = defineStore('auth', {
     },
 
     actions: {
-        async login(credentials) {
+        async iniciarSesion(credenciales) {
             this.cargando = true
             this.error = null
 
             try {
-                const response = await axios.post('/api/login', credentials)
-                const { token, user: usuario } = response.data
-                const usuarioNormalizado = normalizeUser(usuario)
+                const respuesta = await axios.post('/api/login', credenciales)
+                const { token, user: usuario } = respuesta.data
+                const usuarioNormalizado = normalizarUsuario(usuario)
 
                 this.usuario = usuarioNormalizado
                 this.token = token
                 localStorage.setItem('token', token)
                 localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
 
-                const expirationDate = new Date()
-                expirationDate.setDate(expirationDate.getDate() + 7)
-                document.cookie = `token=${token}; path=/; SameSite=Lax; expires=${expirationDate.toUTCString()}`
+                const fechaExpiracion = new Date()
+                fechaExpiracion.setDate(fechaExpiracion.getDate() + 7)
+                document.cookie = `token=${token}; path=/; SameSite=Lax; expires=${fechaExpiracion.toUTCString()}`
 
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
                 return { success: true }
-            } catch (error) {
-                const status = error.response?.status
-                const message = error.response?.data?.message || 'No se pudo iniciar sesión'
+            } catch (errorCapturado) {
+                const estado = errorCapturado.response?.status
+                const mensaje = errorCapturado.response?.data?.message || 'No se pudo iniciar sesión'
 
-                if (status === 401) {
+                if (estado === 401) {
                     this.usuario = null
                     this.token = null
                     localStorage.removeItem('token')
@@ -81,47 +81,47 @@ export const useAuthStore = defineStore('auth', {
                     delete axios.defaults.headers.common['Authorization']
                 }
 
-                this.error = message
+                this.error = mensaje
 
-                return { success: false, error: message }
+                return { success: false, error: mensaje }
             } finally {
                 this.cargando = false
             }
         },
 
-        async register(datosUsuario) {
+        async registrar(datosUsuario) {
             this.cargando = true
             this.error = null
 
             try {
-                const response = await axios.post('/api/register', datosUsuario)
-                const { token, user: usuario } = response.data
-                const usuarioNormalizado = normalizeUser(usuario)
+                const respuesta = await axios.post('/api/register', datosUsuario)
+                const { token, user: usuario } = respuesta.data
+                const usuarioNormalizado = normalizarUsuario(usuario)
 
                 this.usuario = usuarioNormalizado
                 this.token = token
                 localStorage.setItem('token', token)
                 localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
 
-                const expirationDate = new Date()
-                expirationDate.setDate(expirationDate.getDate() + 7)
-                document.cookie = `token=${token}; path=/; SameSite=Lax; expires=${expirationDate.toUTCString()}`
+                const fechaExpiracion = new Date()
+                fechaExpiracion.setDate(fechaExpiracion.getDate() + 7)
+                document.cookie = `token=${token}; path=/; SameSite=Lax; expires=${fechaExpiracion.toUTCString()}`
 
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
                 return { success: true, usuario: usuarioNormalizado }
-            } catch (error) {
-                const message = error.response?.data?.message || 'No se pudo registrar el usuario'
-                const errors = error.response?.data?.errors || {}
-                this.error = message
+            } catch (errorCapturado) {
+                const mensaje = errorCapturado.response?.data?.message || 'No se pudo registrar el usuario'
+                const errores = errorCapturado.response?.data?.errors || {}
+                this.error = mensaje
 
-                return { success: false, error: message, errors }
+                return { success: false, error: mensaje, errors: errores }
             } finally {
                 this.cargando = false
             }
         },
 
-        async logout() {
+        async cerrarSesion() {
             try {
                 await axios.post('/logout')
             } catch {
@@ -143,13 +143,13 @@ export const useAuthStore = defineStore('auth', {
             document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
         },
 
-        async checkAuth() {
-            const getCookie = (name) => {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
+        async verificarAutenticacion() {
+            const obtenerCookie = (nombreCookie) => {
+                const valorCookie = `; ${document.cookie}`
+                const partesCookie = valorCookie.split(`; ${nombreCookie}=`)
+                if (partesCookie.length === 2) return partesCookie.pop().split(';').shift()
 
-                return null;
+                return null
             }
 
             let token = localStorage.getItem('token')
@@ -158,10 +158,10 @@ export const useAuthStore = defineStore('auth', {
             if (!token && !cadenaUsuario) {
                 try {
                     const response = await axios.get('/api/me')
-                    const usuarioNormalizado = normalizeUser(response.data)
+                    const usuarioNormalizado = normalizarUsuario(response.data)
                     this.usuario = usuarioNormalizado
                     localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
-                    this.initialized = true
+                    this.inicializado = true
 
                     return true
                 } catch {
@@ -169,7 +169,7 @@ export const useAuthStore = defineStore('auth', {
             }
 
             if (!token) {
-                token = getCookie('token')
+                token = obtenerCookie('token')
                 if (token) {
                     console.log('Token recuperado desde cookie')
                     localStorage.setItem('token', token)
@@ -184,10 +184,10 @@ export const useAuthStore = defineStore('auth', {
                     console.log('Sincronizando usuario desde el servidor...')
                     try {
                         const response = await axios.get('/api/me')
-                        const usuarioNormalizado = normalizeUser(response.data)
+                        const usuarioNormalizado = normalizarUsuario(response.data)
                         this.usuario = usuarioNormalizado
                         localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
-                        this.initialized = true
+                        this.inicializado = true
 
                         return true
                     } catch (error) {
@@ -196,39 +196,39 @@ export const useAuthStore = defineStore('auth', {
                         this.usuario = null
                         localStorage.removeItem('token')
                         delete axios.defaults.headers.common['Authorization']
-                        this.initialized = true
+                        this.inicializado = true
 
                         return false
                     }
                 } else {
                     try {
                         const usuario = JSON.parse(cadenaUsuario)
-                        const usuarioNormalizado = normalizeUser(usuario)
+                        const usuarioNormalizado = normalizarUsuario(usuario)
                         this.usuario = usuarioNormalizado
                         localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
-                        this.initialized = true
+                        this.inicializado = true
 
                         return true
                     } catch (error) {
-                        console.error('Error parsing usuario from localStorage:', error)
+                        console.error('Error al parsear usuario desde localStorage:', error)
                         this.usuario = null
                         this.token = null
                         localStorage.removeItem('token')
                         localStorage.removeItem('usuario')
                         delete axios.defaults.headers.common['Authorization']
-                        this.initialized = true
+                        this.inicializado = true
 
                         return false
                     }
                 }
             }
             
-            this.initialized = true
+            this.inicializado = true
 
             return false
         },
 
-        getDashboardRoute() {
+        obtenerRutaDashboard() {
             if (!this.usuario) return '/'
             
             switch (this.usuario.role) {
@@ -245,12 +245,12 @@ export const useAuthStore = defineStore('auth', {
             }
         },
 
-        async syncUser() {
+        async sincronizarUsuario() {
             if (!this.token) return false
 
             try {
                 const response = await axios.get('/api/me')
-                const usuarioNormalizado = normalizeUser(response.data)
+                const usuarioNormalizado = normalizarUsuario(response.data)
                 this.usuario = usuarioNormalizado
                 localStorage.setItem('usuario', JSON.stringify(usuarioNormalizado))
                 console.log('Usuario sincronizado desde el servidor:', this.usuario)

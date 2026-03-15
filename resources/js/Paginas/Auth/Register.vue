@@ -2,7 +2,7 @@
   <!-- Página de registro: se limita a mostrar el modal de autenticación centrado -->
   <div class="min-h-screen flex items-center justify-center px-4">
     <!-- El modal controla la UI de registro; aquí solo gestionamos apertura/cierre -->
-    <ModalAutenticacion v-model="show" />
+    <ModalAutenticacion v-model="modalVisible" />
   </div>
 </template>
 
@@ -15,10 +15,10 @@ import { router as inertiaRouter } from '@inertiajs/vue3'
 import ModalAutenticacion from '../../Componentes/Autenticacion/ModalAutenticacion.vue'
 
 // El modal inicia abierto al entrar en la ruta
-const show = ref(true)
+const modalVisible = ref(true)
 
-watch(show, (isOpen) => {
+watch(modalVisible, (estaAbierto) => {
   // Si el usuario cierra el modal, volver a la landing
-  if (!isOpen) inertiaRouter.visit('/')
+  if (!estaAbierto) inertiaRouter.visit('/')
 })
 </script>

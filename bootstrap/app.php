@@ -15,7 +15,7 @@
             $middleware->statefulApi();
 
             $middleware->append([
-                \App\Http\Middleware\SecurityHeaders::class,
+                \App\Http\Middleware\EncabezadosSeguridad::class,
             ]);
 
             $middleware->web(append: [
@@ -24,9 +24,9 @@
             ]);
 
             $middleware->alias([
-                'role' => \App\Http\Middleware\RoleMiddleware::class,
-                'account.enabled' => \App\Http\Middleware\EnsureAccountEnabled::class,
-                'conductor.approved' => \App\Http\Middleware\EnsureConductorApproved::class,
+                'role' => \App\Http\Middleware\MiddlewareRol::class,
+                'account.enabled' => \App\Http\Middleware\VerificarCuentaHabilitada::class,
+                'conductor.approved' => \App\Http\Middleware\VerificarConductorAprobado::class,
             ]);
         })
         ->withExceptions(function (Exceptions $exceptions): void {

@@ -62,7 +62,7 @@
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('checkLg')"></svg>
                 Aceptar
               </button>
-              <button @click="viajeStore.dismissOffer(solicitud.id)" class="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors">
+              <button @click="viajeStore.descartarOferta(solicitud.id)" class="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors">
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('xLg')"></svg>
                 Cancelar
               </button>
@@ -112,11 +112,11 @@
         </div>
 
         <div class="flex space-x-3">
-          <button v-if="viaje.estado === 'accepted'" @click="startTrip(viaje.id)" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600">
+          <button v-if="viaje.estado === 'accepted'" @click="iniciarViaje(viaje.id)" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('playFill')"></svg>
             Iniciar viaje
           </button>
-          <button v-if="viaje.estado === 'in_progress'" @click="completeTrip(viaje.id)" class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black">
+          <button v-if="viaje.estado === 'in_progress'" @click="completarViaje(viaje.id)" class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('check2Circle')"></svg>
             Completar viaje
           </button>
@@ -183,21 +183,21 @@
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('carFront')"></svg>
             Modelo
           </p>
-          <p class="font-medium">{{ conductorStore.perfil.vehicle.model }}</p>
+          <p class="font-medium">{{ conductorStore.perfil.vehiculo.modelo }}</p>
         </div>
         <div>
           <p class="text-xs text-neutral-slate">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('upcScan')"></svg>
             Matrícula
           </p>
-          <p class="font-medium">{{ conductorStore.perfil.vehicle.plate }}</p>
+          <p class="font-medium">{{ conductorStore.perfil.vehiculo.matricula }}</p>
         </div>
         <div>
           <p class="text-xs text-neutral-slate">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('people')"></svg>
             Capacidad
           </p>
-          <p class="font-medium">{{ conductorStore.perfil.vehicle.capacity }} personas</p>
+          <p class="font-medium">{{ conductorStore.perfil.vehiculo.capacidad }} personas</p>
         </div>
       </div>
     </div>
@@ -210,7 +210,7 @@
 import { computed } from 'vue'
 import DisposicionConductor from '../../Disposiciones/DisposicionConductor.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
-import { useTripStore } from '../../Almacenes/almacenViaje.js'
+import { useViajeStore } from '../../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../../Almacenes/almacenConductor.js'
 
 import svgCarFront from 'bootstrap-icons/icons/car-front.svg?raw'
@@ -232,7 +232,7 @@ import svgUpcScan from 'bootstrap-icons/icons/upc-scan.svg?raw'
 import svgPeople from 'bootstrap-icons/icons/people.svg?raw'
 
 const authStore = useAuthStore()
-const viajeStore = useTripStore()
+const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
 
 const iconPaths = {
@@ -308,12 +308,12 @@ const aceptarViaje = async (viajeId) => {
   await conductorStore.aceptarViaje(viajeId)
 }
 
-const startTrip = async (viajeId) => {
-  await viajeStore.startTrip(viajeId)
+const iniciarViaje = async (viajeId) => {
+  await viajeStore.iniciarViaje(viajeId)
 }
 
-const completeTrip = async (viajeId) => {
-  await viajeStore.completeTrip(viajeId)
+const completarViaje = async (viajeId) => {
+  await viajeStore.completarViaje(viajeId)
   await conductorStore.actualizarEstadisticas()
 }
 </script>

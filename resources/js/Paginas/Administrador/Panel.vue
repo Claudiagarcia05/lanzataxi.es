@@ -11,13 +11,13 @@
         <div class="flex items-center gap-3">
           <div>
             <label class="block text-xs text-neutral-slate mb-1">Año</label>
-            <select v-model.number="selectedYear" @change="cargarMensual" class="rounded-lg border-neutral-volcanic text-sm">
-              <option v-for="y in years" :key="y" :value="y">{{ y }}</option>
+            <select v-model.number="anioSeleccionado" @change="cargarMensual" class="rounded-lg border-neutral-volcanic text-sm">
+              <option v-for="y in anios" :key="y" :value="y">{{ y }}</option>
             </select>
           </div>
           <div>
             <label class="block text-xs text-neutral-slate mb-1">Mes</label>
-            <select v-model.number="selectedMonth" @change="cargarMensual" class="rounded-lg border-neutral-volcanic text-sm">
+            <select v-model.number="mesSeleccionado" @change="cargarMensual" class="rounded-lg border-neutral-volcanic text-sm">
               <option v-for="m in 12" :key="m" :value="m">{{ String(m).padStart(2, '0') }}</option>
             </select>
           </div>
@@ -27,11 +27,11 @@
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-neutral-soft rounded-xl p-4">
           <p class="text-xs text-neutral-slate">Viajes completados</p>
-          <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.estadisticasMensuales.completedTrips }}</p>
+          <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.estadisticasMensuales.viajesCompletados }}</p>
         </div>
         <div class="bg-neutral-soft rounded-xl p-4">
           <p class="text-xs text-neutral-slate">Viajes cancelados</p>
-          <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.estadisticasMensuales.cancelledTrips }}</p>
+          <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.estadisticasMensuales.viajesCancelados }}</p>
         </div>
         <div class="bg-neutral-soft rounded-xl p-4">
           <p class="text-xs text-neutral-slate">Ganancias</p>
@@ -42,7 +42,7 @@
       <div class="mt-6 bg-neutral-soft rounded-xl p-4">
         <p class="text-xs text-neutral-slate mb-3">Evolución diaria del mes</p>
         <div class="h-64">
-          <canvas ref="chartCanvas"></canvas>
+          <canvas ref="lienzoGrafico"></canvas>
         </div>
       </div>
     </div>
@@ -60,63 +60,63 @@ import Chart from 'chart.js/auto'
 const authStore = useAuthStore()
 const adminStore = useAdminStore()
 
-const chartCanvas = ref(null)
-let chartInstance = null
+const lienzoGrafico = ref(null)
+let instanciaGrafico = null
 
 onMounted(async () => {
   await adminStore.obtenerEstadisticasMensuales({
-    year: adminStore.estadisticasMensuales.year,
-    month: adminStore.estadisticasMensuales.month,
+    anio: adminStore.estadisticasMensuales.anio,
+    mes: adminStore.estadisticasMensuales.mes,
   })
-  selectedYear.value = adminStore.estadisticasMensuales.year
-  selectedMonth.value = adminStore.estadisticasMensuales.month
+  anioSeleccionado.value = adminStore.estadisticasMensuales.anio
+  mesSeleccionado.value = adminStore.estadisticasMensuales.mes
 
   await nextTick()
-  renderOrUpdateChart()
+  renderizarOActualizarGrafico()
 })
 
 onBeforeUnmount(() => {
-  if (chartInstance) {
-    chartInstance.destroy()
-    chartInstance = null
+  if (instanciaGrafico) {
+    instanciaGrafico.destroy()
+    instanciaGrafico = null
   }
 })
 
-const selectedYear = ref(adminStore.estadisticasMensuales.year)
-const selectedMonth = ref(adminStore.estadisticasMensuales.month)
+const anioSeleccionado = ref(adminStore.estadisticasMensuales.anio)
+const mesSeleccionado = ref(adminStore.estadisticasMensuales.mes)
 
-const years = computed(() => {
-  const minY = adminStore.estadisticasMensuales.minYear
-  const maxY = adminStore.estadisticasMensuales.maxYear
+const anios = computed(() => {
+  const minY = adminStore.estadisticasMensuales.anioMinimo
+  const maxY = adminStore.estadisticasMensuales.anioMaximo
   const out = []
   for (let y = minY; y <= maxY; y++) out.push(y)
   return out
 })
 
 const cargarMensual = async () => {
-  await adminStore.obtenerEstadisticasMensuales({ year: selectedYear.value, month: selectedMonth.value })
+  await adminStore.obtenerEstadisticasMensuales({ anio: anioSeleccionado.value, mes: mesSeleccionado.value })
   await nextTick()
-  renderOrUpdateChart()
+  renderizarOActualizarGrafico()
 }
 
-const renderOrUpdateChart = () => {
-  const daily = adminStore.estadisticasMensuales.daily
-  const labels = daily?.labels || []
-  const completedTrips = daily?.completedTrips || []
-  const cancelledTrips = daily?.cancelledTrips || []
-  const revenue = daily?.revenue || []
+const renderizarOActualizarGrafico = () => {
+  const diario = adminStore.estadisticasMensuales.diario
+  const etiquetas = diario?.etiquetas || []
+  const viajesCompletados = diario?.viajesCompletados || []
+  const viajesCancelados = diario?.viajesCancelados || []
+  const ingresos = diario?.ingresos || []
 
-  const trips = labels.map((_, idx) => Number(completedTrips[idx] || 0) + Number(cancelledTrips[idx] || 0))
+  const viajes = etiquetas.map((_, idx) => Number(viajesCompletados[idx] || 0) + Number(viajesCancelados[idx] || 0))
 
-  const canvas = chartCanvas.value
-  if (!canvas) return
+  const lienzo = lienzoGrafico.value
+  if (!lienzo) return
 
   const data = {
-    labels,
+    labels: etiquetas,
     datasets: [
       {
         label: 'Ganancias (€)',
-        data: revenue,
+        data: ingresos,
         borderColor: '#244194',
         backgroundColor: 'transparent',
         borderWidth: 2,
@@ -126,7 +126,7 @@ const renderOrUpdateChart = () => {
       },
       {
         label: 'Viajes',
-        data: trips,
+        data: viajes,
         borderColor: '#FDD342',
         backgroundColor: 'transparent',
         borderWidth: 2,
@@ -163,16 +163,16 @@ const renderOrUpdateChart = () => {
     },
   }
 
-  if (!chartInstance) {
-    chartInstance = new Chart(canvas, {
+  if (!instanciaGrafico) {
+    instanciaGrafico = new Chart(lienzo, {
       type: 'line',
       data,
       options,
     })
   } else {
-    chartInstance.data = data
-    chartInstance.options = options
-    chartInstance.update()
+    instanciaGrafico.data = data
+    instanciaGrafico.options = options
+    instanciaGrafico.update()
   }
 }
 </script>

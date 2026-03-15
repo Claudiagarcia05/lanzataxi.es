@@ -27,12 +27,12 @@
       <!-- Métodos de pago -->
       <div class="space-y-3 mb-6">
         <button 
-          v-for="method in pagoMethods" 
+          v-for="method in metodosPago" 
           :key="method.value"
-          @click="selectedMethod = method.value"
+          @click="metodoSeleccionado = method.value"
           :class="[
             'w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all',
-            selectedMethod === method.value 
+            metodoSeleccionado === method.value 
               ? 'border-lanzarote-blue bg-lanzarote-blue/5' 
               : 'border-neutral-volcanic hover:border-lanzarote-blue/30'
           ]"
@@ -42,26 +42,26 @@
             <p class="font-medium text-neutral-dark">{{ method.label }}</p>
             <p class="text-xs text-neutral-slate">{{ method.description }}</p>
           </div>
-          <span v-if="selectedMethod === method.value" class="text-lanzarote-blue">✓</span>
+          <span v-if="metodoSeleccionado === method.value" class="text-lanzarote-blue">✓</span>
         </button>
       </div>
 
       <Teleport to="body">
-        <div v-if="errorMsg" class="fixed inset-0 z-50 overflow-y-auto">
+        <div v-if="mensajeError" class="fixed inset-0 z-50 overflow-y-auto">
           <div class="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm transition-opacity"></div>
           <div class="flex min-h-full items-center justify-center p-4">
             <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6" role="dialog" aria-modal="true" aria-label="Error">
-              <button type="button" @click="errorMsg = ''" class="absolute top-4 right-4 text-neutral-slate hover:text-neutral-dark" aria-label="Cerrar">
+              <button type="button" @click="mensajeError = ''" class="absolute top-4 right-4 text-neutral-slate hover:text-neutral-dark" aria-label="Cerrar">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
 
               <h3 class="text-lg font-bold text-neutral-dark mb-2">Error</h3>
-              <p class="text-sm text-neutral-slate" style="white-space: pre-line;">{{ errorMsg }}</p>
+              <p class="text-sm text-neutral-slate" style="white-space: pre-line;">{{ mensajeError }}</p>
 
               <div class="mt-6 flex justify-end">
-                <button type="button" @click="errorMsg = ''" class="px-4 py-2 rounded-lg bg-lanzarote-blue text-white font-semibold hover:bg-lanzarote-yellow hover:text-black transition-all">
+                <button type="button" @click="mensajeError = ''" class="px-4 py-2 rounded-lg bg-lanzarote-blue text-white font-semibold hover:bg-lanzarote-yellow hover:text-black transition-all">
                   Aceptar
                 </button>
               </div>
@@ -71,11 +71,11 @@
       </Teleport>
 
       <!-- Detalles adicionales según método -->
-      <div v-if="selectedMethod === 'card' || selectedMethod === 'stripe'" class="mb-6 space-y-3">
+      <div v-if="metodoSeleccionado === 'card' || metodoSeleccionado === 'stripe'" class="mb-6 space-y-3">
         <div>
           <label class="block text-sm font-medium text-neutral-slate mb-2">Número de tarjeta</label>
           <input 
-            v-model="cardDetails.number"
+            v-model="detallesTarjeta.number"
             type="text"
             placeholder="1234 5678 9012 3456"
             maxlength="19"
@@ -86,7 +86,7 @@
           <div>
             <label class="block text-sm font-medium text-neutral-slate mb-2">Vencimiento</label>
             <input 
-              v-model="cardDetails.expiry"
+              v-model="detallesTarjeta.expiry"
               type="text"
               placeholder="MM/AA"
               maxlength="5"
@@ -96,7 +96,7 @@
           <div>
             <label class="block text-sm font-medium text-neutral-slate mb-2">CVV</label>
             <input 
-              v-model="cardDetails.cvv"
+              v-model="detallesTarjeta.cvv"
               type="text"
               placeholder="123"
               maxlength="3"
@@ -109,11 +109,11 @@
       <!-- Botones de acción -->
       <div class="flex gap-3">
         <button 
-          @click="processpago"
-          :disabled="processing"
+          @click="procesarPago"
+          :disabled="procesando"
           class="flex-1 bg-lanzarote-blue text-white font-semibold py-3 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span v-if="!processing">Confirmar pago</span>
+          <span v-if="!procesando">Confirmar pago</span>
           <span v-else class="flex items-center justify-center gap-2">
             <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
@@ -124,7 +124,7 @@
         </button>
         <button 
           @click="$emit('close')"
-          :disabled="processing"
+          :disabled="procesando"
           class="px-6 border border-neutral-volcanic py-3 rounded-lg hover:bg-neutral-soft transition-colors disabled:opacity-50"
         >
           Cancelar
@@ -150,62 +150,62 @@ const props = defineProps({
 
 const emit = defineEmits(['close', 'success'])
 
-const selectedMethod = ref('cash')
-const processing = ref(false)
-const errorMsg = ref('')
+const metodoSeleccionado = ref('cash')
+const procesando = ref(false)
+const mensajeError = ref('')
 
-const innerSvg = (raw) => raw
+const normalizarSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
   .replace(/<\/svg>\s*$/i, '')
   .trim()
 
-const cardDetails = ref({
+const detallesTarjeta = ref({
   number: '',
   expiry: '',
   cvv: ''
 })
 
-const pagoMethods = [
-  { value: 'cash', label: 'Efectivo', description: 'Pagar al conductor', iconSvg: innerSvg(svgCashCoin) },
-  { value: 'card', label: 'Tarjeta', description: 'Débito o crédito', iconSvg: innerSvg(svgCreditCard) },
-  { value: 'stripe', label: 'Stripe', description: 'Pago online seguro', iconSvg: innerSvg(svgShieldLock) },
-  { value: 'paypal', label: 'PayPal', description: 'Cuenta PayPal', iconSvg: innerSvg(svgPaypal) }
+const metodosPago = [
+  { value: 'cash', label: 'Efectivo', description: 'Pagar al conductor', iconSvg: normalizarSvg(svgCashCoin) },
+  { value: 'card', label: 'Tarjeta', description: 'Débito o crédito', iconSvg: normalizarSvg(svgCreditCard) },
+  { value: 'stripe', label: 'Stripe', description: 'Pago online seguro', iconSvg: normalizarSvg(svgShieldLock) },
+  { value: 'paypal', label: 'PayPal', description: 'Cuenta PayPal', iconSvg: normalizarSvg(svgPaypal) }
 ]
 
-const processpago = async () => {
-  processing.value = true
-  errorMsg.value = ''
+const procesarPago = async () => {
+  procesando.value = true
+  mensajeError.value = ''
   
   try {
-    let response
+    let respuesta
     
-    if (selectedMethod.value === 'stripe') {
-      response = await axios.post(`/api/viajes/${props.viaje.id}/pago/stripe`, {
+    if (metodoSeleccionado.value === 'stripe') {
+      respuesta = await axios.post(`/api/viajes/${props.viaje.id}/pago/stripe`, {
         pago_method_id: 'pm_' + Math.random().toString(36).substr(2, 9),
         amount: props.viaje.price
       })
-    } else if (selectedMethod.value === 'paypal') {
-      response = await axios.post(`/api/viajes/${props.viaje.id}/pago/paypal`, {
+    } else if (metodoSeleccionado.value === 'paypal') {
+      respuesta = await axios.post(`/api/viajes/${props.viaje.id}/pago/paypal`, {
         order_id: 'PAYPAL-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
         amount: props.viaje.price
       })
     } else {
-      response = await axios.post(`/api/viajes/${props.viaje.id}/pago`, {
-        method: selectedMethod.value,
+      respuesta = await axios.post(`/api/viajes/${props.viaje.id}/pago`, {
+        method: metodoSeleccionado.value,
         amount: props.viaje.price,
-        transaction_id: selectedMethod.value === 'card' ? 'CARD-' + Date.now() : null
+        transaction_id: metodoSeleccionado.value === 'card' ? 'CARD-' + Date.now() : null
       })
     }
     
-    if (response.data.success !== false) {
-      emit('success', response.data)
+    if (respuesta.data.success !== false) {
+      emit('success', respuesta.data)
       emit('close')
     }
   } catch (error) {
     console.error('Error al procesar pago:', error)
-    errorMsg.value = 'Error al procesar el pago. Inténtalo de nuevo.'
+    mensajeError.value = 'Error al procesar el pago. Inténtalo de nuevo.'
   } finally {
-    processing.value = false
+    procesando.value = false
   }
 }
 </script>

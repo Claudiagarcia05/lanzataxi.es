@@ -8,41 +8,41 @@ use Illuminate\Support\Carbon;
 
 class ConductorEstadoController extends Controller
 {
-    public function update(Request $request)
+    public function update(Request $solicitud)
     {
-        $user = $request->user();
-        $conductor = Conductor::where('user_id', $user->id)->firstOrFail();
-        $validated = $request->validate([
+        $usuario = $solicitud->user();
+        $conductor = Conductor::where('user_id', $usuario->id)->firstOrFail();
+        $validado = $solicitud->validate([
             'is_active' => 'required|boolean',
         ]);
 
-        $now = Carbon::now();
-        $wasActive = (bool) $conductor->is_active;
-        $willBeActive = (bool) $validated['is_active'];
+        $ahora = Carbon::now();
+        $estabaActivo = (bool) $conductor->is_active;
+        $estaraActivo = (bool) $validado['is_active'];
 
-        $monthKey = $now->format('Y-m');
-        if (($conductor->online_month ?? null) !== $monthKey) {
-            $conductor->online_month = $monthKey;
+        $claveMes = $ahora->format('Y-m');
+        if (($conductor->online_month ?? null) !== $claveMes) {
+            $conductor->online_month = $claveMes;
             $conductor->online_seconds_month = 0;
-            $conductor->online_since = $willBeActive ? $now : null;
+            $conductor->online_since = $estaraActivo ? $ahora : null;
         }
 
-        if ($wasActive && !$willBeActive) {
+        if ($estabaActivo && !$estaraActivo) {
             if ($conductor->online_since) {
-                $elapsed = $conductor->online_since->diffInSeconds($now);
-                $conductor->online_seconds = (int) ($conductor->online_seconds ?? 0) + (int) $elapsed;
-                $conductor->online_seconds_month = (int) ($conductor->online_seconds_month ?? 0) + (int) $elapsed;
+                $transcurrido = $conductor->online_since->diffInSeconds($ahora);
+                $conductor->online_seconds = (int) ($conductor->online_seconds ?? 0) + (int) $transcurrido;
+                $conductor->online_seconds_month = (int) ($conductor->online_seconds_month ?? 0) + (int) $transcurrido;
                 $conductor->online_since = null;
             }
-        } elseif (!$wasActive && $willBeActive) {
+        } elseif (!$estabaActivo && $estaraActivo) {
             if (!$conductor->online_since) {
-                $conductor->online_since = $now;
+                $conductor->online_since = $ahora;
             }
-        } elseif ($willBeActive && !$conductor->online_since) {
-            $conductor->online_since = $now;
+        } elseif ($estaraActivo && !$conductor->online_since) {
+            $conductor->online_since = $ahora;
         }
 
-        $conductor->is_active = $willBeActive;
+        $conductor->is_active = $estaraActivo;
         $conductor->save();
 
         if ($conductor->is_active) {
@@ -61,10 +61,10 @@ class ConductorEstadoController extends Controller
             'success' => true,
             'is_active' => $conductor->is_active,
             'taxi' => $conductor->taxi,
-            'connected_seconds' => (int) ($conductor->online_seconds ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($now) : 0),
-            'connected_hours' => round((((int) ($conductor->online_seconds ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($now) : 0)) / 3600), 2),
-            'connected_seconds_month' => (int) ($conductor->online_seconds_month ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($now) : 0),
-            'connected_hours_month' => round((((int) ($conductor->online_seconds_month ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($now) : 0)) / 3600), 2),
+            'connected_seconds' => (int) ($conductor->online_seconds ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($ahora) : 0),
+            'connected_hours' => round((((int) ($conductor->online_seconds ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($ahora) : 0)) / 3600), 2),
+            'connected_seconds_month' => (int) ($conductor->online_seconds_month ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($ahora) : 0),
+            'connected_hours_month' => round((((int) ($conductor->online_seconds_month ?? 0) + ($conductor->is_active && $conductor->online_since ? $conductor->online_since->diffInSeconds($ahora) : 0)) / 3600), 2),
             'online_month' => $conductor->online_month,
             'online_since' => $conductor->online_since?->toIso8601String(),
         ]);

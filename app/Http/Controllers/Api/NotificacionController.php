@@ -5,9 +5,9 @@
     use App\Http\Controllers\Controller;
     use Illuminate\Http\Request;
 
-    class NotificationController extends Controller {
+    class NotificacionController extends Controller {
         public function index(Request $solicitud) {
-            $notifications = [
+            $notificaciones = [
                 [
                     'id' => 1,
                     'type' => 'viaje_accepted',
@@ -28,7 +28,7 @@
                 ],
             ];
 
-            return response()->json($notifications);
+            return response()->json($notificaciones);
         }
 
         public function markAsRead(Request $solicitud, $notificationId) {

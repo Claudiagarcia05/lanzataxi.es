@@ -11,7 +11,7 @@
     use Illuminate\Support\Carbon;
     use Illuminate\Support\Facades\DB;
 
-    class AdminController extends Controller {
+    class AdministradorController extends Controller {
         public function users() {
             $usuarios = User::query()
                 ->latest()
@@ -29,109 +29,109 @@
         }
 
         public function stats() {
-            $today = now()->toDateString();
+            $hoy = now()->toDateString();
 
             return response()->json([
                 'totalUsers' => User::count(),
                 'activeConductors' => Conductor::where('is_active', true)->count(),
                 'totalTaxis' => Taxi::count(),
-                'todayTrips' => Viaje::whereDate('created_at', $today)->count(),
-                'todayRevenue' => (float) Viaje::whereDate('created_at', $today)->where('status', 'completed')->sum('price'),
+                'todayTrips' => Viaje::whereDate('created_at', $hoy)->count(),
+                'todayRevenue' => (float) Viaje::whereDate('created_at', $hoy)->where('status', 'completed')->sum('price'),
                 'averageRating' => round((float) Conductor::avg('rating'), 2),
                 'weeklyRevenue' => (float) Viaje::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->where('status', 'completed')->sum('price'),
                 'monthlyRevenue' => (float) Viaje::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->where('status', 'completed')->sum('price'),
             ]);
         }
 
-        public function monthlyStats(Request $request) {
-            $validated = $request->validate([
+        public function monthlyStats(Request $solicitud) {
+            $validado = $solicitud->validate([
                 'year' => 'nullable|integer|min:2000|max:2100',
                 'month' => 'nullable|integer|min:1|max:12',
             ]);
 
-            $year = (int) ($validated['year'] ?? now()->year);
-            $month = (int) ($validated['month'] ?? now()->month);
+            $anio = (int) ($validado['year'] ?? now()->year);
+            $mes = (int) ($validado['month'] ?? now()->month);
 
-            $from = Carbon::create($year, $month, 1, 0, 0, 0)->startOfMonth();
-            $to = (clone $from)->endOfMonth();
+            $desde = Carbon::create($anio, $mes, 1, 0, 0, 0)->startOfMonth();
+            $hasta = (clone $desde)->endOfMonth();
 
             // NOTA:
             // - Viajes completados: usar end_time; si no existe (datos antiguos), fallback a updated_at/created_at.
             // - Viajes cancelados: usar updated_at como aproximación al instante de cancelación.
             $completedDateExpr = DB::raw('COALESCE(end_time, updated_at, created_at)');
 
-            $completedTrips = Viaje::query()
+            $viajesCompletados = Viaje::query()
                 ->where('status', 'completed')
-                ->whereBetween($completedDateExpr, [$from, $to])
+                ->whereBetween($completedDateExpr, [$desde, $hasta])
                 ->count();
 
-            $cancelledTrips = Viaje::query()
+            $viajesCancelados = Viaje::query()
                 ->where('status', 'cancelled')
-                ->whereBetween('updated_at', [$from, $to])
+                ->whereBetween('updated_at', [$desde, $hasta])
                 ->count();
 
-            $revenue = (float) Viaje::query()
+            $recaudacion = (float) Viaje::query()
                 ->where('status', 'completed')
-                ->whereBetween($completedDateExpr, [$from, $to])
+                ->whereBetween($completedDateExpr, [$desde, $hasta])
                 ->sum('price');
 
-            $daysInMonth = (int) $from->daysInMonth;
-            $labels = [];
-            $dailyCompleted = array_fill(0, $daysInMonth, 0);
-            $dailyCancelled = array_fill(0, $daysInMonth, 0);
-            $dailyRevenue = array_fill(0, $daysInMonth, 0.0);
+            $diasEnMes = (int) $desde->daysInMonth;
+            $etiquetas = [];
+            $completadosPorDia = array_fill(0, $diasEnMes, 0);
+            $canceladosPorDia = array_fill(0, $diasEnMes, 0);
+            $recaudacionPorDia = array_fill(0, $diasEnMes, 0.0);
 
-            for ($d = 1; $d <= $daysInMonth; $d++) {
-                $labels[] = str_pad((string) $d, 2, '0', STR_PAD_LEFT);
+            for ($dia = 1; $dia <= $diasEnMes; $dia++) {
+                $etiquetas[] = str_pad((string) $dia, 2, '0', STR_PAD_LEFT);
             }
 
-            $completedRows = Viaje::query()
+            $filasCompletados = Viaje::query()
                 ->where('status', 'completed')
-                ->whereBetween($completedDateExpr, [$from, $to])
+                ->whereBetween($completedDateExpr, [$desde, $hasta])
                 ->selectRaw('DATE(COALESCE(end_time, updated_at, created_at)) as day, COUNT(*) as cnt, COALESCE(SUM(price), 0) as rev')
                 ->groupBy('day')
                 ->get();
 
-            foreach ($completedRows as $row) {
-                $day = $row->day ? Carbon::parse($row->day)->day : null;
-                if (!$day || $day < 1 || $day > $daysInMonth) continue;
-                $idx = $day - 1;
-                $dailyCompleted[$idx] = (int) ($row->cnt ?? 0);
-                $dailyRevenue[$idx] = (float) ($row->rev ?? 0);
+            foreach ($filasCompletados as $fila) {
+                $dia = $fila->day ? Carbon::parse($fila->day)->day : null;
+                if (!$dia || $dia < 1 || $dia > $diasEnMes) continue;
+                $indice = $dia - 1;
+                $completadosPorDia[$indice] = (int) ($fila->cnt ?? 0);
+                $recaudacionPorDia[$indice] = (float) ($fila->rev ?? 0);
             }
 
-            $cancelledRows = Viaje::query()
+            $filasCancelados = Viaje::query()
                 ->where('status', 'cancelled')
-                ->whereBetween('updated_at', [$from, $to])
+                ->whereBetween('updated_at', [$desde, $hasta])
                 ->selectRaw('DATE(updated_at) as day, COUNT(*) as cnt')
                 ->groupBy('day')
                 ->get();
 
-            foreach ($cancelledRows as $row) {
-                $day = $row->day ? Carbon::parse($row->day)->day : null;
-                if (!$day || $day < 1 || $day > $daysInMonth) continue;
-                $idx = $day - 1;
-                $dailyCancelled[$idx] = (int) ($row->cnt ?? 0);
+            foreach ($filasCancelados as $fila) {
+                $dia = $fila->day ? Carbon::parse($fila->day)->day : null;
+                if (!$dia || $dia < 1 || $dia > $diasEnMes) continue;
+                $indice = $dia - 1;
+                $canceladosPorDia[$indice] = (int) ($fila->cnt ?? 0);
             }
 
-            $minDate = Viaje::min('created_at');
-            $maxDate = Viaje::max('created_at');
-            $minYear = $minDate ? Carbon::parse($minDate)->year : now()->year;
-            $maxYear = $maxDate ? Carbon::parse($maxDate)->year : now()->year;
+            $fechaMinima = Viaje::min('created_at');
+            $fechaMaxima = Viaje::max('created_at');
+            $anioMinimo = $fechaMinima ? Carbon::parse($fechaMinima)->year : now()->year;
+            $anioMaximo = $fechaMaxima ? Carbon::parse($fechaMaxima)->year : now()->year;
 
             return response()->json([
-                'year' => $year,
-                'month' => $month,
-                'completedTrips' => $completedTrips,
-                'cancelledTrips' => $cancelledTrips,
-                'revenue' => $revenue,
-                'minYear' => $minYear,
-                'maxYear' => $maxYear,
+                'year' => $anio,
+                'month' => $mes,
+                'completedTrips' => $viajesCompletados,
+                'cancelledTrips' => $viajesCancelados,
+                'revenue' => $recaudacion,
+                'minYear' => $anioMinimo,
+                'maxYear' => $anioMaximo,
                 'daily' => [
-                    'labels' => $labels,
-                    'completedTrips' => $dailyCompleted,
-                    'cancelledTrips' => $dailyCancelled,
-                    'revenue' => $dailyRevenue,
+                    'labels' => $etiquetas,
+                    'completedTrips' => $completadosPorDia,
+                    'cancelledTrips' => $canceladosPorDia,
+                    'revenue' => $recaudacionPorDia,
                 ],
             ]);
         }
@@ -175,68 +175,68 @@
             return response()->json($conductor->fresh(['user:id,name,email,phone,is_disabled', 'taxi']));
         }
 
-        public function disableUser(User $user)
+        public function disableUser(User $usuario)
         {
-            $user->is_disabled = true;
-            if (empty($user->disabled_at)) {
-                $user->disabled_at = now();
+            $usuario->is_disabled = true;
+            if (empty($usuario->disabled_at)) {
+                $usuario->disabled_at = now();
             }
-            $user->save();
+            $usuario->save();
 
-            if (($user->role ?? null) === 'conductor') {
-                $user->loadMissing('conductor.taxi');
-                if ($user->conductor) {
-                    $user->conductor->is_active = false;
-                    $user->conductor->save();
-                    if ($user->conductor->taxi && $user->conductor->taxi->status !== 'offline') {
-                        $user->conductor->taxi->update(['status' => 'offline']);
+            if (($usuario->role ?? null) === 'conductor') {
+                $usuario->loadMissing('conductor.taxi');
+                if ($usuario->conductor) {
+                    $usuario->conductor->is_active = false;
+                    $usuario->conductor->save();
+                    if ($usuario->conductor->taxi && $usuario->conductor->taxi->status !== 'offline') {
+                        $usuario->conductor->taxi->update(['status' => 'offline']);
                     }
                 }
             }
 
-            return response()->json($user->fresh(['conductor']));
+            return response()->json($usuario->fresh(['conductor']));
         }
 
         public function conductorEarningsReport(Conductor $conductor)
         {
-            $rows = Viaje::query()
+            $filas = Viaje::query()
                 ->where('conductor_id', $conductor->id)
                 ->whereIn('status', ['completed', 'cancelled'])
                 ->select(['id', 'status', 'price', 'created_at'])
                 ->orderBy('created_at')
                 ->get();
 
-            $grouped = [];
-            $totals = [
+            $agrupado = [];
+            $totales = [
                 'completedTrips' => 0,
                 'cancelledTrips' => 0,
                 'revenue' => 0.0,
             ];
 
-            foreach ($rows as $row) {
-                $key = Carbon::parse($row->created_at)->format('Y-m');
-                if (!isset($grouped[$key])) {
-                    $grouped[$key] = [
-                        'month' => $key,
+            foreach ($filas as $fila) {
+                $clave = Carbon::parse($fila->created_at)->format('Y-m');
+                if (!isset($agrupado[$clave])) {
+                    $agrupado[$clave] = [
+                        'month' => $clave,
                         'completedTrips' => 0,
                         'cancelledTrips' => 0,
                         'revenue' => 0.0,
                     ];
                 }
 
-                if ($row->status === 'completed') {
-                    $grouped[$key]['completedTrips']++;
-                    $grouped[$key]['revenue'] += (float) ($row->price ?? 0);
-                    $totals['completedTrips']++;
-                    $totals['revenue'] += (float) ($row->price ?? 0);
-                } elseif ($row->status === 'cancelled') {
-                    $grouped[$key]['cancelledTrips']++;
-                    $totals['cancelledTrips']++;
+                if ($fila->status === 'completed') {
+                    $agrupado[$clave]['completedTrips']++;
+                    $agrupado[$clave]['revenue'] += (float) ($fila->price ?? 0);
+                    $totales['completedTrips']++;
+                    $totales['revenue'] += (float) ($fila->price ?? 0);
+                } elseif ($fila->status === 'cancelled') {
+                    $agrupado[$clave]['cancelledTrips']++;
+                    $totales['cancelledTrips']++;
                 }
             }
 
-            $months = array_values($grouped);
-            usort($months, fn ($a, $b) => strcmp($a['month'], $b['month']));
+            $meses = array_values($agrupado);
+            usort($meses, fn ($a, $b) => strcmp($a['month'], $b['month']));
 
             $conductor->loadMissing('user:id,name,email,phone');
 
@@ -247,19 +247,19 @@
                     'email' => $conductor->user?->email,
                     'phone' => $conductor->user?->phone,
                 ],
-                'totals' => $totals,
-                'months' => $months,
+                'totals' => $totales,
+                'months' => $meses,
             ]);
         }
 
-        public function clientTripsReport(User $user)
+        public function clientTripsReport(User $usuario)
         {
-            if (($user->role ?? null) !== 'pasajero') {
+            if (($usuario->role ?? null) !== 'pasajero') {
                 return response()->json(['message' => 'El usuario no es un cliente.'], 400);
             }
 
-            $trips = Viaje::query()
-                ->where('pasajero_id', $user->id)
+            $viajes = Viaje::query()
+                ->where('pasajero_id', $usuario->id)
                 ->whereIn('status', ['completed', 'cancelled'])
                 ->select(['id', 'status', 'price', 'pickup_address', 'dropoff_address', 'created_at'])
                 ->latest()
@@ -267,12 +267,12 @@
 
             return response()->json([
                 'client' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'phone' => $user->phone,
+                    'id' => $usuario->id,
+                    'name' => $usuario->name,
+                    'email' => $usuario->email,
+                    'phone' => $usuario->phone,
                 ],
-                'trips' => $trips,
+                'trips' => $viajes,
             ]);
         }
     }

@@ -13,7 +13,7 @@
         }
 
         public function store(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'conductor_id' => 'required|exists:conductors,id',
                 'plate' => 'required|string|unique:taxis,plate',
                 'model' => 'required|string',
@@ -22,7 +22,7 @@
                 'status' => 'nullable|in:available,busy,offline',
             ]);
 
-            $taxi = Taxi::create($validated);
+            $taxi = Taxi::create($validado);
 
             return response()->json($taxi, 201);
         }
@@ -33,7 +33,7 @@
         }
 
         public function update(Request $solicitud, Taxi $taxi) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'conductor_id' => 'sometimes|exists:conductors,id',
                 'plate' => 'sometimes|string|unique:taxis,plate,' . $taxi->id,
                 'model' => 'sometimes|string',
@@ -42,7 +42,7 @@
                 'status' => 'sometimes|in:available,busy,offline',
             ]);
 
-            $taxi->update($validated);
+            $taxi->update($validado);
 
             return response()->json($taxi);
         }

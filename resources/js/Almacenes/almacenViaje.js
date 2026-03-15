@@ -2,15 +2,15 @@
 import { useAuthStore } from './almacenAutenticacion'
 import axios from 'axios'
 
-export const useTripStore = defineStore('viaje', {
+export const useViajeStore = defineStore('viaje', {
     state: () => ({
         viajes: [],
         viajeActivo: null,
         cargando: false,
         error: null,
         ubicacionConductor: null,
-        pollingId: null,
-        ignoredOfferIds: []
+        idSondeo: null,
+        idsOfertasIgnoradas: []
     }),
 
     getters: {
@@ -19,36 +19,36 @@ export const useTripStore = defineStore('viaje', {
             return state.viajes
         },
         viajesConductor: (state) => {
-            const auth = useAuthStore()
-            const userId = auth.usuario?.id
-            if (userId == null) {
+            const autenticacion = useAuthStore()
+            const idUsuario = autenticacion.usuario?.id
+            if (idUsuario == null) {
 
                 return state.viajes.filter(t => t.conductorEntityId != null)
             }
 
-            return state.viajes.filter(t => Number(t.conductorId) === Number(userId))
+            return state.viajes.filter(t => Number(t.conductorId) === Number(idUsuario))
         },
         viajesPendientes: (state) => state.viajes.filter(t => t.estado === 'pendiente'),
-        completedviajes: (state) => state.viajes.filter(t => t.estado === 'completed'),
+        viajesCompletados: (state) => state.viajes.filter(t => t.estado === 'completed'),
         viajesHoy: (state) => {
-            const today = new Date().toDateString()
+            const hoy = new Date().toDateString()
 
-            return state.viajes.filter(t => new Date(t.date).toDateString() === today)
+            return state.viajes.filter(t => new Date(t.date).toDateString() === hoy)
         }
     },
 
     actions: {
-        parseFiniteNumber(value) {
-            const n = typeof value === 'number' ? value : parseFloat(value)
+        parsearNumeroFinito(valor) {
+            const numero = typeof valor === 'number' ? valor : parseFloat(valor)
             
-            return Number.isFinite(n) ? n : null
+            return Number.isFinite(numero) ? numero : null
         },
 
         mapearViaje(viaje) {
-            const auth = useAuthStore()
+            const autenticacion = useAuthStore()
 
-            const path = typeof window !== 'undefined' ? window.location.pathname : ''
-            const isConductorContext = auth.isconductor || path.startsWith('/conductor')
+            const rutaActual = typeof window !== 'undefined' ? window.location.pathname : ''
+            const esContextoConductor = autenticacion.isconductor || rutaActual.startsWith('/conductor')
 
             const statusMap = {
                 pending: 'pendiente',
@@ -71,10 +71,10 @@ export const useTripStore = defineStore('viaje', {
                 dropoff: viaje.dropoff_address || `(${viaje.dropoff_lat}, ${viaje.dropoff_lng})`,
                 pickup_address: viaje.pickup_address,
                 dropoff_address: viaje.dropoff_address,
-                pickupLat: this.parseFiniteNumber(viaje.pickup_lat),
-                pickupLng: this.parseFiniteNumber(viaje.pickup_lng),
-                dropoffLat: this.parseFiniteNumber(viaje.dropoff_lat),
-                dropoffLng: this.parseFiniteNumber(viaje.dropoff_lng),
+                pickupLat: this.parsearNumeroFinito(viaje.pickup_lat),
+                pickupLng: this.parsearNumeroFinito(viaje.pickup_lng),
+                dropoffLat: this.parsearNumeroFinito(viaje.dropoff_lat),
+                dropoffLng: this.parsearNumeroFinito(viaje.dropoff_lng),
                 date: viaje.created_at,
                 created_at: viaje.created_at,
                 endTime: viaje.end_time,
@@ -94,76 +94,76 @@ export const useTripStore = defineStore('viaje', {
             }
         },
 
-        startPolling(intervalMs = 5000) {
-            this.stopPolling()
-            this.pollingId = setInterval(() => {
-                this.fetchTrips()
-            }, intervalMs)
+        iniciarSondeo(intervaloMs = 5000) {
+            this.detenerSondeo()
+            this.idSondeo = setInterval(() => {
+                this.obtenerViajes()
+            }, intervaloMs)
         },
 
-        stopPolling() {
-            if (this.pollingId) {
-                clearInterval(this.pollingId)
-                this.pollingId = null
+        detenerSondeo() {
+            if (this.idSondeo) {
+                clearInterval(this.idSondeo)
+                this.idSondeo = null
             }
         },
 
-        async fetchTrips() {
+        async obtenerViajes() {
             this.cargando = true
             this.error = null
             try {
-                const auth = useAuthStore()
+                const autenticacion = useAuthStore()
                 let endpoint = '/api/user/viajes'
 
-                const path = typeof window !== 'undefined' ? window.location.pathname : ''
-                const assumeConductor = auth.isconductor || path.startsWith('/conductor')
-                const assumeAdmin = auth.isAdmin || path.startsWith('/admin')
+                const rutaActual = typeof window !== 'undefined' ? window.location.pathname : ''
+                const asumirConductor = autenticacion.isconductor || rutaActual.startsWith('/conductor')
+                const asumirAdmin = autenticacion.isAdmin || rutaActual.startsWith('/admin')
 
-                if (assumeConductor) {
+                if (asumirConductor) {
                     endpoint = '/api/conductor/viajes'
-                } else if (assumeAdmin) {
+                } else if (asumirAdmin) {
                     endpoint = '/api/admin/viajes'
                 }
 
-                if (assumeConductor) {
-                    const misViajesResponse = await axios.get(endpoint)
-                    const misViajes = (misViajesResponse.data || []).map(this.mapearViaje)
+                if (asumirConductor) {
+                    const respuestaMisViajes = await axios.get(endpoint)
+                    const misViajes = (respuestaMisViajes.data || []).map(this.mapearViaje)
 
                     const conductorOcupado = misViajes.some(t => ['accepted', 'in_progress'].includes(t.estado))
 
                     let disponibles = []
                     if (!conductorOcupado) {
                         try {
-                            const disponiblesResponse = await axios.get('/api/conductor/viajes/available')
-                            disponibles = (disponiblesResponse.data || [])
+                            const respuestaDisponibles = await axios.get('/api/conductor/viajes/available')
+                            disponibles = (respuestaDisponibles.data || [])
                                 .map(this.mapearViaje)
-                                .filter(t => !this.ignoredOfferIds.includes(t.id))
-                        } catch (e) {
-                            console.error('❌ Error fetching available trips:', e?.response?.data || e?.message)
-                            this.error = e?.response?.data?.message || 'No se pudieron cargar las ofertas'
+                                .filter(t => !this.idsOfertasIgnoradas.includes(t.id))
+                        } catch (errorCapturado) {
+                            console.error('❌ Error al obtener ofertas disponibles:', errorCapturado?.response?.data || errorCapturado?.message)
+                            this.error = errorCapturado?.response?.data?.message || 'No se pudieron cargar las ofertas'
                         }
                     }
 
                     this.viajes = [...disponibles, ...misViajes]
                 } else {
-                    const response = await axios.get(endpoint)
-                    console.log('✅ Response from fetchTrips:', response.data)
-                    this.viajes = response.data.map(this.mapearViaje)
+                    const respuesta = await axios.get(endpoint)
+                    console.log('✅ Respuesta de obtenerViajes:', respuesta.data)
+                    this.viajes = respuesta.data.map(this.mapearViaje)
                 }
                 console.log('✅ Mapped viajes count:', this.viajes.length)
                 console.log('✅ Viajes:', this.viajes)
-            } catch (error) {
-                console.error('❌ Error fetching trips:', error.response?.data || error.message)
-                this.error = error.response?.data?.message || 'No se pudieron cargar los viajes'
+            } catch (errorCapturado) {
+                console.error('❌ Error al obtener viajes:', errorCapturado.response?.data || errorCapturado.message)
+                this.error = errorCapturado.response?.data?.message || 'No se pudieron cargar los viajes'
             } finally {
                 this.cargando = false
             }
         },
 
-        async createTrip(datosViaje) {
+        async crearViaje(datosViaje) {
             this.cargando = true
             try {
-                const response = await axios.post('/api/viajes', {
+                const respuesta = await axios.post('/api/viajes', {
                     pickup_lat: datosViaje.pickup_lat || datosViaje.pickupLat,
                     pickup_lng: datosViaje.pickup_lng || datosViaje.pickupLng,
                     dropoff_lat: datosViaje.dropoff_lat || datosViaje.dropoffLat,
@@ -178,17 +178,17 @@ export const useTripStore = defineStore('viaje', {
                     notes: datosViaje.notes || null,
                 })
 
-                const viajeNuevo = this.mapearViaje(response.data)
+                const viajeNuevo = this.mapearViaje(respuesta.data)
 
                 this.viajes.unshift(viajeNuevo)
                 this.viajeActivo = viajeNuevo
 
                 return { success: true, viaje: viajeNuevo }
-            } catch (error) {
-                const message = error.response?.data?.message || 'No se pudo crear el viaje'
-                this.error = message
+            } catch (errorCapturado) {
+                const mensaje = errorCapturado.response?.data?.message || 'No se pudo crear el viaje'
+                this.error = mensaje
 
-                return { success: false, error: message }
+                return { success: false, error: mensaje }
             } finally {
                 this.cargando = false
             }
@@ -210,52 +210,52 @@ export const useTripStore = defineStore('viaje', {
                 this.viajes = replaced ? updatedList : [viajeActualizado, ...updatedList]
                 this.viajeActivo = viajeActualizado
 
-                const auth = useAuthStore()
-                const path = typeof window !== 'undefined' ? window.location.pathname : ''
-                const assumeConductor = auth.isconductor || path.startsWith('/conductor')
-                if (assumeConductor) {
-                    await this.fetchTrips()
+                const autenticacion = useAuthStore()
+                const rutaActual = typeof window !== 'undefined' ? window.location.pathname : ''
+                const asumirConductor = autenticacion.isconductor || rutaActual.startsWith('/conductor')
+                if (asumirConductor) {
+                    await this.obtenerViajes()
                 }
-            } catch (error) {
-                const status = error.response?.status
+            } catch (errorCapturado) {
+                const status = errorCapturado.response?.status
                 if (status === 400) {
-                    this.error = error.response?.data?.message || 'No se pudo aceptar el viaje.'
-                    await this.fetchTrips()
+                    this.error = errorCapturado.response?.data?.message || 'No se pudo aceptar el viaje.'
+                    await this.obtenerViajes()
 
                     return
                 }
                 if (status === 409) {
                     this.error = 'Este viaje ya fue aceptado por otro conductor.'
-                    await this.fetchTrips()
+                    await this.obtenerViajes()
 
                     return
                 }
-                throw error
+                throw errorCapturado
             }
         },
 
-        dismissOffer(viajeId) {
-            if (!this.ignoredOfferIds.includes(viajeId)) {
-                this.ignoredOfferIds.push(viajeId)
+        descartarOferta(viajeId) {
+            if (!this.idsOfertasIgnoradas.includes(viajeId)) {
+                this.idsOfertasIgnoradas.push(viajeId)
             }
             this.viajes = this.viajes.filter(t => t.id !== viajeId)
         },
 
-        async startTrip(viajeId) {
+        async iniciarViaje(viajeId) {
             const response = await axios.patch(`/api/viajes/${viajeId}/start`)
             const viajeActualizado = this.mapearViaje(response.data)
             this.viajes = this.viajes.map(t => t.id === viajeId ? viajeActualizado : t)
             this.viajeActivo = viajeActualizado
 
-            const auth = useAuthStore()
-            const path = typeof window !== 'undefined' ? window.location.pathname : ''
-            const assumeConductor = auth.isconductor || path.startsWith('/conductor')
-            if (assumeConductor) {
-                await this.fetchTrips()
+            const autenticacion = useAuthStore()
+            const rutaActual = typeof window !== 'undefined' ? window.location.pathname : ''
+            const asumirConductor = autenticacion.isconductor || rutaActual.startsWith('/conductor')
+            if (asumirConductor) {
+                await this.obtenerViajes()
             }
         },
 
-        async completeTrip(viajeId, valoracion = null, comment = '') {
+        async completarViaje(viajeId, valoracion = null, comment = '') {
             const response = await axios.patch(`/api/viajes/${viajeId}/complete`, {
                 rating: valoracion,
                 comment,
@@ -265,15 +265,15 @@ export const useTripStore = defineStore('viaje', {
             this.viajes = this.viajes.map(t => t.id === viajeId ? viajeActualizado : t)
             this.viajeActivo = null
 
-            const auth = useAuthStore()
-            const path = typeof window !== 'undefined' ? window.location.pathname : ''
-            const assumeConductor = auth.isconductor || path.startsWith('/conductor')
-            if (assumeConductor) {
-                await this.fetchTrips()
+            const autenticacion = useAuthStore()
+            const rutaActual = typeof window !== 'undefined' ? window.location.pathname : ''
+            const asumirConductor = autenticacion.isconductor || rutaActual.startsWith('/conductor')
+            if (asumirConductor) {
+                await this.obtenerViajes()
             }
         },
 
-        async cancelTrip(viajeId) {
+        async cancelarViaje(viajeId) {
             const response = await axios.patch(`/api/viajes/${viajeId}/cancel`)
             const viajeActualizado = this.mapearViaje(response.data)
             this.viajes = this.viajes.map(t => t.id === viajeId ? viajeActualizado : t)
@@ -302,7 +302,7 @@ export const useTripStore = defineStore('viaje', {
             }, 2000)
         },
 
-        async rateTrip(viajeId, valoracion, comment = '') {
+        async valorarViaje(viajeId, valoracion, comment = '') {
             const viaje = this.viajes.find(t => t.id === viajeId)
             if (!viaje) return
 

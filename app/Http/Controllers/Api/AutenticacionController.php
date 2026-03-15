@@ -7,9 +7,9 @@
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Hash;
 
-    class AuthController extends Controller {
+    class AutenticacionController extends Controller {
         public function register(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|email:rfc,dns|unique:users,email',
                 'password' => 'required|string|min:6|confirmed',
@@ -23,13 +23,13 @@
             // Regla de negocio: los administradores deben usar obligatoriamente emails @admin.com
             // - Si el rol es admin, el email debe terminar en @admin.com
             // - Si el email termina en @admin.com, el rol debe ser admin
-            $role = $validated['role'] ?? 'pasajero';
-            $email = strtolower(trim($validated['email'] ?? ''));
-            $isAdminEmail = str_ends_with($email, '@admin.com');
+            $rol = $validado['role'] ?? 'pasajero';
+            $correo = strtolower(trim($validado['email'] ?? ''));
+            $esCorreoAdmin = str_ends_with($correo, '@admin.com');
 
             $mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.';
 
-            if ($role === 'admin' && !$isAdminEmail) {
+            if ($rol === 'admin' && !$esCorreoAdmin) {
                 return response()->json([
                     'message' => $mensajeGenericoCredenciales,
                     'errors' => [
@@ -38,7 +38,7 @@
                 ], 422);
             }
 
-            if ($role !== 'admin' && $isAdminEmail) {
+            if ($rol !== 'admin' && $esCorreoAdmin) {
                 return response()->json([
                     'message' => $mensajeGenericoCredenciales,
                     'errors' => [
@@ -48,16 +48,16 @@
             }
 
             $usuario = User::create([
-                'name' => $validated['name'],
-                'email' => $validated['email'],
-                'password' => Hash::make($validated['password']),
-                'role' => $validated['role'] ?? 'pasajero',
-                'phone' => $validated['phone'] ?? null,
+                'name' => $validado['name'],
+                'email' => $validado['email'],
+                'password' => Hash::make($validado['password']),
+                'role' => $validado['role'] ?? 'pasajero',
+                'phone' => $validado['phone'] ?? null,
                 'wallet_balance' => 0,
                 'is_disabled' => false,
             ]);
 
-            if (($validated['role'] ?? 'pasajero') === 'conductor') {
+            if (($validado['role'] ?? 'pasajero') === 'conductor') {
                 $conductor = \App\Models\Conductor::create([
                     'user_id' => $usuario->id,
                     'license_number' => 'LIC-' . strtoupper(uniqid()),
@@ -89,14 +89,14 @@
         }
 
         public function login(Request $solicitud) {
-            $validated = $solicitud->validate([
+            $validado = $solicitud->validate([
                 'email' => 'required|email',
                 'password' => 'required|string',
             ]);
 
-            $usuario = User::where('email', $validated['email'])->first();
+            $usuario = User::where('email', $validado['email'])->first();
 
-            if (!$usuario || !Hash::check($validated['password'], $usuario->password)) {
+            if (!$usuario || !Hash::check($validado['password'], $usuario->password)) {
                 return response()->json([
                     'message' => 'Credenciales inválidas. Por favor verifica tu email y contraseña.',
                     'errors' => [
