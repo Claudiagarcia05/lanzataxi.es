@@ -13,23 +13,27 @@
                 'name' => 'required|string|max:255',
                 'email' => 'required|email:rfc,dns|unique:users,email',
                 'password' => 'required|string|min:6|confirmed',
-                'role' => 'nullable|in:pasajero,conductor,admin',
+                // Nota: el rol admin NO se crea por registro público. Solo pasajero/conductor.
+                'role' => 'nullable|in:pasajero,conductor',
                 'phone' => 'nullable|string|max:50',
             ], [
                 'email.email' => 'El email debe ser una dirección válida y con dominio real.',
                 'email.unique' => 'El email ya está registrado.',
             ]);
 
-            // Regla de negocio: los administradores deben usar obligatoriamente emails @admin.com
-            // - Si el rol es admin, el email debe terminar en @admin.com
-            // - Si el email termina en @admin.com, el rol debe ser admin
+            // Reglas de negocio (registro público):
+            // - Los emails @admin.es están reservados: no se permite registrarlos públicamente.
+            // - Coherencia Taxista ⇔ @taxi.es
+            //   - Si el rol es conductor, el email debe terminar en @taxi.es
+            //   - Si el email termina en @taxi.es, el rol debe ser conductor
             $rol = $validado['role'] ?? 'pasajero';
             $correo = strtolower(trim($validado['email'] ?? ''));
-            $esCorreoAdmin = str_ends_with($correo, '@admin.com');
+            $esCorreoAdmin = str_ends_with($correo, '@admin.es');
+            $esCorreoConductor = str_ends_with($correo, '@taxi.es');
 
             $mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.';
 
-            if ($rol === 'admin' && !$esCorreoAdmin) {
+            if ($esCorreoAdmin) {
                 return response()->json([
                     'message' => $mensajeGenericoCredenciales,
                     'errors' => [
@@ -38,7 +42,16 @@
                 ], 422);
             }
 
-            if ($rol !== 'admin' && $esCorreoAdmin) {
+            if ($rol === 'conductor' && !$esCorreoConductor) {
+                return response()->json([
+                    'message' => $mensajeGenericoCredenciales,
+                    'errors' => [
+                        'email' => [$mensajeGenericoCredenciales],
+                    ],
+                ], 422);
+            }
+
+            if ($rol !== 'conductor' && $esCorreoConductor) {
                 return response()->json([
                     'message' => $mensajeGenericoCredenciales,
                     'errors' => [
@@ -51,13 +64,13 @@
                 'name' => $validado['name'],
                 'email' => $validado['email'],
                 'password' => Hash::make($validado['password']),
-                'role' => $validado['role'] ?? 'pasajero',
+                'role' => $rol,
                 'phone' => $validado['phone'] ?? null,
                 'wallet_balance' => 0,
                 'is_disabled' => false,
             ]);
 
-            if (($validado['role'] ?? 'pasajero') === 'conductor') {
+            if ($rol === 'conductor') {
                 $conductor = \App\Models\Conductor::create([
                     'user_id' => $usuario->id,
                     'license_number' => 'LIC-' . strtoupper(uniqid()),

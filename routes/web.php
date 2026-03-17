@@ -155,6 +155,11 @@
                 return Inertia::render('Administrador/Clientes');
             })->name('admin.clientes');
 
+            Route::get('/admin/admins', function () {
+
+                return Inertia::render('Administrador/Admin');
+            })->name('admin.admins');
+
             Route::get('/admin/taxis', function () {
 
                 return Inertia::render('Administrador/Panel');

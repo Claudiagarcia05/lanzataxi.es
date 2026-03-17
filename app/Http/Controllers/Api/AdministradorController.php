@@ -10,6 +10,7 @@
     use Illuminate\Http\Request;
     use Illuminate\Support\Carbon;
     use Illuminate\Support\Facades\DB;
+    use Illuminate\Support\Facades\Hash;
 
     class AdministradorController extends Controller {
         public function users() {
@@ -274,5 +275,48 @@
                 ],
                 'trips' => $viajes,
             ]);
+        }
+
+        public function createAdmin(Request $solicitud)
+        {
+            $validado = $solicitud->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email:rfc,dns|unique:users,email',
+                'password' => 'required|string|min:6|confirmed',
+                'phone' => 'nullable|string|max:50',
+            ], [
+                'email.unique' => 'El email ya está registrado.',
+            ]);
+
+            $correo = strtolower(trim($validado['email'] ?? ''));
+            if (!str_ends_with($correo, '@admin.es')) {
+                return response()->json([
+                    'message' => 'Validación fallida.',
+                    'errors' => [
+                        'email' => ['El email del administrador debe terminar en @admin.es.'],
+                    ],
+                ], 422);
+            }
+
+            $usuario = User::create([
+                'name' => $validado['name'],
+                'email' => $validado['email'],
+                'password' => Hash::make($validado['password']),
+                'role' => 'admin',
+                'phone' => $validado['phone'] ?? null,
+                'wallet_balance' => 0,
+                'is_disabled' => false,
+            ]);
+
+            return response()->json([
+                'message' => 'Administrador creado correctamente.',
+                'user' => [
+                    'id' => $usuario->id,
+                    'name' => $usuario->name,
+                    'email' => $usuario->email,
+                    'role' => $usuario->role,
+                    'phone' => $usuario->phone,
+                ],
+            ], 201);
         }
     }

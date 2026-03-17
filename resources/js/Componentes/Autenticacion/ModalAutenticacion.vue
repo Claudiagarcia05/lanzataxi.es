@@ -46,15 +46,12 @@
 
             <div v-if="!esInicioSesion">
               <label class="block text-sm font-medium text-neutral-dark mb-2">Tipo de usuario</label>
-              <div class="grid grid-cols-3 gap-2">
+              <div class="grid grid-cols-2 gap-2">
                 <button type="button" @click="datosFormulario.role = 'pasajero'" :class="['p-2 rounded-lg border text-sm transition-all', datosFormulario.role === 'pasajero' ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic text-neutral-dark hover:border-lanzarote-blue']">
                   Pasajero
                 </button>
                 <button type="button" @click="datosFormulario.role = 'conductor'" :class="[ 'p-2 rounded-lg border text-sm transition-all', datosFormulario.role === 'conductor' ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic text-neutral-dark hover:border-lanzarote-blue']">
                   Taxista
-                </button>
-                <button type="button" @click="datosFormulario.role = 'admin'" :class="[ 'p-2 rounded-lg border text-sm transition-all', datosFormulario.role === 'admin' ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic text-neutral-dark hover:border-lanzarote-blue']">
-                  Admin
                 </button>
               </div>
             </div>
@@ -162,22 +159,29 @@ const validarFormulario = () => {
       return false
     }
 
-    // Regla de negocio: coherencia entre el tipo de usuario Admin y el dominio del email
-    // - Admin => email obligatorio @admin.com
-    // - Email @admin.com => rol obligatorio Admin
+    // Reglas de negocio (frontend/UX):
+    // - Los emails @admin.es están reservados (no hay registro público de admins)
+    // - Coherencia Taxista ⇔ @taxi.es
     const correo = (datosFormulario.value.email || '').trim().toLowerCase()
     const rol = datosFormulario.value.role || 'pasajero'
-    const esCorreoAdmin = correo.endsWith('@admin.com')
+    const esCorreoAdmin = correo.endsWith('@admin.es')
+    const esCorreoConductor = correo.endsWith('@taxi.es')
 
     const mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.'
 
-    if (rol === 'admin' && !esCorreoAdmin) {
+    if (esCorreoAdmin) {
       error.value = mensajeGenericoCredenciales
 
       return false
     }
 
-    if (rol !== 'admin' && esCorreoAdmin) {
+    if (rol === 'conductor' && !esCorreoConductor) {
+      error.value = mensajeGenericoCredenciales
+
+      return false
+    }
+
+    if (rol !== 'conductor' && esCorreoConductor) {
       error.value = mensajeGenericoCredenciales
 
       return false
@@ -260,16 +264,7 @@ const enviarFormulario = async () => {
       || Object.values(e.response?.data?.errors || {})?.flat()?.[0]
       || 'Error en la autenticación'
 
-    // Unificar mensaje para la regla Admin ⇔ @admin.com
-    const mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.'
-    const mensajesAUnificar = [
-      'Para crear un usuario administrador el email debe terminar en @admin.com.',
-      'Si el email termina en @admin.com debes seleccionar el tipo de usuario Admin.'
-    ]
-
-    error.value = mensajesAUnificar.includes(mensaje)
-      ? mensajeGenericoCredenciales
-      : mensaje
+    error.value = mensaje
   } finally {
     cargando.value = false
   }

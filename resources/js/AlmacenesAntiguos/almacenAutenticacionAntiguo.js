@@ -69,10 +69,10 @@ export function useAuthStore() {
 
       return { success: false, error: 'Email no válido' };
     }
-    // Regla de negocio: coherencia entre rol Admin y dominio @admin.com
+    // Regla de negocio: coherencia entre rol Admin y dominio @admin.es
     const correoNormalizado = String(email || '').trim().toLowerCase();
     const rolNormalizado = role || 'pasajero';
-    const esCorreoAdmin = correoNormalizado.endsWith('@admin.com');
+    const esCorreoAdmin = correoNormalizado.endsWith('@admin.es');
 
     const mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.';
 

@@ -105,6 +105,9 @@
             Route::get('/admin/stats', [AdministradorController::class, 'stats']);
             Route::get('/admin/monthly-stats', [AdministradorController::class, 'monthlyStats']);
 
+            // Alta de administradores (solo desde panel admin)
+            Route::post('/admin/admins', [AdministradorController::class, 'createAdmin']);
+
             // Aprobación / rechazo de taxistas
             Route::post('/admin/conductors/{conductor}/approve', [AdministradorController::class, 'approveConductor']);
             Route::post('/admin/conductors/{conductor}/reject', [AdministradorController::class, 'rejectConductor']);

@@ -208,6 +208,13 @@ export const useAdminStore = defineStore('admin', {
       this.pendientesNuevos = []
     },
 
+    async crearAdmin(payload) {
+      const response = await axios.post('/api/admin/admins', payload)
+      // Refrescar usuarios para que el panel refleje el alta.
+      await this.obtenerUsuarios()
+      return response.data
+    },
+
     async actualizarEstadoUsuario(usuarioId, estado) {
       const usuario = this.usuarios.find(u => u.id === usuarioId)
       if (usuario) {

@@ -298,7 +298,14 @@ const elementosMenu = computed(() => {
     activo: rutaActual.value.includes('/admin/clientes')
   }
 
-  if (authStore.isAdmin) return [inicio, taxistas, clientes, miPerfil]
+  const administradores = {
+    label: 'Admins',
+    icon: 'M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5s-3 1.343-3 3 1.343 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
+    path: '/admin/admins',
+    activo: rutaActual.value.includes('/admin/admins')
+  }
+
+  if (authStore.isAdmin) return [inicio, taxistas, clientes, administradores, miPerfil]
   if (authStore.isconductor) return [inicio, misViajes, ganancias, miPerfil]
   if (authStore.ispasajero) return [inicio, misViajes, miPerfil]
 
