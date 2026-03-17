@@ -60,7 +60,22 @@ export const useConductorStore = defineStore('conductor', {
 
         const auth = useAuthStore()
         const datosPerfil = respuestaPerfil.data
-        const taxi = datosPerfil.taxi || {}
+        const taxiRaw = datosPerfil.taxi || {}
+        const plateRaw = String(taxiRaw.plate || '')
+        const modelRaw = String(taxiRaw.model || '')
+        const esPlatePlaceholder = plateRaw.startsWith('PENDIENTE-') || plateRaw.startsWith('TMP-')
+        const esModelPlaceholder = modelRaw.trim().toLowerCase() === 'pendiente'
+
+        const taxi = {
+          ...taxiRaw,
+          plate: esPlatePlaceholder ? '' : plateRaw,
+          model: esModelPlaceholder ? '' : modelRaw,
+        }
+
+        let capacidad = taxi.capacity ?? null
+        if ((esPlatePlaceholder || esModelPlaceholder) && Number(capacidad || 0) === 4) {
+          capacidad = null
+        }
         const avatar = datosPerfil.user?.avatar || null
 
         if (datosPerfil.user) {
@@ -82,11 +97,11 @@ export const useConductorStore = defineStore('conductor', {
           avatar: avatar,
           numeroLicencia: datosPerfil.license_number,
           vehiculo: {
-            modelo: taxi.model || 'Sin modelo',
-            matricula: taxi.plate || 'Sin matricula',
+            modelo: String(taxi.model || ''),
+            matricula: String(taxi.plate || ''),
             anio: taxi.year || new Date().getFullYear(),
             color: taxi.color || 'Sin color',
-            capacidad: taxi.capacity || 4
+            capacidad: capacidad
           },
           verificado: true,
           fechaRegistro: datosPerfil.created_at?.split('T')[0] || null

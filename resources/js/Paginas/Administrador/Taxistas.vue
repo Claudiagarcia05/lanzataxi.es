@@ -141,7 +141,13 @@
             <form v-else @submit.prevent="guardarTaxi" class="space-y-3">
               <div>
                 <label class="block text-xs text-neutral-slate mb-1">Matrícula</label>
-                <input v-model="formularioTaxi.plate" class="w-full rounded-lg border-neutral-volcanic" />
+                <input
+                  v-model="formularioTaxi.plate"
+                  maxlength="8"
+                  placeholder="1234 ABC"
+                  @input="formatearMatriculaInput"
+                  class="w-full rounded-lg border-neutral-volcanic"
+                />
               </div>
               <div>
                 <label class="block text-xs text-neutral-slate mb-1">Modelo</label>
@@ -257,7 +263,16 @@ const guardarTaxi = async () => {
   try {
     const payload = {}
 
-    if (String(formularioTaxi.value.plate || '').trim()) payload.plate = String(formularioTaxi.value.plate).trim()
+    const plate = String(formularioTaxi.value.plate || '').trim()
+    if (plate) {
+      const valido = /^\d{4}\s[A-Z]{3}$/.test(plate)
+      if (!valido) {
+        mensajeError.value = 'La matrícula debe tener formato 1234 ABC (4 números, espacio, 3 letras).'
+        setTimeout(() => { mensajeError.value = '' }, 5000)
+        return
+      }
+      payload.plate = plate
+    }
     if (String(formularioTaxi.value.model || '').trim()) payload.model = String(formularioTaxi.value.model).trim()
     if (formularioTaxi.value.capacity !== null && formularioTaxi.value.capacity !== '' && !Number.isNaN(Number(formularioTaxi.value.capacity))) {
       payload.capacity = Number(formularioTaxi.value.capacity)
@@ -278,6 +293,19 @@ const guardarTaxi = async () => {
     mensajeError.value = error.response?.data?.message || 'No se pudo actualizar el vehículo'
     setTimeout(() => { mensajeError.value = '' }, 4000)
   }
+}
+
+const formatearMatriculaInput = (e) => {
+  const raw = String(e?.target?.value ?? formularioTaxi.value.plate ?? '')
+
+  const digits = raw.replace(/\D/g, '').slice(0, 4)
+  const letters = raw.replace(/[^a-zA-Z]/g, '').toUpperCase().slice(0, 3)
+
+  let out = digits
+  if (digits.length === 4 && letters.length > 0) out += ' '
+  out += letters
+
+  formularioTaxi.value.plate = out
 }
 
 const aprobarConductor = async () => {

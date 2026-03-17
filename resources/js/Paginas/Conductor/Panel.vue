@@ -116,10 +116,43 @@
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('playFill')"></svg>
             Iniciar viaje
           </button>
+          <button v-if="['accepted','in_progress'].includes(viaje.estado)" @click="abrirMapa(viaje)" class="bg-white text-neutral-dark px-4 py-2 rounded-lg text-sm border border-neutral-volcanic hover:bg-neutral-soft">
+            Ver mapa
+          </button>
           <button v-if="viaje.estado === 'in_progress'" @click="completarViaje(viaje.id)" class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('check2Circle')"></svg>
             Completar viaje
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal Mapa (conductor) -->
+    <div v-if="modalMapaAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <div class="w-full max-w-5xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
+        <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
+          <div>
+            <h3 class="font-semibold text-neutral-dark">Mapa del viaje</h3>
+            <p class="text-sm text-neutral-slate">Origen y destino del viaje</p>
+          </div>
+          <button @click="cerrarMapa" class="p-2 rounded-lg hover:bg-neutral-soft">
+            <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
+          </button>
+        </div>
+
+        <div class="p-5">
+          <div class="h-[60vh] min-h-[360px]">
+            <MapaSeguimiento
+              v-if="viajeMapa"
+              :pickupLat="viajeMapa.pickupLat"
+              :pickupLng="viajeMapa.pickupLng"
+              :dropoffLat="viajeMapa.dropoffLat"
+              :dropoffLng="viajeMapa.dropoffLng"
+              :taxiLat="conductorStore.ubicacionActual?.lat ?? null"
+              :taxiLng="conductorStore.ubicacionActual?.lng ?? null"
+              :estado="viajeMapa.estado"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -197,7 +230,7 @@
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('people')"></svg>
             Capacidad
           </p>
-          <p class="font-medium">{{ conductorStore.perfil.vehiculo.capacidad }} personas</p>
+          <p class="font-medium">{{ conductorStore.perfil.vehiculo.capacidad ? `${conductorStore.perfil.vehiculo.capacidad} personas` : '' }}</p>
         </div>
       </div>
     </div>
@@ -207,11 +240,12 @@
 
 
 <script setup>
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
 import DisposicionConductor from '../../Disposiciones/DisposicionConductor.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useViajeStore } from '../../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../../Almacenes/almacenConductor.js'
+import MapaSeguimiento from '../../Componentes/MapaSeguimiento.vue'
 
 import svgCarFront from 'bootstrap-icons/icons/car-front.svg?raw'
 import svgFileText from 'bootstrap-icons/icons/file-text.svg?raw'
@@ -234,6 +268,9 @@ import svgPeople from 'bootstrap-icons/icons/people.svg?raw'
 const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
+
+const modalMapaAbierto = ref(false)
+const viajeMapa = ref(null)
 
 const iconPaths = {
   viajes: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
@@ -315,5 +352,15 @@ const iniciarViaje = async (viajeId) => {
 const completarViaje = async (viajeId) => {
   await viajeStore.completarViaje(viajeId)
   await conductorStore.actualizarEstadisticas()
+}
+
+const abrirMapa = (viaje) => {
+  viajeMapa.value = viaje || null
+  modalMapaAbierto.value = true
+}
+
+const cerrarMapa = () => {
+  modalMapaAbierto.value = false
+  viajeMapa.value = null
 }
 </script>

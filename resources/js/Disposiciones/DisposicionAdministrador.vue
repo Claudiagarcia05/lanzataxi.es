@@ -179,7 +179,6 @@ const notificaciones = ref([
   { id: 2, text: 'Viaje completado con éxito', time: 'hace 15 min', read: false },
   { id: 3, text: 'Pago recibido: 18.50€', time: 'hace 1 hora', read: true }
 ])
-
 onMounted(() => {
   ;(async () => {
     if (!authStore.inicializado || !authStore.usuario) {
@@ -299,7 +298,7 @@ const elementosMenu = computed(() => {
   }
 
   const administradores = {
-    label: 'Admins',
+    label: 'Administradores',
     icon: 'M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5s-3 1.343-3 3 1.343 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
     path: '/admin/admins',
     activo: rutaActual.value.includes('/admin/admins')
