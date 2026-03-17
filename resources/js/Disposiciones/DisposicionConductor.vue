@@ -131,9 +131,6 @@ const navegarA = (path) => {
 }
 
 const cerrarSesion = async () => {
-  if (conductorStore.estaEnLinea) {
-    await conductorStore.establecerEstadoEnLinea(false)
-  }
   await authStore.cerrarSesion()
   inertiaRouter.visit('/')
 }

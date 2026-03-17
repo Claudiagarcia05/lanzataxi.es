@@ -116,39 +116,41 @@
     </div>
   </div>
 
-  <div v-if="authStore.isAdmin && adminStore.modalPendientesAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-    <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
-      <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
-        <div>
-          <h3 class="font-semibold text-neutral-dark">Solicitud de taxista</h3>
-          <p class="text-sm text-neutral-slate">Revisa y decide: aprobar o rechazar.</p>
-        </div>
-        <button @click="adminStore.cerrarModalPendientes()" class="p-2 rounded-lg hover:bg-neutral-soft">
-          <span class="text-neutral-slate">Cerrar</span>
-        </button>
-      </div>
+  <div
+    v-if="authStore.isAdmin && panelPendientesAbierto && adminStore.conductoresPendientes.length > 0"
+    class="fixed top-24 right-6 w-96 max-h-[calc(100vh-7rem)] overflow-auto bg-white rounded-2xl shadow-sm border border-neutral-volcanic z-40"
+  >
+    <div class="p-4 border-b border-neutral-volcanic flex items-center justify-between">
+      <h3 class="font-semibold text-neutral-dark">
+        Solicitudes de taxista ({{ adminStore.conductoresPendientes.length }})
+      </h3>
+      <button @click="panelPendientesAbierto = false" class="p-2 rounded-lg hover:bg-neutral-soft" aria-label="Cerrar">
+        <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
+      </button>
+    </div>
 
-      <div class="p-5 space-y-3 max-h-[70vh] overflow-y-auto">
-        <div v-for="solicitud in adminStore.pendientesNuevos" :key="solicitud.id" class="border border-neutral-volcanic rounded-lg p-4">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div>
-              <p class="font-medium text-neutral-dark">{{ solicitud.name }}</p>
-              <p class="text-sm text-neutral-slate">{{ solicitud.email }} · {{ solicitud.phone }}</p>
-              <p class="text-xs text-neutral-slate mt-1">Licencia: {{ solicitud.license_number || '—' }} · Solicitó: {{ (solicitud.created_at || '').split('T')[0] }}</p>
-            </div>
-            <div class="flex items-center gap-2">
-              <button @click="adminStore.aprobarConductor(solicitud.id)" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600">
-                Aprobar
-              </button>
-              <button @click="adminStore.rechazarConductor(solicitud.id)" class="bg-red-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600">
-                Rechazar
-              </button>
-            </div>
+    <div class="p-4 space-y-3">
+      <div
+        v-for="solicitud in adminStore.conductoresPendientes"
+        :key="solicitud.id"
+        class="bg-neutral-soft rounded-xl p-4 border border-neutral-volcanic"
+      >
+        <div class="flex items-start justify-between gap-3">
+          <div class="min-w-0">
+            <p class="font-semibold text-neutral-dark truncate">{{ solicitud.name }}</p>
+            <p class="text-xs text-neutral-slate mt-1 truncate">{{ solicitud.email }} · {{ solicitud.phone }}</p>
+            <p class="text-xs text-neutral-slate mt-1">Licencia: {{ solicitud.license_number || '—' }}</p>
+            <p class="text-xs text-neutral-slate">Solicitó: {{ (solicitud.created_at || '').split('T')[0] }}</p>
           </div>
-        </div>
 
-        <div v-if="adminStore.pendientesNuevos.length === 0" class="text-sm text-neutral-slate">
-          No hay nuevas solicitudes.
+          <div class="flex flex-col gap-2 shrink-0">
+            <button @click="adminStore.aprobarConductor(solicitud.id)" class="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors">
+              Aprobar
+            </button>
+            <button @click="adminStore.rechazarConductor(solicitud.id)" class="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors">
+              Rechazar
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -174,6 +176,7 @@ let idIntervaloSondeoPendientes = null
 
 const barraLateralAbierta = ref(true)
 const mostrarNotificaciones = ref(false)
+const panelPendientesAbierto = ref(true)
 const notificaciones = ref([
   { id: 1, text: 'Nueva solicitud de viaje', time: 'hace 2 min', read: false },
   { id: 2, text: 'Viaje completado con éxito', time: 'hace 15 min', read: false },
@@ -194,7 +197,7 @@ onMounted(() => {
       adminStore.obtenerTodosLosDatos()
 
       idIntervaloSondeoPendientes = setInterval(() => {
-        adminStore.obtenerConductoresPendientes({ abrirModalSiHayNuevos: true })
+        adminStore.obtenerConductoresPendientes({ abrirModalSiHayNuevos: false })
       }, 15000)
     }
   })()

@@ -105,23 +105,6 @@
               </button>
 
               <button
-                v-if="conductorSeleccionado?.approval_status === 'pending'"
-                @click="aprobarConductor"
-                :disabled="!conductorSeleccionado"
-                class="bg-green-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600"
-              >
-                Aprobar
-              </button>
-              <button
-                v-if="conductorSeleccionado?.approval_status === 'pending'"
-                @click="rechazarConductor"
-                :disabled="!conductorSeleccionado"
-                class="bg-red-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
-              >
-                Rechazar
-              </button>
-
-              <button
                 @click="guardarTaxi"
                 :disabled="!conductorSeleccionado || !formularioTaxi.id"
                 class="bg-lanzarote-yellow disabled:opacity-50 text-black px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-blue hover:text-white"
@@ -306,45 +289,6 @@ const formatearMatriculaInput = (e) => {
   out += letters
 
   formularioTaxi.value.plate = out
-}
-
-const aprobarConductor = async () => {
-  const idConductor = conductorSeleccionado.value?.id
-  if (!idConductor) return
-
-  mensajeError.value = ''
-  mensajeInfo.value = ''
-
-  try {
-    await adminStore.aprobarConductor(idConductor)
-    const actualizado = adminStore.conductores.find(c => c.id === idConductor)
-    if (actualizado) conductorSeleccionado.value = actualizado
-    mensajeInfo.value = 'Solicitud aprobada correctamente'
-    setTimeout(() => { mensajeInfo.value = '' }, 4000)
-  } catch (error) {
-    mensajeError.value = error.response?.data?.message || 'No se pudo aprobar la solicitud'
-    setTimeout(() => { mensajeError.value = '' }, 4000)
-  }
-}
-
-const rechazarConductor = async () => {
-  const idConductor = conductorSeleccionado.value?.id
-  if (!idConductor) return
-
-  mensajeError.value = ''
-  mensajeInfo.value = ''
-
-  try {
-    await adminStore.rechazarConductor(idConductor)
-    await adminStore.obtenerConductores()
-    const actualizado = adminStore.conductores.find(c => c.id === idConductor)
-    if (actualizado) conductorSeleccionado.value = actualizado
-    mensajeInfo.value = 'Solicitud rechazada correctamente'
-    setTimeout(() => { mensajeInfo.value = '' }, 4000)
-  } catch (error) {
-    mensajeError.value = error.response?.data?.message || 'No se pudo rechazar la solicitud'
-    setTimeout(() => { mensajeError.value = '' }, 4000)
-  }
 }
 
 const formatearMes = (yyyyMm) => {
