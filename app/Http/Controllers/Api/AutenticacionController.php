@@ -3,9 +3,11 @@
     namespace App\Http\Controllers\Api;
 
     use App\Http\Controllers\Controller;
+    use App\Models\Conductor;
     use App\Models\User;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Hash;
+    use Illuminate\Support\Str;
 
     class AutenticacionController extends Controller {
         public function register(Request $solicitud) {
@@ -71,9 +73,14 @@
             ]);
 
             if ($rol === 'conductor') {
+                $licencia = 'LIC-' . Str::upper(Str::random(10));
+                while (Conductor::where('license_number', $licencia)->exists()) {
+                    $licencia = 'LIC-' . Str::upper(Str::random(10));
+                }
+
                 $conductor = \App\Models\Conductor::create([
                     'user_id' => $usuario->id,
-                    'license_number' => 'LIC-' . strtoupper(uniqid()),
+                    'license_number' => $licencia,
                     'rating' => 5.0,
                     'is_active' => false,
                     'approval_status' => 'pending',

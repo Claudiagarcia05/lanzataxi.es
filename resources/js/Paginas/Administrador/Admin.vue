@@ -53,12 +53,41 @@
         </div>
       </form>
     </div>
+
+    <div class="bg-white rounded-xl shadow-sm mt-6">
+      <div class="p-6 border-b border-neutral-volcanic">
+        <h3 class="font-semibold text-neutral-dark">Administradores</h3>
+        <p class="text-sm text-neutral-slate mt-1">Listado rápido (nombre, email y estado)</p>
+      </div>
+
+      <div class="p-6">
+        <div class="max-h-56 overflow-y-auto border border-neutral-volcanic rounded-lg">
+          <div
+            v-for="a in administradores"
+            :key="a.id"
+            class="flex items-center justify-between gap-3 px-4 py-3 border-b border-neutral-volcanic last:border-b-0"
+          >
+            <div class="min-w-0">
+              <p class="text-sm font-medium text-neutral-dark truncate">{{ a.name }}</p>
+              <p class="text-xs text-neutral-slate truncate">{{ a.email }}</p>
+            </div>
+            <span :class="['shrink-0 px-2 py-1 rounded-full text-xs', a.is_disabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800']">
+              {{ a.is_disabled ? 'De baja' : 'Activo' }}
+            </span>
+          </div>
+
+          <div v-if="administradores.length === 0" class="px-4 py-4 text-sm text-neutral-slate">
+            No hay administradores.
+          </div>
+        </div>
+      </div>
+    </div>
   </DisposicionAdministrador>
 </template>
 
 
 <script setup>
-import { ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 
@@ -75,6 +104,16 @@ const form = ref({
   password: '',
   password_confirmation: '',
 })
+
+onMounted(async () => {
+  try {
+    await adminStore.obtenerUsuarios()
+  } catch (_) {
+    // Silencioso: si falla la carga, el alta sigue funcionando.
+  }
+})
+
+const administradores = computed(() => adminStore.usuarios.filter(u => u.role === 'admin'))
 
 const resetForm = () => {
   form.value = {

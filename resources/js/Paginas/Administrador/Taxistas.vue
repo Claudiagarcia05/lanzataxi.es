@@ -67,7 +67,6 @@
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
             <h3 class="font-semibold text-neutral-dark">Taxista</h3>
-            <p class="text-sm text-neutral-slate">Datos personales no editables. Vehículo editable por admin.</p>
           </div>
           <button @click="cerrarModal" class="p-2 rounded-lg hover:bg-neutral-soft">
             <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
@@ -104,6 +103,24 @@
               >
                 Informe
               </button>
+
+              <button
+                v-if="conductorSeleccionado?.approval_status === 'pending'"
+                @click="aprobarConductor"
+                :disabled="!conductorSeleccionado"
+                class="bg-green-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600"
+              >
+                Aprobar
+              </button>
+              <button
+                v-if="conductorSeleccionado?.approval_status === 'pending'"
+                @click="rechazarConductor"
+                :disabled="!conductorSeleccionado"
+                class="bg-red-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
+              >
+                Rechazar
+              </button>
+
               <button
                 @click="guardarTaxi"
                 :disabled="!conductorSeleccionado || !formularioTaxi.id"
@@ -133,7 +150,7 @@
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs text-neutral-slate mb-1">Capacidad</label>
-                  <input v-model.number="formularioTaxi.capacity" type="number" min="1" class="w-full rounded-lg border-neutral-volcanic" />
+                  <input v-model="formularioTaxi.capacity" type="number" min="1" class="w-full rounded-lg border-neutral-volcanic" />
                 </div>
                 <div>
                   <label class="block text-xs text-neutral-slate mb-1">Color</label>
@@ -178,7 +195,7 @@ const formularioTaxi = ref({
   id: null,
   plate: '',
   model: '',
-  capacity: 4,
+  capacity: null,
   color: '',
 })
 
@@ -193,12 +210,17 @@ const abrirModalConductor = (conductor) => {
   modalConductorAbierto.value = true
 
   const taxi = conductor.taxi || null
+  const esPlatePlaceholder = String(taxi?.plate || '').startsWith('PENDIENTE-') || String(taxi?.plate || '').startsWith('TMP-')
   formularioTaxi.value = {
     id: taxi?.id ?? null,
-    plate: taxi?.plate ?? '',
-    model: taxi?.model ?? '',
-    capacity: taxi?.capacity ?? 4,
+    plate: esPlatePlaceholder ? '' : (taxi?.plate ?? ''),
+    model: (taxi?.model ?? ''),
+    capacity: (taxi?.capacity ?? null),
     color: taxi?.color ?? '',
+  }
+
+  if ((esPlatePlaceholder || String(taxi?.model || '').trim().toLowerCase() === 'pendiente') && Number(formularioTaxi.value.capacity || 0) === 4) {
+    formularioTaxi.value.capacity = null
   }
 }
 
@@ -233,12 +255,16 @@ const guardarTaxi = async () => {
   mensajeInfo.value = ''
 
   try {
-    await axios.put(`/api/taxis/${formularioTaxi.value.id}`, {
-      plate: formularioTaxi.value.plate,
-      model: formularioTaxi.value.model,
-      capacity: formularioTaxi.value.capacity,
-      color: formularioTaxi.value.color,
-    })
+    const payload = {}
+
+    if (String(formularioTaxi.value.plate || '').trim()) payload.plate = String(formularioTaxi.value.plate).trim()
+    if (String(formularioTaxi.value.model || '').trim()) payload.model = String(formularioTaxi.value.model).trim()
+    if (formularioTaxi.value.capacity !== null && formularioTaxi.value.capacity !== '' && !Number.isNaN(Number(formularioTaxi.value.capacity))) {
+      payload.capacity = Number(formularioTaxi.value.capacity)
+    }
+    if (formularioTaxi.value.color !== undefined) payload.color = (formularioTaxi.value.color || '').trim() || null
+
+    await axios.put(`/api/taxis/${formularioTaxi.value.id}`, payload)
 
     await adminStore.obtenerConductores()
     const conductorActualizado = adminStore.conductores.find(c => c.id === conductorSeleccionado.value?.id)
@@ -252,6 +278,56 @@ const guardarTaxi = async () => {
     mensajeError.value = error.response?.data?.message || 'No se pudo actualizar el vehículo'
     setTimeout(() => { mensajeError.value = '' }, 4000)
   }
+}
+
+const aprobarConductor = async () => {
+  const idConductor = conductorSeleccionado.value?.id
+  if (!idConductor) return
+
+  mensajeError.value = ''
+  mensajeInfo.value = ''
+
+  try {
+    await adminStore.aprobarConductor(idConductor)
+    const actualizado = adminStore.conductores.find(c => c.id === idConductor)
+    if (actualizado) conductorSeleccionado.value = actualizado
+    mensajeInfo.value = 'Solicitud aprobada correctamente'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
+  } catch (error) {
+    mensajeError.value = error.response?.data?.message || 'No se pudo aprobar la solicitud'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
+  }
+}
+
+const rechazarConductor = async () => {
+  const idConductor = conductorSeleccionado.value?.id
+  if (!idConductor) return
+
+  mensajeError.value = ''
+  mensajeInfo.value = ''
+
+  try {
+    await adminStore.rechazarConductor(idConductor)
+    await adminStore.obtenerConductores()
+    const actualizado = adminStore.conductores.find(c => c.id === idConductor)
+    if (actualizado) conductorSeleccionado.value = actualizado
+    mensajeInfo.value = 'Solicitud rechazada correctamente'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
+  } catch (error) {
+    mensajeError.value = error.response?.data?.message || 'No se pudo rechazar la solicitud'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
+  }
+}
+
+const formatearMes = (yyyyMm) => {
+  const valor = String(yyyyMm || '').trim()
+  const match = valor.match(/^(\d{4})-(\d{2})$/)
+  if (!match) return valor || '—'
+
+  const [_, y, m] = match
+  const fecha = new Date(Number(y), Number(m) - 1, 1)
+  const texto = fecha.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+  return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
 const obtenerTextoAprobacion = (estadoAprobacion) => {
@@ -313,7 +389,7 @@ const descargarInformeConductor = async (idConductor) => {
 
   doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
   doc.setFontSize(11)
-  doc.text('Histórico por mes (YYYY-MM)', 14, y)
+  doc.text('Histórico por mes', 14, y)
   y += 6
 
   doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
@@ -325,7 +401,8 @@ const descargarInformeConductor = async (idConductor) => {
       doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
       doc.setFontSize(10)
     }
-    doc.text(`${m.mes}  -  Completados: ${m.viajesCompletados}  Cancelados: ${m.viajesCancelados}  Ganancias: ${m.ingresos.toFixed(2)} €`, 14, y)
+    const mesLabel = formatearMes(m.mes)
+    doc.text(`${mesLabel}  -  Completados: ${m.viajesCompletados}  Cancelados: ${m.viajesCancelados}  Ganancias: ${m.ingresos.toFixed(2)} €`, 14, y)
     y += 5
   })
 

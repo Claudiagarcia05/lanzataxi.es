@@ -55,7 +55,11 @@
                 return $existingTaxi;
             }
 
-            $plateBase = 'TMP-' . $this->id . '-' . strtoupper(bin2hex(random_bytes(3)));
+            // NOTA de negocio:
+            // Al crear un taxista nuevo, el vehículo debe aparecer vacío en el panel
+            // hasta que el admin lo edite. Como la tabla `taxis` requiere plate/model/capacity,
+            // generamos una matrícula placeholder (no mostrable) y dejamos el resto vacío.
+            $plateBase = 'PENDIENTE-' . $this->id . '-' . strtoupper(bin2hex(random_bytes(3)));
             $plate = $plateBase;
             $suffix = 0;
             while (Taxi::where('plate', $plate)->exists()) {
@@ -65,7 +69,7 @@
 
             $createdTaxi = $this->taxi()->create([
                 'plate' => $plate,
-                'model' => 'Pendiente',
+                'model' => '',
                 'capacity' => 4,
                 'color' => null,
                 'status' => $statusIfCreate,

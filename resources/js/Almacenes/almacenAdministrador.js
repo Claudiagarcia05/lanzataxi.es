@@ -41,6 +41,27 @@ export const useAdminStore = defineStore('admin', {
   },
 
   actions: {
+    _sanearTaxiParaEdicion(taxi) {
+      if (!taxi) return null
+
+      const plate = String(taxi.plate || '')
+      const esPlatePlaceholder = plate.startsWith('PENDIENTE-') || plate.startsWith('TMP-')
+      const model = String(taxi.model || '')
+      const esModelPlaceholder = model.trim().toLowerCase() === 'pendiente'
+
+      const taxiSan = { ...taxi }
+
+      if (esPlatePlaceholder) taxiSan.plate = ''
+      if (esModelPlaceholder) taxiSan.model = ''
+
+      // Si es un taxi placeholder, no forzamos capacidad por defecto en UI.
+      if ((esPlatePlaceholder || esModelPlaceholder) && Number(taxiSan.capacity || 0) === 4) {
+        taxiSan.capacity = null
+      }
+
+      return taxiSan
+    },
+
     async obtenerTodosLosDatos() {
       this.cargando = true
       try {
@@ -90,11 +111,19 @@ export const useAdminStore = defineStore('admin', {
         approved_at: conductor.approved_at,
         rejected_at: conductor.rejected_at,
         license_number: conductor.license_number,
-        vehiculo: conductor.taxi ? `${conductor.taxi.model} - ${conductor.taxi.plate}` : 'Sin taxi',
+        vehiculo: conductor.taxi
+          ? (() => {
+              const taxiSan = this._sanearTaxiParaEdicion(conductor.taxi)
+              const modelo = String(taxiSan?.model || '').trim()
+              const matricula = String(taxiSan?.plate || '').trim()
+              const etiqueta = [modelo, matricula].filter(Boolean).join(' · ')
+              return etiqueta || ''
+            })()
+          : '',
         estado: conductor.is_active ? 'activo' : 'inactivo',
         valoracion: Number(conductor.rating || 0),
         viajes: conductor.viajes_count || 0,
-        taxi: conductor.taxi || null,
+        taxi: this._sanearTaxiParaEdicion(conductor.taxi) || null,
       }))
     },
 
@@ -122,7 +151,7 @@ export const useAdminStore = defineStore('admin', {
         is_disabled: Boolean(conductor.user?.is_disabled),
         license_number: conductor.license_number,
         created_at: conductor.created_at,
-        taxi: conductor.taxi || null,
+        taxi: this._sanearTaxiParaEdicion(conductor.taxi) || null,
       }))
 
       const vistos = Array.isArray(this.pendientesVistosIds) ? this.pendientesVistosIds : []
