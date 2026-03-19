@@ -65,7 +65,6 @@
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
             <h3 class="font-semibold text-neutral-dark">Cliente</h3>
-            <p class="text-sm text-neutral-slate">Datos personales.</p>
           </div>
           <button @click="cerrarModal" class="p-2 rounded-lg hover:bg-neutral-soft">
             <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>

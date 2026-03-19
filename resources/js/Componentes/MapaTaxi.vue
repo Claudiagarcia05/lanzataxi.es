@@ -177,7 +177,9 @@ const initMap = async () => {
     placeholder: 'Buscar dirección...',
     errorMessage: 'No se encontró la dirección',
     geocoder: L.Control.Geocoder.nominatim({
-      serviceUrl: 'https://nominatim.openstreetmap.org/search?format=json&q='
+      // Restringir resultados a Lanzarote (bounding box)
+      // Nominatim: viewbox=left,top,right,bottom
+      serviceUrl: 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=es&bounded=1&viewbox=-13.95,29.35,-13.20,28.85&q='
     })
   }).on('markgeocode', function(e) {
     const { center, name } = e.geocode

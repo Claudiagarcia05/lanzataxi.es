@@ -195,10 +195,11 @@
 
         public function store(Request $solicitud) {
             $validado = $solicitud->validate([
-                'pickup_lat' => 'required|numeric',
-                'pickup_lng' => 'required|numeric',
-                'dropoff_lat' => 'required|numeric',
-                'dropoff_lng' => 'required|numeric',
+                // Lanzarote (aprox.): lat 28.85..29.35, lng -13.95..-13.20
+                'pickup_lat' => 'required|numeric|between:28.85,29.35',
+                'pickup_lng' => 'required|numeric|between:-13.95,-13.20',
+                'dropoff_lat' => 'required|numeric|between:28.85,29.35',
+                'dropoff_lng' => 'required|numeric|between:-13.95,-13.20',
                 'pickup_address' => 'nullable|string|max:255',
                 'dropoff_address' => 'nullable|string|max:255',
                 'distance' => 'nullable|numeric|min:0',
@@ -207,6 +208,11 @@
                 'luggage' => 'nullable|integer|min:0|max:10',
                 'pago_method' => 'nullable|string|in:efectivo,wallet,tarjeta',
                 'notes' => 'nullable|string|max:1000',
+            ], [
+                'pickup_lat.between' => 'La ubicación de origen debe estar dentro de Lanzarote.',
+                'pickup_lng.between' => 'La ubicación de origen debe estar dentro de Lanzarote.',
+                'dropoff_lat.between' => 'La ubicación de destino debe estar dentro de Lanzarote.',
+                'dropoff_lng.between' => 'La ubicación de destino debe estar dentro de Lanzarote.',
             ]);
 
             $municipios = [

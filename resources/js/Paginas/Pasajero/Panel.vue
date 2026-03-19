@@ -197,9 +197,40 @@ const normalizarSvg = (raw) => raw
 
 const iconoTaxiSvg = normalizarSvg(svgTaxiFront)
 
+// Bounding box simple para Lanzarote (incluye La Graciosa, aprox.)
+const LANZAROTE_BOUNDS = {
+  south: 28.85,
+  west: -13.95,
+  north: 29.35,
+  east: -13.20,
+}
+
+const estaEnLanzarote = (lat, lng) => {
+  return Number.isFinite(lat)
+    && Number.isFinite(lng)
+    && lat >= LANZAROTE_BOUNDS.south
+    && lat <= LANZAROTE_BOUNDS.north
+    && lng >= LANZAROTE_BOUNDS.west
+    && lng <= LANZAROTE_BOUNDS.east
+}
+
+const viewboxLanzarote = () => {
+  // Nominatim: viewbox=left,top,right,bottom
+  return `${LANZAROTE_BOUNDS.west},${LANZAROTE_BOUNDS.north},${LANZAROTE_BOUNDS.east},${LANZAROTE_BOUNDS.south}`
+}
+
 // Recibe una ubicación (por ejemplo, desde el componente del mapa) y actualiza el formulario
 const manejarUbicacionUsuario = (ubicacion) => {
   if (ubicacion && ubicacion.address) {
+    if (ubicacion.lat && ubicacion.lng) {
+      const lat = Number.parseFloat(ubicacion.lat)
+      const lng = Number.parseFloat(ubicacion.lng)
+      if (!estaEnLanzarote(lat, lng)) {
+        mensajeError.value = 'Solo se admiten direcciones y ubicaciones dentro de Lanzarote.'
+        return
+      }
+    }
+
     formularioReserva.value.pickupAddress = ubicacion.address
     if (ubicacion.lat && ubicacion.lng) {
       formularioReserva.value.pickupLat = ubicacion.lat
@@ -222,19 +253,22 @@ const geocodificarDireccion = async (address) => {
     params: {
       q,
       format: 'json',
-      limit: 1,
-      countrycodes: 'es'
+      limit: 5,
+      countrycodes: 'es',
+      bounded: 1,
+      viewbox: viewboxLanzarote(),
     }
   })
 
-  const first = response.data?.[0]
-  if (!first) return null
+  const candidatos = Array.isArray(response.data) ? response.data : []
+  for (const item of candidatos) {
+    const lat = Number.parseFloat(item?.lat)
+    const lng = Number.parseFloat(item?.lon)
+    if (!estaEnLanzarote(lat, lng)) continue
+    return { lat, lng, displayName: item?.display_name }
+  }
 
-  const lat = Number.parseFloat(first.lat)
-  const lng = Number.parseFloat(first.lon)
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
-
-  return { lat, lng, displayName: first.display_name }
+  return null
 }
 
 const establecerCoordenadasRecogida = ({ lat, lng }) => {
@@ -262,6 +296,12 @@ const obtenerUbicacionUsuario = async () => {
   navigator.geolocation.getCurrentPosition(async (position) => {
     const lat = position.coords.latitude
     const lng = position.coords.longitude
+
+    if (!estaEnLanzarote(lat, lng)) {
+      mensajeError.value = 'Tu ubicación actual parece estar fuera de Lanzarote.'
+      return
+    }
+
     try {
       const response = await axios.get(`https://nominatim.openstreetmap.org/reverse`, {
         params: {

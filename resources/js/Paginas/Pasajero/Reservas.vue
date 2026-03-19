@@ -4,7 +4,7 @@
     <div class="max-w-7xl mx-auto">
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <!-- Título de la sección -->
-        <h1 class="text-3xl font-bold text-neutral-dark">Mis Reservas</h1>
+        <h1 class="text-3xl font-bold mb-2">Mis Reservas</h1>
         <p class="text-neutral-slate mt-1">Historial y seguimiento de tus viajes</p>
       </div>
 

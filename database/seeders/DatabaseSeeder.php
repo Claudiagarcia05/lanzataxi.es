@@ -16,7 +16,7 @@
             User::updateOrCreate([
                 'email' => 'admin@admin.es',
             ], [
-                'name' => 'Ana Admin',
+                'name' => 'Admin',
                 'password' => Hash::make('password'),
                 'role' => 'admin',
                 'phone' => '+34 600 333 333',
