@@ -187,7 +187,12 @@ const descargarInformeCliente = async (idUsuario) => {
 
   try {
     const response = await axios.get(`/api/admin/clients/${idUsuario}/trips-report`)
-    const { client: cliente, trips: viajes } = response.data
+    const data = response?.data
+    if (!data || typeof data !== 'object') {
+      throw new Error('Respuesta inesperada del servidor al generar el informe.')
+    }
+
+    const { client: cliente, trips: viajes } = data
 
     const now = new Date()
     const fechaLabel = now.toLocaleString('es-ES', {
@@ -278,7 +283,7 @@ const descargarInformeCliente = async (idUsuario) => {
 
       doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
       doc.setFontSize(12)
-      doc.text('Viajes (completados y cancelados)', marginX, y)
+      doc.text('Viajes', marginX, y)
       y += 14
 
       return y
@@ -328,7 +333,17 @@ const descargarInformeCliente = async (idUsuario) => {
     const listaViajes = Array.isArray(viajes) ? viajes : []
     for (const viaje of listaViajes) {
       const fecha = String(viaje.created_at || '').split('T')[0]
-      const estado = viaje.status === 'completed' ? 'completado' : viaje.status === 'cancelled' ? 'cancelado' : (viaje.status || '—')
+      const estado = viaje.status === 'completed'
+        ? 'completado'
+        : viaje.status === 'cancelled'
+          ? 'cancelado'
+          : viaje.status === 'pending'
+            ? 'pendiente'
+            : viaje.status === 'accepted'
+              ? 'aceptado'
+              : viaje.status === 'in_progress'
+                ? 'en curso'
+                : (viaje.status || '—')
       const precio = `${Number(viaje.price || 0).toFixed(2)} €`
       const ruta = `${viaje.pickup_address || ''} - ${viaje.dropoff_address || ''}`.trim()
 

@@ -9,9 +9,6 @@
             <h1 class="text-3xl font-bold mb-2">Seguimiento del Viaje</h1>
             <p class="text-blue-100">Sigue tu taxi en tiempo real por las carreteras de Lanzarote</p>
           </div>
-          <span class="bg-white/20 px-4 py-2 rounded-full text-sm">
-            {{ obtenerTextoEstado(viaje?.estado) }}
-          </span>
         </div>
       </div>
 
@@ -66,12 +63,6 @@
                     {{ ubicacionTaxi ? 'Taxi en movimiento' : 'Esperando al taxi' }}
                   </p>
                 </div>
-
-                <div class="relative pl-8">
-                  <div class="absolute left-0 w-4 h-4 rounded-full" :class="viaje?.estado === 'completed' ? 'bg-green-500' : 'bg-neutral-volcanic'">
-                  </div>
-                  <p class="text-sm font-medium">Viaje completado</p>
-                </div>
               </div>
             </div>
           </div>
@@ -95,6 +86,10 @@
                 <div>
                   <p class="text-xs text-neutral-slate">Distancia</p>
                   <p class="font-semibold text-lanzarote-blue">{{ viaje?.distance || 0 }} km</p>
+
+                  <button type="button" @click="volverAReservas" class="mt-3 w-full border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
+                    Volver atrás
+                  </button>
                 </div>
                 <div>
                   <p class="text-xs text-neutral-slate">Precio</p>
@@ -204,10 +199,14 @@ const obtenerTextoEstado = (estado) => {
     'pendiente': 'Buscando taxista',
     'accepted': 'Taxista en camino',
     'in_progress': 'Viaje en curso',
-    'completed': 'Viaje completado',
+    'completed': 'Finalizado',
     'cancelled': 'Cancelado'
   }
   return estados[estado] || estado
+}
+
+const volverAReservas = () => {
+  inertiaRouter.visit('/pasajero/reservas')
 }
 
 const formatearFecha = (dateString) => {

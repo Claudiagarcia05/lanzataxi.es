@@ -263,9 +263,9 @@
             $viajes = $esPasajero
                 ? Viaje::query()
                     ->where('pasajero_id', $usuario->id)
-                    ->whereIn('status', ['completed', 'cancelled'])
                     ->select(['id', 'status', 'price', 'pickup_address', 'dropoff_address', 'created_at'])
                     ->latest()
+                    ->limit(200)
                     ->get()
                 : collect();
 
