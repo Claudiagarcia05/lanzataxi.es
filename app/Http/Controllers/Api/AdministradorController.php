@@ -253,16 +253,16 @@
             ]);
         }
 
-        public function clientTripsReport(User $usuario)
+        public function clientTripsReport(User $user)
         {
             // UX: desde el panel se puede intentar generar informe aunque el usuario no tenga
             // viajes (o incluso si su rol no es pasajero). En vez de 400, devolvemos un informe
             // vacío para evitar errores en frontend.
-            $esPasajero = (($usuario->role ?? null) === 'pasajero');
+            $esPasajero = (($user->role ?? null) === 'pasajero');
 
             $viajes = $esPasajero
                 ? Viaje::query()
-                    ->where('pasajero_id', $usuario->id)
+                    ->where('pasajero_id', $user->id)
                     ->select(['id', 'status', 'price', 'pickup_address', 'dropoff_address', 'created_at'])
                     ->latest()
                     ->limit(200)
@@ -271,10 +271,10 @@
 
             return response()->json([
                 'client' => [
-                    'id' => $usuario->id,
-                    'name' => $usuario->name,
-                    'email' => $usuario->email,
-                    'phone' => $usuario->phone,
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'phone' => $user->phone,
                 ],
                 'trips' => $viajes,
                 'note' => $esPasajero ? null : 'El usuario no es pasajero; informe sin viajes.',
