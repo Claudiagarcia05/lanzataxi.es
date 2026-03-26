@@ -14,6 +14,7 @@
             config([
                 'recaptcha.enabled' => true,
                 'recaptcha.secret_key' => 'test-secret',
+                'recaptcha.hostnames' => [],
                 'recaptcha.actions.login' => 'login',
             ]);
 
@@ -34,6 +35,7 @@
                 'recaptcha.secret_key' => 'test-secret',
                 'recaptcha.min_score' => 0.5,
                 'recaptcha.hostname' => '',
+                'recaptcha.hostnames' => [],
                 'recaptcha.actions.login' => 'login',
             ]);
 
@@ -62,6 +64,7 @@
                 'recaptcha.secret_key' => 'test-secret',
                 'recaptcha.min_score' => 0.5,
                 'recaptcha.hostname' => '',
+                'recaptcha.hostnames' => [],
                 'recaptcha.actions.login' => 'login',
             ]);
 
