@@ -4,6 +4,7 @@
 
     use App\Http\Controllers\Controller;
     use App\Models\User;
+    use App\Services\RecaptchaV3;
     use Illuminate\Auth\Events\Registered;
     use Illuminate\Http\RedirectResponse;
     use Illuminate\Http\Request;
@@ -25,11 +26,22 @@
          * @throws \Illuminate\Validation\ValidationException
          */
         public function store(Request $solicitud): RedirectResponse {
-            $solicitud->validate([
+            $recaptcha = app(RecaptchaV3::class);
+
+            $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
+                'recaptcha_token' => $recaptcha->isEnabled() ? 'required|string' : 'nullable|string',
             ]);
+
+            if ($recaptcha->isEnabled()) {
+                $recaptcha->verifyOrFail(
+                    $validado['recaptcha_token'] ?? '',
+                    (string) config('recaptcha.actions.register', 'register'),
+                    $solicitud->ip(),
+                );
+            }
 
             $usuario = User::create([
                 'name' => $solicitud->name,

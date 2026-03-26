@@ -3,6 +3,7 @@
     namespace App\Http\Controllers\Api;
 
     use App\Http\Controllers\Controller;
+    use App\Services\RecaptchaV3;
     use App\Models\Conductor;
     use App\Models\User;
     use Illuminate\Http\Request;
@@ -11,6 +12,8 @@
 
     class AutenticacionController extends Controller {
         public function register(Request $solicitud) {
+            $recaptcha = app(RecaptchaV3::class);
+
             $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|email:rfc,dns|unique:users,email',
@@ -18,10 +21,19 @@
                 // Nota: el rol admin NO se crea por registro público. Solo pasajero/conductor.
                 'role' => 'nullable|in:pasajero,conductor',
                 'phone' => 'nullable|string|max:50',
+                'recaptcha_token' => $recaptcha->isEnabled() ? 'required|string' : 'nullable|string',
             ], [
                 'email.email' => 'El email debe ser una dirección válida y con dominio real.',
                 'email.unique' => 'El email ya está registrado.',
             ]);
+
+            if ($recaptcha->isEnabled()) {
+                $recaptcha->verifyOrFail(
+                    $validado['recaptcha_token'] ?? '',
+                    (string) config('recaptcha.actions.register', 'register'),
+                    $solicitud->ip(),
+                );
+            }
 
             // Reglas de negocio (registro público):
             // - Los emails @admin.es están reservados: no se permite registrarlos públicamente.
@@ -109,10 +121,21 @@
         }
 
         public function login(Request $solicitud) {
+            $recaptcha = app(RecaptchaV3::class);
+
             $validado = $solicitud->validate([
                 'email' => 'required|email',
                 'password' => 'required|string',
+                'recaptcha_token' => $recaptcha->isEnabled() ? 'required|string' : 'nullable|string',
             ]);
+
+            if ($recaptcha->isEnabled()) {
+                $recaptcha->verifyOrFail(
+                    $validado['recaptcha_token'] ?? '',
+                    (string) config('recaptcha.actions.login', 'login'),
+                    $solicitud->ip(),
+                );
+            }
 
             $usuario = User::where('email', $validado['email'])->first();
 

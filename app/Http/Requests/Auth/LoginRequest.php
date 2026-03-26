@@ -2,6 +2,7 @@
 
     namespace App\Http\Requests\Auth;
 
+    use App\Services\RecaptchaV3;
     use Illuminate\Auth\Events\Lockout;
     use Illuminate\Foundation\Http\FormRequest;
     use Illuminate\Support\Facades\Auth;
@@ -22,9 +23,12 @@
          */
         public function rules(): array {
 
+            $recaptcha = app(RecaptchaV3::class);
+
             return [
                 'email' => ['required', 'string', 'email'],
                 'password' => ['required', 'string'],
+                'recaptcha_token' => $recaptcha->isEnabled() ? ['required', 'string'] : ['nullable', 'string'],
             ];
         }
 
@@ -35,6 +39,15 @@
          */
         public function authenticate(): void {
             $this->ensureIsNotRateLimited();
+
+            $recaptcha = app(RecaptchaV3::class);
+            if ($recaptcha->isEnabled()) {
+                $recaptcha->verifyOrFail(
+                    (string) $this->input('recaptcha_token', ''),
+                    (string) config('recaptcha.actions.login', 'login'),
+                    $this->ip(),
+                );
+            }
 
             if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
                 RateLimiter::hit($this->throttleKey());

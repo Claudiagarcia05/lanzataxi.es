@@ -84,6 +84,7 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { executeRecaptchaV3 } from '../../recaptchaV3'
 
 defineProps({
   modelValue: Boolean
@@ -203,11 +204,28 @@ const enviarFormulario = async () => {
   datosFormulario.value.email = datosFormulario.value.email.trim()
   datosFormulario.value.name = datosFormulario.value.name.trim()
 
+  const accionRecaptcha = esInicioSesion.value ? 'login' : 'register'
+  let recaptchaToken = null
+
+  try {
+    recaptchaToken = await executeRecaptchaV3(accionRecaptcha)
+  } catch (e) {
+    // Si hay site key configurada y falla reCAPTCHA, no seguimos (evita falsos positivos en backend)
+    if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
+      error.value = 'No se pudo validar reCAPTCHA. Recarga la página e inténtalo de nuevo.'
+
+      cargando.value = false
+
+      return
+    }
+  }
+
   try {
     if (esInicioSesion.value) {
       const respuesta = await axios.post('/api/login', {
         email: datosFormulario.value.email,
         password: datosFormulario.value.password,
+        recaptcha_token: recaptchaToken,
       })
 
       const token = respuesta.data?.token
@@ -238,6 +256,7 @@ const enviarFormulario = async () => {
       password_confirmation: datosFormulario.value.password_confirmation,
       role: datosFormulario.value.role,
       phone: datosFormulario.value.phone?.trim() || null,
+      recaptcha_token: recaptchaToken,
     })
 
     // Si el backend responde correctamente, mostrar mensaje de éxito y cambiar a login
