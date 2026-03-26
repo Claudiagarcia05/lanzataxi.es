@@ -42,8 +42,15 @@
                 </span>
               </td>
               <td class="p-4">
-                <span :class="['px-2 py-1 rounded-full text-xs', c.is_disabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800']">
-                  {{ c.is_disabled ? 'De baja' : 'Activo' }}
+                <span
+                  :class="[
+                    'px-2 py-1 rounded-full text-xs',
+                    c.is_disabled
+                      ? 'bg-red-100 text-red-800'
+                      : (c.is_active ? 'bg-green-100 text-green-800' : 'bg-neutral-soft text-neutral-slate'),
+                  ]"
+                >
+                  {{ c.is_disabled ? 'De baja' : (c.is_active ? 'Conectado' : 'Desconectado') }}
                 </span>
               </td>
               <td class="p-4 text-right">
@@ -166,7 +173,7 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 import axios from 'axios'
@@ -188,8 +195,40 @@ const formularioTaxi = ref({
   color: '',
 })
 
+let intervaloRefrescoConductores = null
+let refrescoEnCurso = false
+
+const refrescarConductores = async () => {
+  if (refrescoEnCurso) return
+
+  refrescoEnCurso = true
+  try {
+    await adminStore.obtenerConductores()
+
+    if (conductorSeleccionado.value?.id) {
+      const actualizado = adminStore.conductores.find(c => c.id === conductorSeleccionado.value.id)
+      if (actualizado) {
+        conductorSeleccionado.value = actualizado
+      }
+    }
+  } catch {
+    // No interrumpir UX por fallos puntuales de refresco.
+  } finally {
+    refrescoEnCurso = false
+  }
+}
+
 onMounted(async () => {
   await adminStore.obtenerTodosLosDatos()
+
+  // Refresco automático del estado (conectado/desconectado).
+  intervaloRefrescoConductores = setInterval(refrescarConductores, 10000)
+})
+
+onBeforeUnmount(() => {
+  if (intervaloRefrescoConductores) {
+    clearInterval(intervaloRefrescoConductores)
+  }
 })
 
 const conductores = computed(() => adminStore.conductores)

@@ -106,6 +106,8 @@ export const useAdminStore = defineStore('admin', {
         name: conductor.user?.name || 'Sin nombre',
         email: conductor.user?.email || '',
         phone: conductor.user?.phone || '',
+        taxi_status: conductor.taxi?.status ?? null,
+        is_active: Boolean(conductor.is_active),
         is_disabled: Boolean(conductor.user?.is_disabled),
         approval_status: conductor.approval_status,
         approved_at: conductor.approved_at,
