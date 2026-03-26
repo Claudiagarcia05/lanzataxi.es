@@ -106,7 +106,7 @@ Configura la base de datos y el usuario correspondiente:
 ```
 sudo mysql
 CREATE DATABASE lanzataxi_db;
-CREATE USER 'lanzataxi_user'@'localhost' IDENTIFIED BY 'lanza_taxi';
+CREATE USER 'lanzataxi_user'@'localhost' IDENTIFIED BY 'tu_password_segura';
 GRANT ALL PRIVILEGES ON lanzataxi_db.* TO 'lanzataxi_user'@'localhost';
 FLUSH PRIVILEGES;
 EXIT;
@@ -129,6 +129,8 @@ Confirma la instalación:
 git --version
 ```
 
+> Nota (Windows/XAMPP): este proyecto también puede ejecutarse en Windows. En ese caso, instala PHP 8.2+, Composer y Node 18+ y sirve el proyecto desde Apache (XAMPP) o usando `php artisan serve`.
+
 1. Clona el repositorio:
 ```
 git clone https://github.com/Claudiagarcia05/lanzataxi.lan.git
@@ -137,45 +139,49 @@ git clone https://github.com/Claudiagarcia05/lanzataxi.lan.git
 ```
 cd lanzataxi.lan
 ```
-3. Otorga los permisos correspondientes:
-```
-sudo chmod 777 -R ./*
-```
-4. Instala las dependencias de Composer y de Node.js:
+3. Instala las dependencias de Composer y de Node.js:
 ```
 composer install
 npm install
-npm run build
 ```
-5. Copia el archivo .env.example a un archivo .env.
-6. Modifica estas líneas del .env:
+
+> Nota (Linux): no uses `chmod 777`. Laravel necesita permisos de escritura en `storage` y `bootstrap/cache`.
+> Un ejemplo típico sería: `chmod -R u+rwX,g+rwX storage bootstrap/cache`.
+
+4. Copia el archivo .env.example a un archivo .env.
+  - Linux/macOS: `cp .env.example .env`
+  - Windows (PowerShell): `Copy-Item .env.example .env`
+5. Modifica estas líneas del .env:
 ```
 DB_CONNECTION=mysql
 DB_HOST=127.0.0.1
 DB_PORT=3306
 DB_DATABASE=lanzataxi_db
 DB_USERNAME=lanzataxi_user
-DB_PASSWORD=lanza_taxi
+DB_PASSWORD=tu_password_segura
 ```
-7. Genera la clave de encriptación:
+
+> Usa una contraseña propia (no reutilices ejemplos).
+6. Genera la clave de encriptación:
 ```
 php artisan key:generate
 ```
-8. Ejecuta las migraciones y estos seeders, para rellenar los datos en la base de datos:
+7. Ejecuta las migraciones y el seeder principal:
 ```
-php artisan migrate
-php artisan db:seed --class=UserSeeder
-php artisan db:seed --class=TarifaSeeder
-php artisan db:seed --class=HorarioSeeder
+php artisan migrate --seed
 ```
-Si quieres, también puedes ejecutar este seeder:
-```
-php artisan db:seed --class=EventoSeeder
-```
-9. Para poder almacenar las imágenes para los eventos, ejecuta el siguiente comando:
+
+> El seeder por defecto crea un usuario administrador inicial (revisa [database/seeders/DatabaseSeeder.php](database/seeders/DatabaseSeeder.php) y cambia la contraseña tras el primer acceso).
+
+8. Para poder almacenar las imágenes, ejecuta el siguiente comando:
 ```
 php artisan storage:link
 ```
+
+9. Compila los assets del frontend:
+  - Desarrollo: `npm run dev`
+  - Producción: `npm run build`
+
 10. Inicia el servicio:
 ```
 php artisan serve

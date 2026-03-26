@@ -94,12 +94,6 @@
                   {{ obtenerTextoAprobacion(conductorSeleccionado?.approval_status) }}
                 </span>
               </p>
-              <p>
-                <span class="text-neutral-slate">Estado cuenta:</span>
-                <span :class="['ml-2 px-2 py-1 rounded-full text-xs', conductorSeleccionado?.is_disabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800']">
-                  {{ conductorSeleccionado?.is_disabled ? 'De baja' : 'Activo' }}
-                </span>
-              </p>
             </div>
 
             <div class="mt-5 flex flex-wrap gap-2">
