@@ -236,18 +236,18 @@
             return response()->json($conductor->fresh(['user:id,name,email,phone,is_disabled', 'taxi']));
         }
 
-        public function disableUser(User $usuario)
+        public function disableUser(User $user)
         {
             try {
                 // Actualiza primero is_disabled (campo crítico para la baja)
                 $filas = DB::table('users')
-                    ->where('id', $usuario->id)
+                    ->where('id', $user->id)
                     ->update(['is_disabled' => true]);
 
                 // disabled_at es opcional: si existe, lo registramos; si no, no bloquea la operación.
                 try {
                     DB::table('users')
-                        ->where('id', $usuario->id)
+                        ->where('id', $user->id)
                         ->whereNull('disabled_at')
                         ->update(['disabled_at' => now()]);
                 } catch (QueryException $e) {
@@ -270,7 +270,7 @@
 
             // Revocar tokens existentes para cortar acceso inmediato.
             try {
-                $usuario->tokens()->delete();
+                $user->tokens()->delete();
             } catch (\Throwable $e) {
                 // Si Sanctum no está disponible o la tabla no existe, no bloqueamos la baja.
             }
@@ -278,7 +278,7 @@
             // Confirma que la baja ha persistido en BD (lectura directa para evitar estados cacheados).
             $valorIsDisabled = null;
             try {
-                $valorIsDisabled = DB::table('users')->where('id', $usuario->id)->value('is_disabled');
+                $valorIsDisabled = DB::table('users')->where('id', $user->id)->value('is_disabled');
             } catch (QueryException $e) {
                 // Si falla la lectura por columna inexistente, lo tratamos como BD desactualizada.
                 return response()->json([
@@ -290,7 +290,7 @@
 
             if (!$isDisabledAhora) {
                 \Log::warning('No se pudo persistir is_disabled al dar de baja', [
-                    'user_id' => $usuario->id,
+                    'user_id' => $user->id,
                     'updated_rows' => $filas ?? null,
                     'db_value' => $valorIsDisabled,
                 ]);
@@ -300,18 +300,18 @@
                 ], 409);
             }
 
-            if (($usuario->role ?? null) === 'conductor') {
-                $usuario->loadMissing('conductor.taxi');
-                if ($usuario->conductor) {
-                    $usuario->conductor->is_active = false;
-                    $usuario->conductor->save();
-                    if ($usuario->conductor->taxi && $usuario->conductor->taxi->status !== 'offline') {
-                        $usuario->conductor->taxi->update(['status' => 'offline']);
+            if (($user->role ?? null) === 'conductor') {
+                $user->loadMissing('conductor.taxi');
+                if ($user->conductor) {
+                    $user->conductor->is_active = false;
+                    $user->conductor->save();
+                    if ($user->conductor->taxi && $user->conductor->taxi->status !== 'offline') {
+                        $user->conductor->taxi->update(['status' => 'offline']);
                     }
                 }
             }
 
-            return response()->json($usuario->refresh()->loadMissing('conductor'));
+            return response()->json($user->refresh()->loadMissing('conductor'));
         }
 
         public function conductorEarningsReport(Conductor $conductor)
