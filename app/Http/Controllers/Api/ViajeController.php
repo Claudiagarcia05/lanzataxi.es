@@ -343,14 +343,24 @@
                         throw new \RuntimeException('Usuario no encontrado');
                     }
 
-                    $precioViaje = (float) ($viajeBloqueado->price ?? 0);
-                    $saldoActual = (float) ($usuarioPasajero->wallet_balance ?? 0);
-                    $cobradoAhora = min($saldoActual, $precioViaje);
-                    $deudaRestante = max(0, $precioViaje - $cobradoAhora);
+                    // Regla de negocio:
+                    // - Si el pasajero cancela ANTES de que el taxista acepte (status=pending y sin conductor), NO se cobra.
+                    // - Solo se cobra si el viaje ya fue aceptado (o tiene conductor asignado).
+                    $esCancelacionCobrable = ($viajeBloqueado->status === 'accepted') || !empty($viajeBloqueado->conductor_id);
 
+                    $precioViaje = (float) ($viajeBloqueado->price ?? 0);
                     // Cambiar estado
                     $viajeBloqueado->status = 'cancelled';
                     $viajeBloqueado->save();
+
+                    if (!$esCancelacionCobrable) {
+                        // Cancelación sin cobro: no se descuenta saldo, no se crea deuda ni registro de pago.
+                        return $viajeBloqueado;
+                    }
+
+                    $saldoActual = (float) ($usuarioPasajero->wallet_balance ?? 0);
+                    $cobradoAhora = min($saldoActual, $precioViaje);
+                    $deudaRestante = max(0, $precioViaje - $cobradoAhora);
 
                     // Cobro inmediato desde cartera (si hay saldo)
                     $usuarioPasajero->wallet_balance = $saldoActual - $cobradoAhora;

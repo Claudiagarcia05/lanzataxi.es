@@ -3,6 +3,7 @@
     namespace App\Http\Controllers\Api;
 
     use App\Http\Controllers\Controller;
+    use App\Rules\EmailDomainHasMx;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Storage;
@@ -17,7 +18,11 @@
                 $rules['name'] = 'string|max:255';
             }
             if ($solicitud->has('email')) {
-                $rules['email'] = 'email|unique:users,email,' . $usuario->id;
+                $rules['email'] = array_values(array_filter([
+                    'email:rfc,dns',
+                    app()->environment('testing') ? null : new EmailDomainHasMx(),
+                    'unique:users,email,' . $usuario->id,
+                ]));
             }
             if ($solicitud->has('phone')) {
                 $rules['phone'] = 'nullable|string|max:20';

@@ -106,6 +106,7 @@
               </button>
 
               <button
+                v-if="!esConductorRechazado"
                 @click="guardarTaxi"
                 :disabled="!conductorSeleccionado || !formularioTaxi.id"
                 class="bg-lanzarote-yellow disabled:opacity-50 text-black px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-blue hover:text-white"
@@ -127,6 +128,7 @@
                 <label class="block text-xs text-neutral-slate mb-1">Matrícula</label>
                 <input
                   v-model="formularioTaxi.plate"
+                  :disabled="esConductorRechazado"
                   maxlength="8"
                   placeholder="1234 ABC"
                   @input="formatearMatriculaInput"
@@ -135,21 +137,22 @@
               </div>
               <div>
                 <label class="block text-xs text-neutral-slate mb-1">Modelo</label>
-                <input v-model="formularioTaxi.model" class="w-full rounded-lg border-neutral-volcanic" />
+                <input v-model="formularioTaxi.model" :disabled="esConductorRechazado" class="w-full rounded-lg border-neutral-volcanic" />
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label class="block text-xs text-neutral-slate mb-1">Capacidad</label>
-                  <input v-model="formularioTaxi.capacity" type="number" min="1" class="w-full rounded-lg border-neutral-volcanic" />
+                  <input v-model="formularioTaxi.capacity" :disabled="esConductorRechazado" type="number" min="1" class="w-full rounded-lg border-neutral-volcanic" />
                 </div>
                 <div>
                   <label class="block text-xs text-neutral-slate mb-1">Color</label>
-                  <input v-model="formularioTaxi.color" class="w-full rounded-lg border-neutral-volcanic" />
+                  <input v-model="formularioTaxi.color" :disabled="esConductorRechazado" class="w-full rounded-lg border-neutral-volcanic" />
                 </div>
               </div>
 
               <div class="flex justify-end gap-2 pt-2">
                 <button
+                  v-if="!esConductorRechazado"
                   type="button"
                   @click="darDeBaja(conductorSeleccionado?.user_id)"
                   :disabled="!conductorSeleccionado || conductorSeleccionado.is_disabled"
@@ -226,6 +229,8 @@ onBeforeUnmount(() => {
 })
 
 const conductores = computed(() => adminStore.conductores)
+
+const esConductorRechazado = computed(() => conductorSeleccionado.value?.approval_status === 'rejected')
 
 const abrirModalConductor = (conductor) => {
   conductorSeleccionado.value = conductor
@@ -357,59 +362,218 @@ const descargarInformeConductor = async (idConductor) => {
   if (!idConductor) return
 
   const response = await axios.get(`/api/admin/conductors/${idConductor}/earnings-report`)
-  const { conductor: conductorInfo, totals: totalesApi, months: mesesApi } = response.data
+  const data = response?.data
+  const conductorInfo = data?.conductor || null
+  const viajes = Array.isArray(data?.trips) ? data.trips : []
 
-  const totalesInforme = {
-    viajesCompletados: Number(totalesApi?.completedTrips || 0),
-    viajesCancelados: Number(totalesApi?.cancelledTrips || 0),
-    ingresos: Number(totalesApi?.revenue || 0),
+  const archivoADataUrl = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result)
+    reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
+    reader.readAsDataURL(file)
+  })
+
+  const cargarImagenPublicaPng = async (url) => {
+    const respuesta = await fetch(url, { cache: 'no-store' })
+    if (!respuesta.ok) return null
+    const blob = await respuesta.blob()
+    const dataUrl = await archivoADataUrl(blob)
+
+    const dimensiones = await new Promise((resolve) => {
+      const img = new Image()
+      img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight })
+      img.onerror = () => resolve(null)
+      img.src = dataUrl
+    })
+
+    return { dataUrl, dims: dimensiones }
   }
 
-  const mesesInforme = Array.isArray(mesesApi)
-    ? mesesApi.map((m) => ({
-        mes: m.month,
-        viajesCompletados: Number(m.completedTrips || 0),
-        viajesCancelados: Number(m.cancelledTrips || 0),
-        ingresos: Number(m.revenue || 0),
-      }))
-    : []
+  const now = new Date()
+  const fechaLabel = now.toLocaleString('es-ES', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 
   const FAMILIA_FUENTE_PDF = 'helvetica'
-  const doc = new jsPDF()
-  let y = 14
 
-  doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
-  doc.setFontSize(14)
-  doc.text('Informe de conductor', 14, y)
-  y += 8
-
+  const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' })
   doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
-  doc.setFontSize(10)
-  doc.text(`Nombre: ${conductorInfo?.name || ''}`, 14, y); y += 5
-  doc.text(`Email: ${conductorInfo?.email || ''}`, 14, y); y += 5
-  doc.text(`Teléfono: ${conductorInfo?.phone || ''}`, 14, y); y += 7
 
-  doc.text(`Totales - Completados: ${totalesInforme.viajesCompletados} | Cancelados: ${totalesInforme.viajesCancelados} | Ganancias: ${totalesInforme.ingresos.toFixed(2)} €`, 14, y)
-  y += 8
+  const marginX = 48
+  const marginTop = 56
+  const marginBottom = 48
+  const pageWidth = doc.internal.pageSize.getWidth()
+  const pageHeight = doc.internal.pageSize.getHeight()
+  const maxWidth = pageWidth - marginX * 2
 
-  doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
-  doc.setFontSize(11)
-  doc.text('Histórico por mes', 14, y)
-  y += 6
+  const logo = await cargarImagenPublicaPng('/images/logo.png').catch(() => null)
 
-  doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
-  doc.setFontSize(10)
-  mesesInforme.forEach((m) => {
-    if (y > 285) {
-      doc.addPage();
-      y = 14
+  const renderizarEncabezado = ({ incluirDatosConductor } = { incluirDatosConductor: true }) => {
+    let y = marginTop
+
+    if (logo?.dataUrl) {
+      const maxW = 140
+      const maxH = 52
+
+      let w = maxW
+      let h = 40
+      if (logo.dims?.w && logo.dims?.h) {
+        const ratio = logo.dims.w / logo.dims.h
+        w = Math.min(maxW, maxH * ratio)
+        h = w / ratio
+        if (h > maxH) {
+          h = maxH
+          w = h * ratio
+        }
+      }
+
+      doc.addImage(logo.dataUrl, 'PNG', marginX, y - 8, w, h)
+      y += h + 10
+    }
+
+    doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
+    doc.setFontSize(11)
+    doc.setTextColor(80)
+    doc.text('Informe de viajes · Conductor', marginX, y)
+    doc.text(`Generado: ${fechaLabel}`, pageWidth - marginX, y, { align: 'right' })
+    doc.setTextColor(0)
+    y += 18
+
+    doc.setDrawColor(220)
+    doc.line(marginX, y, pageWidth - marginX, y)
+    y += 18
+
+    if (incluirDatosConductor) {
+      doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
+      doc.setFontSize(12)
+      doc.text('Datos del conductor', marginX, y)
+      y += 14
+
       doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
       doc.setFontSize(10)
+      const labelW = 90
+      const valueW = maxWidth - labelW
+      const datos = [
+        ['Nombre', conductorInfo?.name || '—'],
+        ['Email', conductorInfo?.email || '—'],
+        ['Teléfono', conductorInfo?.phone || '—'],
+      ]
+
+      for (const [label, value] of datos) {
+        doc.setTextColor(90)
+        doc.text(`${label}:`, marginX, y)
+        doc.setTextColor(0)
+        doc.text(String(value), marginX + labelW, y, { maxWidth: valueW })
+        y += 14
+      }
+
+      y += 4
+      doc.setDrawColor(220)
+      doc.line(marginX, y, pageWidth - marginX, y)
+      y += 18
     }
-    const mesLabel = formatearMes(m.mes)
-    doc.text(`${mesLabel}  -  Completados: ${m.viajesCompletados}  Cancelados: ${m.viajesCancelados}  Ganancias: ${m.ingresos.toFixed(2)} €`, 14, y)
-    y += 5
-  })
+
+    doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
+    doc.setFontSize(12)
+    doc.text('Viajes', marginX, y)
+    y += 14
+
+    return y
+  }
+
+  const renderizarEncabezadoTabla = (y) => {
+    const tableX = marginX
+    const rowH = 18
+
+    const colFechaW = 80
+    const colEstadoW = 90
+    const colGananciaW = 80
+    const colRutaW = maxWidth - colFechaW - colEstadoW - colGananciaW
+
+    doc.setFillColor(245, 247, 250)
+    doc.setDrawColor(220)
+    doc.rect(tableX, y, maxWidth, rowH, 'FD')
+
+    doc.setFont(FAMILIA_FUENTE_PDF, 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(60)
+
+    const textY = y + 12
+    doc.text('Fecha', tableX + 6, textY)
+    doc.text('Estado', tableX + colFechaW + 6, textY)
+    doc.text('Ganancia', tableX + colFechaW + colEstadoW + 6, textY)
+    doc.text('Ruta', tableX + colFechaW + colEstadoW + colGananciaW + 6, textY)
+
+    doc.setTextColor(0)
+    doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
+    return {
+      y: y + rowH,
+      widths: { colFechaW, colEstadoW, colGananciaW, colRutaW },
+      tableX,
+      rowH,
+    }
+  }
+
+  let y = renderizarEncabezado({ incluirDatosConductor: true })
+  let filasEnPagina = 0
+  let tabla = renderizarEncabezadoTabla(y)
+  y = tabla.y
+
+  const limiteInferiorSeguro = pageHeight - marginBottom
+  const alturaLinea = 12
+
+  const listaViajes = viajes
+  for (const viaje of listaViajes) {
+    const fecha = String(viaje.created_at || '').split('T')[0]
+    const estado = viaje.status === 'completed'
+      ? 'completado'
+      : viaje.status === 'cancelled'
+        ? 'cancelado'
+        : viaje.status === 'pending'
+          ? 'pendiente'
+          : viaje.status === 'accepted'
+            ? 'aceptado'
+            : viaje.status === 'in_progress'
+              ? 'en curso'
+              : (viaje.status || '—')
+
+    const gananciaNum = Number(viaje.earnings ?? viaje.price ?? 0)
+    const ganancia = `${gananciaNum.toFixed(2)} €`
+    const ruta = `${viaje.pickup_address || ''} - ${viaje.dropoff_address || ''}`.trim()
+
+    const lineasRuta = doc.splitTextToSize(ruta || '—', tabla.widths.colRutaW - 12)
+    const altoContenido = Math.max(tabla.rowH, lineasRuta.length * alturaLinea + 6)
+
+    const necesitaNuevaPaginaPorCantidad = filasEnPagina >= 7
+    const necesitaNuevaPaginaPorEspacio = y + altoContenido > limiteInferiorSeguro
+    if (necesitaNuevaPaginaPorCantidad || necesitaNuevaPaginaPorEspacio) {
+      doc.addPage()
+      y = renderizarEncabezado({ incluirDatosConductor: false })
+      filasEnPagina = 0
+      tabla = renderizarEncabezadoTabla(y)
+      y = tabla.y
+    }
+
+    doc.setDrawColor(220)
+    doc.rect(tabla.tableX, y, maxWidth, altoContenido)
+    doc.line(tabla.tableX + tabla.widths.colFechaW, y, tabla.tableX + tabla.widths.colFechaW, y + altoContenido)
+    doc.line(tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW, y, tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW, y + altoContenido)
+    doc.line(tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + tabla.widths.colGananciaW, y, tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + tabla.widths.colGananciaW, y + altoContenido)
+
+    const textY = y + 12
+    doc.setFontSize(10)
+    doc.text(String(fecha || '—'), tabla.tableX + 6, textY)
+    doc.text(String(estado || '—'), tabla.tableX + tabla.widths.colFechaW + 6, textY)
+    doc.text(String(ganancia || '—'), tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + 6, textY)
+    doc.text(lineasRuta, tabla.tableX + tabla.widths.colFechaW + tabla.widths.colEstadoW + tabla.widths.colGananciaW + 6, textY)
+
+    y += altoContenido
+    filasEnPagina += 1
+  }
 
   doc.save(`informe-conductor-${idConductor}.pdf`)
 }

@@ -8,13 +8,21 @@ return new class extends Migration
 {
     public function up(): void
     {
+        if (Schema::hasColumn('users', 'is_disabled')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
-            $table->boolean('is_disabled')->default(false)->after('phone');
+            $table->boolean('is_disabled')->default(false);
         });
     }
 
     public function down(): void
     {
+        if (!Schema::hasColumn('users', 'is_disabled')) {
+            return;
+        }
+
         Schema::table('users', function (Blueprint $table) {
             $table->dropColumn('is_disabled');
         });

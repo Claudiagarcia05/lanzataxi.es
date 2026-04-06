@@ -6,8 +6,23 @@
     use App\Models\Conductor;
     use Illuminate\Http\Request;
     use Illuminate\Support\Carbon;
+    use Illuminate\Support\Facades\Schema;
 
     class ConductorController extends Controller {
+
+        private function userSelectColumns(): array
+        {
+            $cols = ['id', 'name', 'email'];
+
+            foreach (['phone', 'avatar', 'is_disabled'] as $col) {
+                if (Schema::hasColumn('users', $col)) {
+                    $cols[] = $col;
+                }
+            }
+
+            return $cols;
+        }
+
         public function profile(Request $solicitud) {
             $conductor = $solicitud->user()->conductor;
 
@@ -22,13 +37,23 @@
                 $taxi->update(['status' => 'available']);
             }
 
-            return response()->json($conductor->load(['user:id,name,email,phone,avatar,is_disabled', 'taxi']));
+            $userCols = $this->userSelectColumns();
+
+            return response()->json($conductor->load([
+                'user' => fn ($q) => $q->select($userCols),
+                'taxi',
+            ]));
         }
 
         public function index() {
 
+            $userCols = $this->userSelectColumns();
+
             return response()->json(
-                conductor::with(['user:id,name,email,phone,is_disabled', 'taxi:id,conductor_id,plate,model,capacity,color,status'])
+                conductor::with([
+                    'user' => fn ($q) => $q->select($userCols),
+                    'taxi:id,conductor_id,plate,model,capacity,color,status',
+                ])
                     ->latest()
                     ->get()
             );
@@ -52,8 +77,12 @@
         }
 
         public function show(conductor $conductor) {
+            $userCols = $this->userSelectColumns();
 
-            return response()->json($conductor->load(['user:id,name,email,phone,is_disabled', 'taxi']));
+            return response()->json($conductor->load([
+                'user' => fn ($q) => $q->select($userCols),
+                'taxi',
+            ]));
         }
 
         public function update(Request $solicitud, conductor $conductor) {

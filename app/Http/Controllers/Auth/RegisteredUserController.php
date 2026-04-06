@@ -4,6 +4,7 @@
 
     use App\Http\Controllers\Controller;
     use App\Models\User;
+    use App\Rules\EmailDomainHasMx;
     use App\Services\RecaptchaV3;
     use Illuminate\Auth\Events\Registered;
     use Illuminate\Http\RedirectResponse;
@@ -28,9 +29,19 @@
         public function store(Request $solicitud): RedirectResponse {
             $recaptcha = app(RecaptchaV3::class);
 
+            $esTesting = app()->environment('testing');
+
             $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
+                'email' => array_values(array_filter([
+                    'required',
+                    'string',
+                    'lowercase',
+                    $esTesting ? 'email:rfc' : 'email:rfc,dns',
+                    $esTesting ? null : new EmailDomainHasMx(),
+                    'max:255',
+                    'unique:' . User::class,
+                ])),
                 'password' => ['required', 'confirmed', Rules\Password::defaults()],
                 'recaptcha_token' => $recaptcha->isEnabled() ? 'required|string' : 'nullable|string',
             ]);

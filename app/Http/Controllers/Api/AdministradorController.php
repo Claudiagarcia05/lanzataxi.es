@@ -11,12 +11,20 @@
     use Illuminate\Support\Carbon;
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
+    use Illuminate\Support\Facades\Schema;
 
     class AdministradorController extends Controller {
         public function users() {
+            $columnas = ['id', 'name', 'email', 'created_at'];
+            foreach (['role', 'phone', 'is_disabled', 'disabled_at'] as $col) {
+                if (Schema::hasColumn('users', $col)) {
+                    $columnas[] = $col;
+                }
+            }
+
             $usuarios = User::query()
                 ->latest()
-                ->get(['id', 'name', 'email', 'role', 'phone', 'is_disabled', 'disabled_at', 'created_at']);
+                ->get($columnas);
 
             return response()->json($usuarios);
         }
@@ -30,17 +38,43 @@
         }
 
         public function stats() {
-            $hoy = now()->toDateString();
+            $hoyInicio = now()->startOfDay();
+            $hoyFin = now()->endOfDay();
+            $completedDateExpr = DB::raw('COALESCE(end_time, updated_at, created_at)');
 
             return response()->json([
                 'totalUsers' => User::count(),
                 'activeConductors' => Conductor::where('is_active', true)->count(),
                 'totalTaxis' => Taxi::count(),
-                'todayTrips' => Viaje::whereDate('created_at', $hoy)->count(),
-                'todayRevenue' => (float) Viaje::whereDate('created_at', $hoy)->where('status', 'completed')->sum('price'),
+                'todayTrips' => Viaje::whereBetween('created_at', [$hoyInicio, $hoyFin])->count(),
+                'todayRevenue' => (float) (
+                    (float) Viaje::where('status', 'completed')
+                        ->whereBetween($completedDateExpr, [$hoyInicio, $hoyFin])
+                        ->sum('price')
+                    + (float) Viaje::where('status', 'cancelled')
+                        ->whereNotNull('conductor_id')
+                        ->whereBetween('updated_at', [$hoyInicio, $hoyFin])
+                        ->sum('price')
+                ),
                 'averageRating' => round((float) Conductor::avg('rating'), 2),
-                'weeklyRevenue' => (float) Viaje::whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()])->where('status', 'completed')->sum('price'),
-                'monthlyRevenue' => (float) Viaje::whereBetween('created_at', [now()->startOfMonth(), now()->endOfMonth()])->where('status', 'completed')->sum('price'),
+                'weeklyRevenue' => (float) (
+                    (float) Viaje::where('status', 'completed')
+                        ->whereBetween($completedDateExpr, [now()->startOfWeek(), now()->endOfWeek()])
+                        ->sum('price')
+                    + (float) Viaje::where('status', 'cancelled')
+                        ->whereNotNull('conductor_id')
+                        ->whereBetween('updated_at', [now()->startOfWeek(), now()->endOfWeek()])
+                        ->sum('price')
+                ),
+                'monthlyRevenue' => (float) (
+                    (float) Viaje::where('status', 'completed')
+                        ->whereBetween($completedDateExpr, [now()->startOfMonth(), now()->endOfMonth()])
+                        ->sum('price')
+                    + (float) Viaje::where('status', 'cancelled')
+                        ->whereNotNull('conductor_id')
+                        ->whereBetween('updated_at', [now()->startOfMonth(), now()->endOfMonth()])
+                        ->sum('price')
+                ),
             ]);
         }
 
@@ -75,6 +109,14 @@
                 ->where('status', 'completed')
                 ->whereBetween($completedDateExpr, [$desde, $hasta])
                 ->sum('price');
+
+            $recaudacionCancelaciones = (float) Viaje::query()
+                ->where('status', 'cancelled')
+                ->whereNotNull('conductor_id')
+                ->whereBetween('updated_at', [$desde, $hasta])
+                ->sum('price');
+
+            $recaudacion = (float) ($recaudacion + $recaudacionCancelaciones);
 
             $diasEnMes = (int) $desde->daysInMonth;
             $etiquetas = [];
@@ -113,6 +155,22 @@
                 if (!$dia || $dia < 1 || $dia > $diasEnMes) continue;
                 $indice = $dia - 1;
                 $canceladosPorDia[$indice] = (int) ($fila->cnt ?? 0);
+            }
+
+            // Recaudación de cancelaciones cobrables (por pasajero tras aceptar): sumar por día.
+            $filasRecaudacionCancelados = Viaje::query()
+                ->where('status', 'cancelled')
+                ->whereNotNull('conductor_id')
+                ->whereBetween('updated_at', [$desde, $hasta])
+                ->selectRaw('DATE(updated_at) as day, COALESCE(SUM(price), 0) as rev')
+                ->groupBy('day')
+                ->get();
+
+            foreach ($filasRecaudacionCancelados as $fila) {
+                $dia = $fila->day ? Carbon::parse($fila->day)->day : null;
+                if (!$dia || $dia < 1 || $dia > $diasEnMes) continue;
+                $indice = $dia - 1;
+                $recaudacionPorDia[$indice] += (float) ($fila->rev ?? 0);
             }
 
             $fechaMinima = Viaje::min('created_at');
@@ -178,8 +236,17 @@
 
         public function disableUser(User $usuario)
         {
+            $hasIsDisabled = Schema::hasColumn('users', 'is_disabled');
+            $hasDisabledAt = Schema::hasColumn('users', 'disabled_at');
+
+            if (!$hasIsDisabled) {
+                return response()->json([
+                    'message' => 'La base de datos no está actualizada (falta users.is_disabled). Ejecuta las migraciones (php artisan migrate).',
+                ], 409);
+            }
+
             $usuario->is_disabled = true;
-            if (empty($usuario->disabled_at)) {
+            if ($hasDisabledAt && empty($usuario->disabled_at)) {
                 $usuario->disabled_at = now();
             }
             $usuario->save();
@@ -203,8 +270,8 @@
             $filas = Viaje::query()
                 ->where('conductor_id', $conductor->id)
                 ->whereIn('status', ['completed', 'cancelled'])
-                ->select(['id', 'status', 'price', 'created_at'])
-                ->orderBy('created_at')
+                ->select(['id', 'status', 'price', 'pickup_address', 'dropoff_address', 'created_at', 'updated_at'])
+                ->orderByDesc('created_at')
                 ->get();
 
             $agrupado = [];
@@ -233,6 +300,10 @@
                 } elseif ($fila->status === 'cancelled') {
                     $agrupado[$clave]['cancelledTrips']++;
                     $totales['cancelledTrips']++;
+
+                    // Cancelación por pasajero tras aceptar: también computa como ganancia del conductor.
+                    $agrupado[$clave]['revenue'] += (float) ($fila->price ?? 0);
+                    $totales['revenue'] += (float) ($fila->price ?? 0);
                 }
             }
 
@@ -240,6 +311,23 @@
             usort($meses, fn ($a, $b) => strcmp($a['month'], $b['month']));
 
             $conductor->loadMissing('user:id,name,email,phone');
+
+            $trips = $filas->map(function ($fila) {
+                $ganancia = in_array($fila->status, ['completed', 'cancelled'], true)
+                    ? (float) ($fila->price ?? 0)
+                    : 0.0;
+
+                return [
+                    'id' => $fila->id,
+                    'status' => $fila->status,
+                    'price' => (float) ($fila->price ?? 0),
+                    'earnings' => $ganancia,
+                    'pickup_address' => $fila->pickup_address,
+                    'dropoff_address' => $fila->dropoff_address,
+                    'created_at' => $fila->created_at,
+                    'updated_at' => $fila->updated_at,
+                ];
+            })->values();
 
             return response()->json([
                 'conductor' => [
@@ -250,6 +338,7 @@
                 ],
                 'totals' => $totales,
                 'months' => $meses,
+                'trips' => $trips,
             ]);
         }
 

@@ -6,6 +6,7 @@
     use App\Services\RecaptchaV3;
     use App\Models\Conductor;
     use App\Models\User;
+    use App\Rules\EmailDomainHasMx;
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Str;
@@ -16,7 +17,12 @@
 
             $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
-                'email' => 'required|email:rfc,dns|unique:users,email',
+                'email' => array_values(array_filter([
+                    'required',
+                    'email:rfc,dns',
+                    app()->environment('testing') ? null : new EmailDomainHasMx(),
+                    'unique:users,email',
+                ])),
                 'password' => 'required|string|min:6|confirmed',
                 // Nota: el rol admin NO se crea por registro público. Solo pasajero/conductor.
                 'role' => 'nullable|in:pasajero,conductor',
