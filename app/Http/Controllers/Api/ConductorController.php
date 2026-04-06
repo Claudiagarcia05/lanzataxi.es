@@ -4,23 +4,21 @@
 
     use App\Http\Controllers\Controller;
     use App\Models\Conductor;
+    use Illuminate\Database\QueryException;
     use Illuminate\Http\Request;
     use Illuminate\Support\Carbon;
-    use Illuminate\Support\Facades\Schema;
 
     class ConductorController extends Controller {
 
-        private function userSelectColumns(): array
+        private function preferredUserSelectColumns(): array
         {
-            $cols = ['id', 'name', 'email'];
+            // Preferimos estos campos; si alguno no existe (BD antigua), haremos fallback.
+            return ['id', 'name', 'email', 'phone', 'avatar', 'is_disabled'];
+        }
 
-            foreach (['phone', 'avatar', 'is_disabled'] as $col) {
-                if (Schema::hasColumn('users', $col)) {
-                    $cols[] = $col;
-                }
-            }
-
-            return $cols;
+        private function fallbackUserSelectColumns(): array
+        {
+            return ['id', 'name', 'email'];
         }
 
         public function profile(Request $solicitud) {
@@ -37,26 +35,47 @@
                 $taxi->update(['status' => 'available']);
             }
 
-            $userCols = $this->userSelectColumns();
+            $userCols = $this->preferredUserSelectColumns();
+            try {
+                return response()->json($conductor->load([
+                    'user' => fn ($q) => $q->select($userCols),
+                    'taxi',
+                ]));
+            } catch (QueryException $e) {
+                $userCols = $this->fallbackUserSelectColumns();
 
-            return response()->json($conductor->load([
-                'user' => fn ($q) => $q->select($userCols),
-                'taxi',
-            ]));
+                return response()->json($conductor->load([
+                    'user' => fn ($q) => $q->select($userCols),
+                    'taxi',
+                ]));
+            }
         }
 
         public function index() {
 
-            $userCols = $this->userSelectColumns();
+            $userCols = $this->preferredUserSelectColumns();
 
-            return response()->json(
-                conductor::with([
-                    'user' => fn ($q) => $q->select($userCols),
-                    'taxi:id,conductor_id,plate,model,capacity,color,status',
-                ])
-                    ->latest()
-                    ->get()
-            );
+            try {
+                return response()->json(
+                    conductor::with([
+                        'user' => fn ($q) => $q->select($userCols),
+                        'taxi:id,conductor_id,plate,model,capacity,color,status',
+                    ])
+                        ->latest()
+                        ->get()
+                );
+            } catch (QueryException $e) {
+                $userCols = $this->fallbackUserSelectColumns();
+
+                return response()->json(
+                    conductor::with([
+                        'user' => fn ($q) => $q->select($userCols),
+                        'taxi:id,conductor_id,plate,model,capacity,color,status',
+                    ])
+                        ->latest()
+                        ->get()
+                );
+            }
         }
 
         public function store(Request $solicitud) {
@@ -77,12 +96,21 @@
         }
 
         public function show(conductor $conductor) {
-            $userCols = $this->userSelectColumns();
+            $userCols = $this->preferredUserSelectColumns();
 
-            return response()->json($conductor->load([
-                'user' => fn ($q) => $q->select($userCols),
-                'taxi',
-            ]));
+            try {
+                return response()->json($conductor->load([
+                    'user' => fn ($q) => $q->select($userCols),
+                    'taxi',
+                ]));
+            } catch (QueryException $e) {
+                $userCols = $this->fallbackUserSelectColumns();
+
+                return response()->json($conductor->load([
+                    'user' => fn ($q) => $q->select($userCols),
+                    'taxi',
+                ]));
+            }
         }
 
         public function update(Request $solicitud, conductor $conductor) {

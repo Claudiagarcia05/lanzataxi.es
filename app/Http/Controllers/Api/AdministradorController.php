@@ -16,16 +16,17 @@
 
     class AdministradorController extends Controller {
         public function users() {
-            $columnas = ['id', 'name', 'email', 'created_at'];
-            foreach (['role', 'phone', 'is_disabled', 'disabled_at'] as $col) {
-                if (Schema::hasColumn('users', $col)) {
-                    $columnas[] = $col;
-                }
-            }
+            $preferidas = ['id', 'name', 'email', 'role', 'phone', 'is_disabled', 'disabled_at', 'created_at'];
 
-            $usuarios = User::query()
-                ->latest()
-                ->get($columnas);
+            try {
+                $usuarios = User::query()
+                    ->latest()
+                    ->get($preferidas);
+            } catch (QueryException $e) {
+                $usuarios = User::query()
+                    ->latest()
+                    ->get(['id', 'name', 'email', 'created_at']);
+            }
 
             return response()->json($usuarios);
         }
@@ -267,6 +268,13 @@
                 throw $e;
             }
 
+            // Revocar tokens existentes para cortar acceso inmediato.
+            try {
+                $usuario->tokens()->delete();
+            } catch (\Throwable $e) {
+                // Si Sanctum no está disponible o la tabla no existe, no bloqueamos la baja.
+            }
+
             if (($usuario->role ?? null) === 'conductor') {
                 $usuario->loadMissing('conductor.taxi');
                 if ($usuario->conductor) {
@@ -278,7 +286,7 @@
                 }
             }
 
-            return response()->json($usuario->fresh(['conductor']));
+            return response()->json($usuario->refresh()->loadMissing('conductor'));
         }
 
         public function conductorEarningsReport(Conductor $conductor)
