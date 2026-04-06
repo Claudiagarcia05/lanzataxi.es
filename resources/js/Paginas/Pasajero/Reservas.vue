@@ -78,8 +78,8 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-sm text-neutral-slate">Pago:</span>
-                  <span v-if="viaje.estado === 'cancelled'" class="text-green-600 font-medium">Pagado</span>
-                  <span v-else-if="viaje.pago && viaje.pago.status === 'paid'" class="text-green-600 font-medium">Pagado</span>
+                  <span v-if="obtenerEstadoPago(viaje).tipo === 'paid'" class="text-green-600 font-medium">Pagado</span>
+                  <span v-else-if="obtenerEstadoPago(viaje).tipo === 'free'" class="text-neutral-slate font-medium">No cobrado</span>
                   <span v-else class="text-yellow-600 font-medium">Pendiente de pago</span>
                 </div>
               </div>
@@ -125,7 +125,7 @@
     <div v-if="idViajeConfirmacionCancelacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Cancelar reserva?</h3>
-        <p class="text-neutral-slate mb-6">¿Estás seguro de que deseas cancelar este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera, se generará una deuda.</p>
+        <p class="text-neutral-slate mb-6">{{ textoConfirmacionCancelacion }}</p>
         <div class="flex space-x-3">
           <button @click="confirmarCancelacionViaje" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Sí, cancelar</button>
           <button @click="cancelarConfirmacionCancelacion" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">No, volver</button>
@@ -159,7 +159,10 @@ const totalGastado = computed(() => {
   let total = 0;
   let deudaPagada = 0;
   viajeStore.viajesPasajero.forEach(t => {
-    if (t.estado === 'completed' || (t.estado === 'cancelled' && (!t.debt || t.debt === 0))) {
+    // NOTA: una cancelación SIN aceptar (sin conductor asignado) no se cobra.
+    const cancelacionCobrable = t.estado === 'cancelled' && t.conductorEntityId != null
+
+    if (t.estado === 'completed' || cancelacionCobrable) {
       total += t.price || 0;
       if (t.debt_paid) deudaPagada += t.debt_paid;
     }
@@ -210,6 +213,36 @@ const abrirConfirmacionCancelacion = async (viajeId) => {
   idViajeConfirmacionCancelacion.value = viajeId
 }
 const idViajeConfirmacionCancelacion = ref(null)
+
+const viajeConfirmacionCancelacion = computed(() => {
+  const id = idViajeConfirmacionCancelacion.value
+  if (!id) return null
+  return viajeStore.viajesPasajero.find(v => v.id === id) || null
+})
+
+const textoConfirmacionCancelacion = computed(() => {
+  const viaje = viajeConfirmacionCancelacion.value
+  // Si está pendiente y no tiene conductor asignado, NO se cobra.
+  const esSinCobro = !viaje || (viaje.estado === 'pendiente' && viaje.conductorEntityId == null)
+  if (esSinCobro) {
+    return '¿Estás seguro de que deseas cancelar este viaje? Como aún no ha sido aceptado por ningún taxista, no se te cobrará nada.'
+  }
+
+  return '¿Estás seguro de que deseas cancelar este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera, se generará una deuda.'
+})
+
+const obtenerEstadoPago = (viaje) => {
+  // Cancelación sin aceptar (sin conductor asignado) => no se cobra.
+  if (viaje?.estado === 'cancelled' && viaje?.conductorEntityId == null) {
+    return { tipo: 'free' }
+  }
+
+  if (viaje?.pago && viaje.pago.status === 'paid') {
+    return { tipo: 'paid' }
+  }
+
+  return { tipo: 'pending' }
+}
 
 const confirmarCancelacionViaje = async () => {
   // Confirma la cancelación y refresca cartera/deuda
