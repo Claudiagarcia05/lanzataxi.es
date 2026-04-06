@@ -240,7 +240,7 @@
         {
             try {
                 // Actualiza primero is_disabled (campo crítico para la baja)
-                DB::table('users')
+                $filas = DB::table('users')
                     ->where('id', $usuario->id)
                     ->update(['is_disabled' => true]);
 
@@ -275,6 +275,19 @@
                 // Si Sanctum no está disponible o la tabla no existe, no bloqueamos la baja.
             }
 
+            // Confirma que la baja ha persistido en BD.
+            $usuario->refresh();
+            if (empty($usuario->is_disabled)) {
+                \Log::warning('No se pudo persistir is_disabled al dar de baja', [
+                    'user_id' => $usuario->id,
+                    'updated_rows' => $filas ?? null,
+                ]);
+
+                return response()->json([
+                    'message' => 'No se pudo dar de baja al usuario (el cambio no se guardó). Revisa la configuración de BD y permisos.',
+                ], 409);
+            }
+
             if (($usuario->role ?? null) === 'conductor') {
                 $usuario->loadMissing('conductor.taxi');
                 if ($usuario->conductor) {
@@ -286,7 +299,7 @@
                 }
             }
 
-            return response()->json($usuario->refresh()->loadMissing('conductor'));
+            return response()->json($usuario->loadMissing('conductor'));
         }
 
         public function conductorEarningsReport(Conductor $conductor)

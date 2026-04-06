@@ -221,17 +221,14 @@ export const useAdminStore = defineStore('admin', {
     },
 
 		async darDeBajaUsuario(userId) {
-      await axios.patch(`/api/admin/users/${userId}/disable`)
-      const usuario = this.usuarios.find(u => u.id === userId)
-      if (usuario) {
-        usuario.is_disabled = true
-        usuario.estado = 'inactivo'
-        if (!usuario.fechaBaja) {
-          usuario.fechaBaja = new Date().toISOString().split('T')[0]
-        }
-      }
-      const conductor = this.conductores.find(c => c.user_id === userId)
-      if (conductor) conductor.is_disabled = true
+			const response = await axios.patch(`/api/admin/users/${userId}/disable`)
+			const isDisabled = Boolean(response?.data?.is_disabled)
+			if (!isDisabled) {
+				throw new Error('El servidor no confirmó la baja (is_disabled=false).')
+			}
+
+			// Re-sincroniza desde servidor para evitar inconsistencias/pestañeos.
+			await Promise.all([this.obtenerUsuarios(), this.obtenerConductores()])
     },
 
 		cerrarModalPendientes() {
