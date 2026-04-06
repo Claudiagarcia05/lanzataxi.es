@@ -12,6 +12,7 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Schema;
+    use Illuminate\Database\QueryException;
 
     class AdministradorController extends Controller {
         public function users() {
@@ -236,20 +237,35 @@
 
         public function disableUser(User $usuario)
         {
-            $hasIsDisabled = Schema::hasColumn('users', 'is_disabled');
-            $hasDisabledAt = Schema::hasColumn('users', 'disabled_at');
+            try {
+                // Actualiza primero is_disabled (campo crítico para la baja)
+                DB::table('users')
+                    ->where('id', $usuario->id)
+                    ->update(['is_disabled' => true]);
 
-            if (!$hasIsDisabled) {
-                return response()->json([
-                    'message' => 'La base de datos no está actualizada (falta users.is_disabled). Ejecuta las migraciones (php artisan migrate).',
-                ], 409);
-            }
+                // disabled_at es opcional: si existe, lo registramos; si no, no bloquea la operación.
+                try {
+                    DB::table('users')
+                        ->where('id', $usuario->id)
+                        ->whereNull('disabled_at')
+                        ->update(['disabled_at' => now()]);
+                } catch (QueryException $e) {
+                    // Ignorar si la columna no existe aún.
+                }
+            } catch (QueryException $e) {
+                $mensaje = (string) ($e->getMessage() ?? '');
+                $esColumnaFaltante = str_contains($mensaje, "Unknown column 'is_disabled'")
+                    || str_contains($mensaje, 'Column not found')
+                    || str_contains($mensaje, '42S22');
 
-            $usuario->is_disabled = true;
-            if ($hasDisabledAt && empty($usuario->disabled_at)) {
-                $usuario->disabled_at = now();
+                if ($esColumnaFaltante) {
+                    return response()->json([
+                        'message' => 'La base de datos no está actualizada (faltan columnas en users). Ejecuta las migraciones en el servidor: php artisan migrate --force',
+                    ], 409);
+                }
+
+                throw $e;
             }
-            $usuario->save();
 
             if (($usuario->role ?? null) === 'conductor') {
                 $usuario->loadMissing('conductor.taxi');
