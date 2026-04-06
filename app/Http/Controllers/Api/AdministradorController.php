@@ -275,12 +275,24 @@
                 // Si Sanctum no está disponible o la tabla no existe, no bloqueamos la baja.
             }
 
-            // Confirma que la baja ha persistido en BD.
-            $usuario->refresh();
-            if (empty($usuario->is_disabled)) {
+            // Confirma que la baja ha persistido en BD (lectura directa para evitar estados cacheados).
+            $valorIsDisabled = null;
+            try {
+                $valorIsDisabled = DB::table('users')->where('id', $usuario->id)->value('is_disabled');
+            } catch (QueryException $e) {
+                // Si falla la lectura por columna inexistente, lo tratamos como BD desactualizada.
+                return response()->json([
+                    'message' => 'La base de datos no está actualizada (faltan columnas en users). Ejecuta las migraciones en el servidor: php artisan migrate --force',
+                ], 409);
+            }
+
+            $isDisabledAhora = (bool) $valorIsDisabled;
+
+            if (!$isDisabledAhora) {
                 \Log::warning('No se pudo persistir is_disabled al dar de baja', [
                     'user_id' => $usuario->id,
                     'updated_rows' => $filas ?? null,
+                    'db_value' => $valorIsDisabled,
                 ]);
 
                 return response()->json([
@@ -299,7 +311,7 @@
                 }
             }
 
-            return response()->json($usuario->loadMissing('conductor'));
+            return response()->json($usuario->refresh()->loadMissing('conductor'));
         }
 
         public function conductorEarningsReport(Conductor $conductor)
