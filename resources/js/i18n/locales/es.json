@@ -1,0 +1,198 @@
+{
+  "nav": {
+    "howItWorks": "Cómo funciona",
+    "municipalities": "Municipios",
+    "reviews": "Opiniones",
+    "contact": "Contacto",
+    "login": "Iniciar sesión",
+    "language": "Idioma",
+    "skipToContent": "Saltar al contenido principal",
+    "toggleMenu": "Alternar menú"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "close": "Cerrar",
+    "processing": "Procesando...",
+    "sending": "Enviando..."
+  },
+  "home": {
+    "hero": {
+      "title": "Tu taxi en",
+      "subtitle": "Reserva tu taxi con seguimiento en tiempo real. Llega a cualquier municipio de la isla de forma segura, rápida y con precios cerrados.",
+      "cta": "Reservar ahora"
+    },
+    "howItWorks": {
+      "titlePrefix": "Cómo funciona",
+      "titleSuffix": "",
+      "subtitle": "Reservar tu taxi es muy sencillo. Sigue estos 3 pasos y estarás en tu destino."
+    },
+    "steps": {
+      "1": {
+        "title": "Solicita tu taxi",
+        "desc": "Indica dónde te encuentras y tu destino. Elige el tipo de vehículo que necesitas."
+      },
+      "2": {
+        "title": "Sigue tu taxi en tiempo real",
+        "desc": "Una vez asignado, podrás ver en el mapa dónde está tu taxi y el tiempo estimado de llegada."
+      },
+      "3": {
+        "title": "Disfruta del viaje",
+        "desc": "Sube al taxi y viaja tranquilo. Pago seguro sin efectivo si lo prefieres."
+      }
+    },
+    "municipalities": {
+      "title": "Los 7 municipios de",
+      "subtitle": "Operamos en toda la isla. Selecciona tu municipio y te recogemos donde estés.",
+      "radioTaxi": "Radio taxi",
+      "items": {
+        "arrecife": "Capital y centro económico",
+        "sanBartolome": "Corazón geográfico de la isla",
+        "teguise": "Historia y tradición",
+        "tias": "Turismo y playas",
+        "yaiza": "Naturaleza volcánica",
+        "tinajo": "Paisajes volcánicos",
+        "haria": "Valle de las mil palmeras"
+      }
+    },
+    "reviews": {
+      "excellent": "EXCELENTE",
+      "count": "{count} reseñas",
+      "onlyRating": "Este usuario solo dejó una calificación.",
+      "readMore": "Leer más"
+    },
+    "footer": {
+      "tagline": "La forma más inteligente de moverte por Lanzarote. Reserva tu taxi con seguimiento en tiempo real y llega a cualquier municipio de la isla de forma segura.",
+      "company": "Empresa",
+      "about": "Sobre nosotros",
+      "howItWorks": "Cómo funciona",
+      "reviews": "Opiniones",
+      "products": "Productos",
+      "passengers": "Pasajeros",
+      "drivers": "Taxistas",
+      "business": "Empresas",
+      "fleets": "Flotas",
+      "support": "Soporte",
+      "help": "Ayuda",
+      "security": "Seguridad",
+      "privacy": "Privacidad",
+      "terms": "Términos",
+      "legal": "Legal",
+      "legalNotice": "Aviso legal",
+      "cookiesPolicy": "Política de cookies",
+      "dataProtection": "Protección de datos",
+      "generalTerms": "Condiciones generales",
+      "contact": "Contacto",
+      "followUs": "Síguenos",
+      "rights": "Todos los derechos reservados.",
+      "cookies": "Cookies"
+    }
+  },
+  "auth": {
+    "welcomeBack": "Bienvenido de nuevo",
+    "createAccount": "Crea tu cuenta",
+    "fields": {
+      "fullName": "Nombre completo",
+      "email": "Email",
+      "password": "Contraseña",
+      "confirmPassword": "Confirmar contraseña",
+      "userType": "Tipo de usuario"
+    },
+    "placeholders": {
+      "fullName": "Tu nombre",
+      "email": "tucorreo@ejemplo.com",
+      "password": "••••••••",
+      "confirmPassword": "••••••••"
+    },
+    "roles": {
+      "passenger": "Pasajero",
+      "driver": "Taxista"
+    },
+    "actions": {
+      "signIn": "Iniciar sesión",
+      "createAccount": "Crear cuenta"
+    },
+    "switch": {
+      "noAccount": "¿No tienes cuenta?",
+      "haveAccount": "¿Ya tienes cuenta?",
+      "signUp": "Regístrate",
+      "signIn": "Inicia sesión"
+    },
+    "messages": {
+      "registerSuccess": "Usuario creado correctamente. Inicie sesión."
+    },
+    "errors": {
+      "emailPasswordRequired": "Email y contraseña son requeridos",
+      "nameRequired": "El nombre es requerido",
+      "emailRequired": "El email es requerido",
+      "passwordRequired": "La contraseña es requerida",
+      "confirmPasswordRequired": "Debes confirmar la contraseña",
+      "passwordsMismatch": "Las contraseñas no coinciden",
+      "passwordMin": "La contraseña debe tener al menos {min} caracteres",
+      "invalidCredentials": "Credenciales inválidas. Por favor verifica tu email y contraseña.",
+      "recaptchaFailed": "No se pudo validar reCAPTCHA. Recarga la página e inténtalo de nuevo.",
+      "loginFailed": "No se pudo iniciar sesión. Inténtalo de nuevo.",
+      "registerFailed": "No se pudo crear la cuenta. Inténtalo de nuevo.",
+      "generic": "Error en la autenticación"
+    }
+  },
+  "reservations": {
+    "title": "Mis Reservas",
+    "subtitle": "Historial y seguimiento de tus viajes",
+    "stats": {
+      "total": "Total reservas",
+      "completed": "Completadas",
+      "spent": "Total gastado"
+    },
+    "historyTitle": "Historial de Viajes",
+    "historyCount": "{count} reservas",
+    "fields": {
+      "price": "Precio",
+      "distance": "Distancia",
+      "passengers": "Pasajeros",
+      "status": "Estado"
+    },
+    "status": {
+      "pending": "Pendiente",
+      "accepted": "Aceptado",
+      "inProgress": "En curso",
+      "completed": "Finalizado",
+      "cancelled": "Cancelado"
+    },
+    "payment": {
+      "label": "Pago:",
+      "paid": "Pagado",
+      "free": "No cobrado",
+      "pending": "Pendiente de pago",
+      "success": "Pago procesado correctamente"
+    },
+    "tracking": {
+      "button": "Ver seguimiento en tiempo real"
+    },
+    "rate": {
+      "button": "Valorar viaje",
+      "title": "Valorar viaje",
+      "yourRating": "Tu valoración:",
+      "score": "Puntuación",
+      "ariaStar": "Puntuar con {i} estrellas",
+      "commentLabel": "Comentario (opcional)",
+      "commentPlaceholder": "Cuéntanos tu experiencia...",
+      "commentMax": "Máximo 1000 caracteres.",
+      "submit": "Enviar valoración",
+      "success": "¡Gracias! Tu valoración se ha guardado.",
+      "errors": {
+        "invalidScore": "Selecciona una puntuación entre 1 y 5.",
+        "saveFailed": "No se pudo guardar la valoración."
+      }
+    },
+    "cancel": {
+      "button": "Cancelar reserva",
+      "title": "¿Cancelar reserva?",
+      "confirm": "Sí, cancelar",
+      "back": "No, volver",
+      "textNoCharge": "¿Estás seguro de que deseas cancelar este viaje? Como aún no ha sido aceptado por ningún taxista, no se te cobrará nada.",
+      "textWithCharge": "¿Estás seguro de que deseas cancelar este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera, se generará una deuda.",
+      "success": "Reserva cancelada correctamente."
+    },
+    "empty": "No hay viajes que mostrar"
+  }
+}

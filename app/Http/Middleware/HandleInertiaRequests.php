@@ -27,6 +27,8 @@
 
             return [
                 ...parent::share($solicitud),
+                'locale' => app()->getLocale(),
+                'localesDisponibles' => ['es', 'en'],
                 'auth' => [
                     'user' => $solicitud->user(),
                 ],

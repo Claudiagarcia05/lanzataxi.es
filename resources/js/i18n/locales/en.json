@@ -1,0 +1,198 @@
+{
+  "nav": {
+    "howItWorks": "How it works",
+    "municipalities": "Municipalities",
+    "reviews": "Reviews",
+    "contact": "Contact",
+    "login": "Sign in",
+    "language": "Language",
+    "skipToContent": "Skip to main content",
+    "toggleMenu": "Toggle menu"
+  },
+  "common": {
+    "cancel": "Cancel",
+    "close": "Close",
+    "processing": "Processing...",
+    "sending": "Sending..."
+  },
+  "home": {
+    "hero": {
+      "title": "Your taxi in",
+      "subtitle": "Book your taxi with real-time tracking. Reach any municipality on the island safely, quickly, and with fixed prices.",
+      "cta": "Book now"
+    },
+    "howItWorks": {
+      "titlePrefix": "How",
+      "titleSuffix": "works",
+      "subtitle": "Booking your taxi is easy. Follow these 3 steps and you'll be on your way."
+    },
+    "steps": {
+      "1": {
+        "title": "Request your taxi",
+        "desc": "Tell us where you are and your destination. Choose the vehicle type you need."
+      },
+      "2": {
+        "title": "Track your taxi in real time",
+        "desc": "Once assigned, you can see your taxi on the map and the estimated arrival time."
+      },
+      "3": {
+        "title": "Enjoy the ride",
+        "desc": "Hop in and travel worry-free. Secure cashless payment if you prefer."
+      }
+    },
+    "municipalities": {
+      "title": "The 7 municipalities of",
+      "subtitle": "We operate across the whole island. Select your municipality and we’ll pick you up wherever you are.",
+      "radioTaxi": "Taxi radio",
+      "items": {
+        "arrecife": "Capital and economic center",
+        "sanBartolome": "Geographic heart of the island",
+        "teguise": "History and tradition",
+        "tias": "Tourism and beaches",
+        "yaiza": "Volcanic nature",
+        "tinajo": "Volcanic landscapes",
+        "haria": "Valley of a thousand palm trees"
+      }
+    },
+    "reviews": {
+      "excellent": "EXCELLENT",
+      "count": "{count} reviews",
+      "onlyRating": "This user only left a rating.",
+      "readMore": "Read more"
+    },
+    "footer": {
+      "tagline": "The smartest way to move around Lanzarote. Book your taxi with real-time tracking and reach any municipality on the island safely.",
+      "company": "Company",
+      "about": "About us",
+      "howItWorks": "How it works",
+      "reviews": "Reviews",
+      "products": "Products",
+      "passengers": "Passengers",
+      "drivers": "Drivers",
+      "business": "Businesses",
+      "fleets": "Fleets",
+      "support": "Support",
+      "help": "Help",
+      "security": "Security",
+      "privacy": "Privacy",
+      "terms": "Terms",
+      "legal": "Legal",
+      "legalNotice": "Legal notice",
+      "cookiesPolicy": "Cookies policy",
+      "dataProtection": "Data protection",
+      "generalTerms": "General terms",
+      "contact": "Contact",
+      "followUs": "Follow us",
+      "rights": "All rights reserved.",
+      "cookies": "Cookies"
+    }
+  },
+  "auth": {
+    "welcomeBack": "Welcome back",
+    "createAccount": "Create your account",
+    "fields": {
+      "fullName": "Full name",
+      "email": "Email",
+      "password": "Password",
+      "confirmPassword": "Confirm password",
+      "userType": "User type"
+    },
+    "placeholders": {
+      "fullName": "Your name",
+      "email": "you@example.com",
+      "password": "••••••••",
+      "confirmPassword": "••••••••"
+    },
+    "roles": {
+      "passenger": "Passenger",
+      "driver": "Driver"
+    },
+    "actions": {
+      "signIn": "Sign in",
+      "createAccount": "Create account"
+    },
+    "switch": {
+      "noAccount": "Don't have an account?",
+      "haveAccount": "Already have an account?",
+      "signUp": "Sign up",
+      "signIn": "Sign in"
+    },
+    "messages": {
+      "registerSuccess": "Account created successfully. Please sign in."
+    },
+    "errors": {
+      "emailPasswordRequired": "Email and password are required",
+      "nameRequired": "Name is required",
+      "emailRequired": "Email is required",
+      "passwordRequired": "Password is required",
+      "confirmPasswordRequired": "Please confirm your password",
+      "passwordsMismatch": "Passwords do not match",
+      "passwordMin": "Password must be at least {min} characters",
+      "invalidCredentials": "Invalid credentials. Please check your email and password.",
+      "recaptchaFailed": "reCAPTCHA validation failed. Reload the page and try again.",
+      "loginFailed": "Could not sign in. Please try again.",
+      "registerFailed": "Could not create the account. Please try again.",
+      "generic": "Authentication error"
+    }
+  },
+  "reservations": {
+    "title": "My Bookings",
+    "subtitle": "History and live tracking of your trips",
+    "stats": {
+      "total": "Total bookings",
+      "completed": "Completed",
+      "spent": "Total spent"
+    },
+    "historyTitle": "Trip History",
+    "historyCount": "{count} bookings",
+    "fields": {
+      "price": "Price",
+      "distance": "Distance",
+      "passengers": "Passengers",
+      "status": "Status"
+    },
+    "status": {
+      "pending": "Pending",
+      "accepted": "Accepted",
+      "inProgress": "In progress",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+    "payment": {
+      "label": "Payment:",
+      "paid": "Paid",
+      "free": "Not charged",
+      "pending": "Payment pending",
+      "success": "Payment processed successfully"
+    },
+    "tracking": {
+      "button": "View live tracking"
+    },
+    "rate": {
+      "button": "Rate trip",
+      "title": "Rate trip",
+      "yourRating": "Your rating:",
+      "score": "Score",
+      "ariaStar": "Rate with {i} stars",
+      "commentLabel": "Comment (optional)",
+      "commentPlaceholder": "Tell us about your experience...",
+      "commentMax": "Up to 1000 characters.",
+      "submit": "Submit rating",
+      "success": "Thanks! Your rating has been saved.",
+      "errors": {
+        "invalidScore": "Select a score between 1 and 5.",
+        "saveFailed": "Could not save the rating."
+      }
+    },
+    "cancel": {
+      "button": "Cancel booking",
+      "title": "Cancel booking?",
+      "confirm": "Yes, cancel",
+      "back": "No, go back",
+      "textNoCharge": "Are you sure you want to cancel this trip? Since it hasn’t been accepted by any driver yet, you won’t be charged.",
+      "textWithCharge": "Are you sure you want to cancel this trip? The full amount will be charged and, if your wallet balance is insufficient, a debt will be created.",
+      "success": "Booking cancelled successfully."
+    },
+    "empty": "There are no trips to show"
+  }
+}

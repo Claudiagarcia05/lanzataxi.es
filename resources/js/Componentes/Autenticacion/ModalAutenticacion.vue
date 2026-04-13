@@ -15,62 +15,62 @@
             <img src="/images/logo.png" alt="LanzaTaxi" class="h-20 mx-auto mb-2" cargando="lazy" decoding="async">
             <h2 id="auth-modal-title" class="text-2xl font-bold text-lanzarote-blue">LanzaTaxi</h2>
             <p id="auth-modal-desc" class="text-neutral-slate text-sm mt-1">
-              {{ esInicioSesion ? 'Bienvenido de nuevo' : 'Crea tu cuenta' }}
+              {{ esInicioSesion ? t('auth.welcomeBack') : t('auth.createAccount') }}
             </p>
           </div>
 
-          <div v-if="error" :class="[esInicioSesion && error === 'Usuario creado correctamente. Inicie sesión.' ? 'mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm' : 'mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm']" aria-live="polite">
+          <div v-if="error" :class="[esInicioSesion && error === t('auth.messages.registerSuccess') ? 'mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-600 text-sm' : 'mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm']" aria-live="polite">
             {{ error }}
           </div>
 
           <form @submit.prevent="enviarFormulario" class="space-y-4">
             <div v-if="!esInicioSesion">
-              <label class="block text-sm font-medium text-neutral-dark mb-1">Nombre completo</label>
-              <input v-model="datosFormulario.name" type="text" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="Tu nombre">
+              <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('auth.fields.fullName') }}</label>
+              <input v-model="datosFormulario.name" type="text" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" :placeholder="t('auth.placeholders.fullName')">
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-1">Email</label>
-              <input v-model="datosFormulario.email" type="email" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="tucorreo@ejemplo.com">
+              <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('auth.fields.email') }}</label>
+              <input v-model="datosFormulario.email" type="email" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" :placeholder="t('auth.placeholders.email')">
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-1">Contraseña</label>
-              <input v-model="datosFormulario.password" type="password" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="••••••••">
+              <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('auth.fields.password') }}</label>
+              <input v-model="datosFormulario.password" type="password" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" :placeholder="t('auth.placeholders.password')">
             </div>
 
             <div v-if="!esInicioSesion">
-              <label class="block text-sm font-medium text-neutral-dark mb-1">Confirmar contraseña</label>
-              <input v-model="datosFormulario.password_confirmation" type="password" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="••••••••">
+              <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('auth.fields.confirmPassword') }}</label>
+              <input v-model="datosFormulario.password_confirmation" type="password" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" :placeholder="t('auth.placeholders.confirmPassword')">
             </div>
 
             <div v-if="!esInicioSesion">
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Tipo de usuario</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('auth.fields.userType') }}</label>
               <div class="grid grid-cols-2 gap-2">
                 <button type="button" @click="datosFormulario.role = 'pasajero'" :class="['p-2 rounded-lg border text-sm transition-all', datosFormulario.role === 'pasajero' ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic text-neutral-dark hover:border-lanzarote-blue']">
-                  Pasajero
+                  {{ t('auth.roles.passenger') }}
                 </button>
                 <button type="button" @click="datosFormulario.role = 'conductor'" :class="[ 'p-2 rounded-lg border text-sm transition-all', datosFormulario.role === 'conductor' ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic text-neutral-dark hover:border-lanzarote-blue']">
-                  Taxista
+                  {{ t('auth.roles.driver') }}
                 </button>
               </div>
             </div>
 
             <button type="submit" :disabled="cargando" class="w-full bg-lanzarote-blue text-white py-3 px-4 rounded-lg font-semibold hover:bg-lanzarote-yellow hover:text-black transition-all disabled:opacity-50 disabled:cursor-not-allowed mt-6" :aria-busy="cargando ? 'true' : 'false'">
-              <span v-if="!cargando">{{ esInicioSesion ? 'Iniciar sesión' : 'Crear cuenta' }}</span>
+              <span v-if="!cargando">{{ esInicioSesion ? t('auth.actions.signIn') : t('auth.actions.createAccount') }}</span>
               <span v-else class="flex items-center justify-center">
                 <svg class="animate-spin h-5 w-5 mr-2" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" />
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                 </svg>
-                Procesando...
+                {{ t('common.processing') }}
               </span>
             </button>
 
             <p class="text-center text-sm text-neutral-slate mt-4">
-              {{ esInicioSesion ? '¿No tienes cuenta?' : '¿Ya tienes cuenta?' }}
+              {{ esInicioSesion ? t('auth.switch.noAccount') : t('auth.switch.haveAccount') }}
               <button type="button" @click="esInicioSesion = !esInicioSesion; error = ''" class="text-lanzarote-blue font-semibold hover:underline ml-1">
-                {{ esInicioSesion ? 'Regístrate' : 'Inicia sesión' }}
+                {{ esInicioSesion ? t('auth.switch.signUp') : t('auth.switch.signIn') }}
               </button>
             </p>
           </form>
@@ -84,6 +84,7 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { useI18n } from 'vue-i18n'
 import { executeRecaptchaV3 } from '../../recaptchaV3'
 
 defineProps({
@@ -95,6 +96,8 @@ const emit = defineEmits(['update:modelValue'])
 const esInicioSesion = ref(true)
 const cargando = ref(false)
 const error = ref('')
+
+const { t } = useI18n()
 
 const datosFormulario = ref({
   name: '',
@@ -124,38 +127,38 @@ const reiniciarFormulario = () => {
 const validarFormulario = () => {
   if (esInicioSesion.value) {
     if (!datosFormulario.value.email.trim() || !datosFormulario.value.password) {
-      error.value = 'Email y contraseña son requeridos'
+      error.value = t('auth.errors.emailPasswordRequired')
 
       return false
     }
   } else {
     if (!datosFormulario.value.name.trim()) {
-      error.value = 'El nombre es requerido'
+      error.value = t('auth.errors.nameRequired')
 
       return false
     }
     if (!datosFormulario.value.email.trim()) {
-      error.value = 'El email es requerido'
+      error.value = t('auth.errors.emailRequired')
 
       return false
     }
     if (!datosFormulario.value.password) {
-      error.value = 'La contraseña es requerida'
+      error.value = t('auth.errors.passwordRequired')
 
       return false
     }
     if (!datosFormulario.value.password_confirmation) {
-      error.value = 'Debes confirmar la contraseña'
+      error.value = t('auth.errors.confirmPasswordRequired')
 
       return false
     }
     if (datosFormulario.value.password !== datosFormulario.value.password_confirmation) {
-      error.value = 'Las contraseñas no coinciden'
+      error.value = t('auth.errors.passwordsMismatch')
 
       return false
     }
     if (datosFormulario.value.password.length < 6) {
-      error.value = 'La contraseña debe tener al menos 6 caracteres'
+      error.value = t('auth.errors.passwordMin', { min: 6 })
 
       return false
     }
@@ -168,7 +171,7 @@ const validarFormulario = () => {
     const esCorreoAdmin = correo.endsWith('@admin.es')
     const esCorreoConductor = correo.endsWith('@taxi.es')
 
-    const mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.'
+    const mensajeGenericoCredenciales = t('auth.errors.invalidCredentials')
 
     if (esCorreoAdmin) {
       error.value = mensajeGenericoCredenciales
@@ -212,7 +215,7 @@ const enviarFormulario = async () => {
   } catch (e) {
     // Si hay site key configurada y falla reCAPTCHA, no seguimos (evita falsos positivos en backend)
     if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
-      error.value = 'No se pudo validar reCAPTCHA. Recarga la página e inténtalo de nuevo.'
+      error.value = t('auth.errors.recaptchaFailed')
 
       cargando.value = false
 
@@ -232,7 +235,7 @@ const enviarFormulario = async () => {
       const usuario = respuesta.data?.user
 
       if (!token) {
-        error.value = 'No se pudo iniciar sesión. Inténtalo de nuevo.'
+        error.value = t('auth.errors.loginFailed')
 
         return
       }
@@ -261,7 +264,7 @@ const enviarFormulario = async () => {
 
     // Si el backend responde correctamente, mostrar mensaje de éxito y cambiar a login
     if (!respuesta.data?.user) {
-      error.value = 'No se pudo crear la cuenta. Inténtalo de nuevo.'
+      error.value = t('auth.errors.registerFailed')
       
       return
     }
@@ -277,11 +280,11 @@ const enviarFormulario = async () => {
       role: 'pasajero'
     }
     // Mensaje de éxito permanente
-    error.value = 'Usuario creado correctamente. Inicie sesión.'
+    error.value = t('auth.messages.registerSuccess')
   } catch (e) {
     const mensaje = e.response?.data?.message
       || Object.values(e.response?.data?.errors || {})?.flat()?.[0]
-      || 'Error en la autenticación'
+      || t('auth.errors.generic')
 
     error.value = mensaje
   } finally {

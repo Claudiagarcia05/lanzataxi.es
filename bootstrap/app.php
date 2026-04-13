@@ -14,6 +14,11 @@
         ->withMiddleware(function (Middleware $middleware): void {
             $middleware->statefulApi();
 
+            // Locale basado en cookie (o Accept-Language como fallback)
+            $middleware->prepend([
+                \App\Http\Middleware\EstablecerLocale::class,
+            ]);
+
             $middleware->append([
                 \App\Http\Middleware\EncabezadosSeguridad::class,
             ]);

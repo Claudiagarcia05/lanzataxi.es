@@ -14,34 +14,48 @@
     use Inertia\Inertia;
 
     $obtenerOpinionesLanding = function () {
-        return Viaje::query()
-            ->where('status', 'completed')
-            ->whereNotNull('rating')
-            ->with(['pasajero:id,name'])
-            ->orderByDesc('end_time')
-            ->limit(6)
-            ->get()
-            ->map(function (Viaje $viaje) {
-                $nombreOriginal = (string) ($viaje->pasajero?->name ?? 'Usuario');
-                $partes = preg_split('/\s+/', trim($nombreOriginal)) ?: [];
-                $nombre = $partes[0] ?? 'Usuario';
-                if (isset($partes[1]) && $partes[1] !== '') {
-                    $nombre .= ' ' . mb_substr($partes[1], 0, 1) . '.';
-                }
+        try {
+            return Viaje::query()
+                ->where('status', 'completed')
+                ->whereNotNull('rating')
+                ->with(['pasajero:id,name'])
+                ->orderByDesc('end_time')
+                ->limit(6)
+                ->get()
+                ->map(function (Viaje $viaje) {
+                    $nombreOriginal = (string) ($viaje->pasajero?->name ?? 'Usuario');
+                    $partes = preg_split('/\s+/', trim($nombreOriginal)) ?: [];
+                    $nombre = $partes[0] ?? 'Usuario';
+                    if (isset($partes[1]) && $partes[1] !== '') {
+                        $nombre .= ' ' . mb_substr($partes[1], 0, 1) . '.';
+                    }
 
-                return [
-                    'nombre' => $nombre,
-                    'valoracion' => (int) $viaje->rating,
-                    'texto' => $viaje->comment,
-                    'tieneMas' => false,
-                    'fecha' => $viaje->end_time?->diffForHumans() ?? null,
-                    'verificado' => true,
-                ];
-            })
-            ->values();
+                    return [
+                        'nombre' => $nombre,
+                        'valoracion' => (int) $viaje->rating,
+                        'texto' => $viaje->comment,
+                        'tieneMas' => false,
+                        'fecha' => $viaje->end_time?->diffForHumans() ?? null,
+                        'verificado' => true,
+                    ];
+                })
+                ->values();
+        } catch (\Throwable $e) {
+            report($e);
+
+            return collect();
+        }
     };
 
     // Landing / Inicio
+    Route::post('/locale', function (\Illuminate\Http\Request $request) {
+        $validado = $request->validate([
+            'locale' => 'required|in:es,en',
+        ]);
+
+        return back()->withCookie(cookie('locale', $validado['locale'], 60 * 24 * 365));
+    })->name('locale.set');
+
     Route::get('/', function () {
 
         $opiniones = $obtenerOpinionesLanding();

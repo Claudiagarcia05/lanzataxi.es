@@ -3,7 +3,7 @@
   <nav class="bg-white shadow-sm fixed w-full top-0 z-50" aria-label="Principal">
     <!-- Enlace para accesibilidad: saltar al contenido principal -->
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:text-neutral-dark focus:px-4 focus:py-2 focus:rounded-lg">
-      Saltar al contenido principal
+      {{ t('nav.skipToContent') }}
     </a>
     <!-- Contenedor principal de la barra -->
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -17,25 +17,38 @@
         <!-- Menú de navegación para escritorio -->
         <div class="hidden md:flex items-center space-x-8">
           <button type="button" @click="scrollToPasos" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
-            Cómo funciona
+            {{ t('nav.howItWorks') }}
           </button>
           <button type="button" @click="scrollToMunicipios" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
-            Municipios
+            {{ t('nav.municipalities') }}
           </button>
           <button type="button" @click="scrollToTestimonios" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
-            Opiniones
+            {{ t('nav.reviews') }}
           </button>
           <button type="button" @click="scrollToFooter" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
-            Contacto
+            {{ t('nav.contact') }}
           </button>
+
+          <label class="sr-only" for="selector-idioma-desktop">{{ t('nav.language') }}</label>
+          <select
+            id="selector-idioma-desktop"
+            v-model="localeSeleccionado"
+            @change="cambiarIdioma"
+            class="border border-neutral-volcanic rounded-lg px-3 py-2 text-sm text-neutral-dark bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue"
+            aria-label="Selector de idioma"
+          >
+            <option value="es">ES</option>
+            <option value="en">EN</option>
+          </select>
+
           <button type="button" @click="showAuthModal = true" class="bg-lanzarote-blue text-white px-6 py-2.5 rounded-lg font-semibold hover:bg-lanzarote-yellow hover:text-black transition-all shadow-md">
-            Iniciar sesión
+            {{ t('nav.login') }}
           </button>
         </div>
 
         <!-- Botón para abrir/cerrar menú móvil -->
         <div class="md:hidden flex items-center">
-          <button type="button" @click="isMenuOpen = !isMenuOpen" class="text-neutral-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" :aria-expanded="isMenuOpen" aria-controls="mobile-menu" aria-label="Alternar menú">
+          <button type="button" @click="isMenuOpen = !isMenuOpen" class="text-neutral-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" :aria-expanded="isMenuOpen" aria-controls="mobile-menu" :aria-label="t('nav.toggleMenu')">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path v-if="!isMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -48,19 +61,33 @@
       <div id="mobile-menu" v-show="isMenuOpen" class="md:hidden py-4 border-t border-neutral-volcanic">
         <div class="flex flex-col space-y-4">
           <button type="button" @click="scrollToPasos; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
-            Cómo funciona
+            {{ t('nav.howItWorks') }}
           </button>
           <button type="button" @click="scrollToMunicipios; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
-            Municipios
+            {{ t('nav.municipalities') }}
           </button>
           <button type="button" @click="scrollToTestimonios; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
-            Opiniones
+            {{ t('nav.reviews') }}
           </button>
           <button type="button" @click="scrollToFooter; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
-            Contacto
+            {{ t('nav.contact') }}
           </button>
+
+          <div class="flex items-center gap-3">
+            <span class="text-sm text-neutral-slate">{{ t('nav.language') }}</span>
+            <select
+              v-model="localeSeleccionado"
+              @change="cambiarIdioma"
+              class="border border-neutral-volcanic rounded-lg px-3 py-2 text-sm text-neutral-dark bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue"
+              aria-label="Selector de idioma"
+            >
+              <option value="es">ES</option>
+              <option value="en">EN</option>
+            </select>
+          </div>
+
           <button type="button" @click="showAuthModal = true; isMenuOpen = false" class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg font-semibold hover:bg-lanzarote-yellow hover:text-black w-full">
-            Iniciar sesión
+            {{ t('nav.login') }}
           </button>
         </div>
       </div>
@@ -74,13 +101,35 @@
 
 <script setup>
 // Importación de utilidades y componentes
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import axios from 'axios'
+import { useI18n } from 'vue-i18n'
+import { usePage } from '@inertiajs/vue3'
 import ModalAutenticacion from './Autenticacion/ModalAutenticacion.vue'
 
 // Controla la visibilidad del modal de autenticación
 const showAuthModal = ref(false)
 // Controla el estado de apertura/cierre del menú móvil
 const isMenuOpen = ref(false)
+
+const { t, locale } = useI18n()
+const page = usePage()
+
+const localeActual = computed(() => page.props?.locale || 'es')
+const localeSeleccionado = ref(localeActual.value)
+
+// Mantener i18n sincronizado con el locale recibido del servidor
+locale.value = localeActual.value
+
+const cambiarIdioma = async () => {
+  try {
+    await axios.post('/locale', { locale: localeSeleccionado.value })
+    window.location.reload()
+  } catch (e) {
+    // Si falla, volvemos al locale actual
+    localeSeleccionado.value = localeActual.value
+  }
+}
 
 // Scroll suave al pie de página
 const scrollToFooter = () => {

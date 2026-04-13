@@ -12,15 +12,15 @@
           <div class="grid md:grid-cols-2 gap-12 items-center">
             <div>
               <h1 class="text-4xl md:text-5xl font-bold mb-6">
-                Tu taxi en <span class="text-lanzarote-yellow">Lanzarote</span>
+                {{ t('home.hero.title') }} <span class="text-lanzarote-yellow">Lanzarote</span>
               </h1>
               <p class="text-xl text-white/90 mb-8 leading-relaxed">
-                Reserva tu taxi con seguimiento en tiempo real. Llega a cualquier municipio de la isla de forma segura, rápida y con precios cerrados.
+                {{ t('home.hero.subtitle') }}
               </p>
               <div class="flex flex-wrap gap-4">
                 <!-- CTA: abre modal de autenticación para reservar -->
                 <button @click="showAuthModal = true" class="bg-lanzarote-yellow text-black px-8 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-all shadow-lg">
-                  Reservar ahora
+                  {{ t('home.hero.cta') }}
                 </button>
               </div>
             </div>
@@ -33,10 +33,10 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
           <h2 class="text-4xl md:text-5xl font-bold text-neutral-dark mb-4">
-            Cómo funciona <span class="text-lanzarote-blue">LanzaTaxi</span>
+            {{ t('home.howItWorks.titlePrefix') }} <span class="text-lanzarote-blue">LanzaTaxi</span> {{ t('home.howItWorks.titleSuffix') }}
           </h2>
           <p class="text-xl text-neutral-slate max-w-3xl mx-auto">
-            Reservar tu taxi es muy sencillo. Sigue estos 3 pasos y estarás en tu destino.
+            {{ t('home.howItWorks.subtitle') }}
           </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
@@ -62,10 +62,10 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
           <h2 class="text-4xl md:text-5xl font-bold text-neutral-dark mb-4">
-            Los 7 municipios de <span class="text-lanzarote-blue">Lanzarote</span>
+            {{ t('home.municipalities.title') }} <span class="text-lanzarote-blue">Lanzarote</span>
           </h2>
           <p class="text-xl text-neutral-slate max-w-3xl mx-auto">
-            Operamos en toda la isla. Selecciona tu municipio y te recogemos donde estés.
+            {{ t('home.municipalities.subtitle') }}
           </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -76,7 +76,7 @@
               <h3 class="text-2xl font-bold text-neutral-dark mb-2">{{ municipio.nombre }}</h3>
               <p class="text-neutral-slate mb-4">{{ municipio.desc }}</p>
               <div>
-                <span class="text-sm font-medium text-neutral-dark mb-2 block">Radio taxi</span>
+                <span class="text-sm font-medium text-neutral-dark mb-2 block">{{ t('home.municipalities.radioTaxi') }}</span>
                 <div class="space-y-2">
                   <!-- Se genera un enlace de llamada por cada teléfono del municipio -->
                   <a v-for="telefono in municipio.telefonos" :key="telefono" :href="`tel:${telefono.replace(/\s/g, '')}`" class="flex items-center space-x-2 text-lanzarote-blue hover:text-lanzarote-blue/80 transition-colors">
@@ -98,11 +98,11 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col items-center mb-16">
           <div class="flex items-center gap-2 mb-2">
-            <span class="font-bold text-neutral-dark text-sm uppercase tracking-widest">EXCELENTE</span>
+            <span class="font-bold text-neutral-dark text-sm uppercase tracking-widest">{{ t('home.reviews.excellent') }}</span>
             <div class="flex text-orange-500 text-lg">
               <template v-for="i in 5">★</template>
             </div>
-            <span class="text-neutral-dark font-medium ml-1">{{ testimonios.length }} reseñas</span>
+            <span class="text-neutral-dark font-medium ml-1">{{ t('home.reviews.count', { count: testimonios.length }) }}</span>
             <!-- Logo externo de Google (reputación / reseñas) -->
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="h-5 ml-1">
           </div>
@@ -130,9 +130,9 @@
             </div>
             <div class="text-gray-700 text-[14px] leading-relaxed">
               <p v-if="testimonio.texto">{{ testimonio.texto }}</p>
-              <p v-else class="italic text-gray-500 text-xs">Este usuario solo dejó una calificación.</p>
+              <p v-else class="italic text-gray-500 text-xs">{{ t('home.reviews.onlyRating') }}</p>
               <span v-if="testimonio.tieneMas" class="inline-block mt-2 text-gray-400 text-xs cursor-pointer hover:underline">
-                Leer más
+                {{ t('home.reviews.readMore') }}
               </span>
             </div>
           </div>
@@ -151,51 +151,51 @@
               <span class="text-3xl font-bold">LanzaTaxi</span>
             </div>
             <p class="text-white/80 max-w-2xl">
-              La forma más inteligente de moverte por Lanzarote. Reserva tu taxi con seguimiento en tiempo real y llega a cualquier municipio de la isla de forma segura.
+              {{ t('home.footer.tagline') }}
             </p>
           </div>
 
           <nav class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12" aria-label="Enlaces del sitio">
             <div>
-              <h3 class="font-semibold text-lg mb-4">Empresa</h3>
+              <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.company') }}</h3>
               <ul class="space-y-3">
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Sobre nosotros</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Cómo funciona</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Opiniones</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.about') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.howItWorks') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.reviews') }}</span></li>
               </ul>
             </div>
             <div>
-              <h3 class="font-semibold text-lg mb-4">Productos</h3>
+              <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.products') }}</h3>
               <ul class="space-y-3">
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Pasajeros</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Taxistas</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Empresas</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Flotas</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.passengers') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.drivers') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.business') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.fleets') }}</span></li>
               </ul>
             </div>
             <div>
-              <h3 class="font-semibold text-lg mb-4">Soporte</h3>
+              <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.support') }}</h3>
               <ul class="space-y-3">
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Ayuda</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Seguridad</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Privacidad</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Términos</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.help') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.security') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.privacy') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.terms') }}</span></li>
               </ul>
             </div>
             <div>
-              <h3 class="font-semibold text-lg mb-4">Legal</h3>
+              <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.legal') }}</h3>
               <ul class="space-y-3">
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Aviso legal</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Política de cookies</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Protección de datos</span></li>
-                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">Condiciones generales</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.legalNotice') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.cookiesPolicy') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.dataProtection') }}</span></li>
+                <li><span class="text-white/70 hover:text-white transition-colors text-sm cursor-default">{{ t('home.footer.generalTerms') }}</span></li>
               </ul>
             </div>
           </nav>
 
           <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 pt-8 border-t border-white/20">
             <div>
-              <h3 class="font-semibold text-lg mb-4">Contacto</h3>
+              <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.contact') }}</h3>
               <ul class="space-y-3">
                 <li class="flex items-center space-x-3">
                   <svg class="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -220,7 +220,7 @@
             </div>
 
             <div>
-              <h3 class="font-semibold text-lg mb-4">Síguenos</h3>
+              <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.followUs') }}</h3>
               <div class="flex space-x-4" aria-label="Redes sociales">
                 <span class="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center hover:bg-lanzarote-yellow hover:text-black transition-colors cursor-default" aria-label="Facebook">
                   <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
@@ -246,11 +246,11 @@
 
         <div class="bg-black/20 py-4">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-white/60">
-            <p>© {{ currentYear }} LanzaTaxi. Todos los derechos reservados.</p>
+            <p>© {{ currentYear }} LanzaTaxi. {{ t('home.footer.rights') }}</p>
             <div class="flex space-x-6 mt-2 md:mt-0">
-              <span class="hover:text-white transition-colors cursor-default">Privacidad</span>
-              <span class="hover:text-white transition-colors cursor-default">Términos</span>
-              <span class="hover:text-white transition-colors cursor-default">Cookies</span>
+              <span class="hover:text-white transition-colors cursor-default">{{ t('home.footer.privacy') }}</span>
+              <span class="hover:text-white transition-colors cursor-default">{{ t('home.footer.terms') }}</span>
+              <span class="hover:text-white transition-colors cursor-default">{{ t('home.footer.cookies') }}</span>
             </div>
           </div>
         </div>
@@ -261,9 +261,12 @@
 
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import BarraNavegacion from '../Componentes/BarraNavegacion.vue'
 import ModalAutenticacion from '../Componentes/Autenticacion/ModalAutenticacion.vue'
+
+const { t } = useI18n()
 
 const props = defineProps({
   opiniones: {
@@ -276,62 +279,62 @@ const props = defineProps({
 const showAuthModal = ref(false)
 
 // Contenido estático: pasos explicativos del proceso de reserva
-const pasosReserva = [
+const pasosReserva = computed(() => ([
   {
     numero: '1',
-    titulo: 'Solicita tu taxi',
-    descripcion: 'Indica dónde te encuentras y tu destino. Elige el tipo de vehículo que necesitas.'
+    titulo: t('home.steps.1.title'),
+    descripcion: t('home.steps.1.desc')
   },
   {
     numero: '2',
-    titulo: 'Sigue tu taxi en tiempo real',
-    descripcion: 'Una vez asignado, podrás ver en el mapa dónde está tu taxi y el tiempo estimado de llegada.'
+    titulo: t('home.steps.2.title'),
+    descripcion: t('home.steps.2.desc')
   },
   {
     numero: '3',
-    titulo: 'Disfruta del viaje',
-    descripcion: 'Sube al taxi y viaja tranquilo. Pago seguro sin efectivo si lo prefieres.'
+    titulo: t('home.steps.3.title'),
+    descripcion: t('home.steps.3.desc')
   }
-]
+]))
 
 // Contenido estático: municipios y teléfonos de radio taxi
-const municipios = [
-  { 
-    nombre: 'Arrecife', 
-    desc: 'Capital y centro económico',
+const municipios = computed(() => ([
+  {
+    nombre: 'Arrecife',
+    desc: t('home.municipalities.items.arrecife'),
     telefonos: ['928 800 806', '928 803 104', '928 812 710'],
   },
-  { 
-    nombre: 'San Bartolomé', 
-    desc: 'Corazón geográfico de la isla',
+  {
+    nombre: 'San Bartolomé',
+    desc: t('home.municipalities.items.sanBartolome'),
     telefonos: ['928 520 176'],
   },
-  { 
-    nombre: 'Teguise', 
-    desc: 'Historia y tradición',
+  {
+    nombre: 'Teguise',
+    desc: t('home.municipalities.items.teguise'),
     telefonos: ['928 524 223'],
   },
-  { 
-    nombre: 'Tías', 
-    desc: 'Turismo y playas',
+  {
+    nombre: 'Tías',
+    desc: t('home.municipalities.items.tias'),
     telefonos: ['928 524 220'],
   },
-  { 
-    nombre: 'Yaiza', 
-    desc: 'Naturaleza volcánica',
+  {
+    nombre: 'Yaiza',
+    desc: t('home.municipalities.items.yaiza'),
     telefonos: ['928 524 222'],
   },
-  { 
-    nombre: 'Tinajo', 
-    desc: 'Paisajes volcánicos',
+  {
+    nombre: 'Tinajo',
+    desc: t('home.municipalities.items.tinajo'),
     telefonos: ['928 840 049'],
   },
-  { 
-    nombre: 'Haría', 
-    desc: 'Valle de las mil palmeras',
+  {
+    nombre: 'Haría',
+    desc: t('home.municipalities.items.haria'),
     telefonos: ['928 524 223', '620 315 350'],
   }
-]
+]))
 
 const testimoniosMock = [
   {

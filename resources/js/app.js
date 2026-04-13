@@ -13,6 +13,8 @@ import { ZiggyVue } from 'ziggy-js';
 import { createPinia } from 'pinia';
 import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 
+import { crearI18n, resolverLocaleInicial } from './i18n';
+
 // Nombre de la app (se usa para el title del documento)
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -30,12 +32,17 @@ createInertiaApp({
 		const pinia = createPinia();
 		pinia.use(piniaPluginPersistedstate);
 
+		const pageProps = props?.initialPage?.props ?? {};
+		const localeInicial = resolverLocaleInicial(pageProps);
+		const i18n = crearI18n(localeInicial);
+
 		// Montaje de la app Vue con los plugins necesarios
 		createApp({ render: () => h(App, props) })
 			.use(plugin)
 			// Ziggy: helpers de rutas de Laravel en el frontend
 			.use(ZiggyVue, window.Ziggy)
 			.use(pinia)
+			.use(i18n)
 			.mount(el);
 	},
 	progress: {

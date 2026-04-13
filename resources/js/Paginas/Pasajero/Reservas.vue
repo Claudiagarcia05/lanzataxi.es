@@ -4,23 +4,23 @@
     <div class="max-w-7xl mx-auto">
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <!-- Título de la sección -->
-        <h1 class="text-3xl font-bold mb-2">Mis Reservas</h1>
-        <p class="text-blue-100">Historial y seguimiento de tus viajes</p>
+        <h1 class="text-3xl font-bold mb-2">{{ t('reservations.title') }}</h1>
+        <p class="text-blue-100">{{ t('reservations.subtitle') }}</p>
       </div>
 
       <!-- Tarjetas resumen (totales) -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-neutral-dark">{{ estadisticasViajes.total }}</p>
-          <p class="text-sm text-neutral-slate">Total reservas</p>
+          <p class="text-sm text-neutral-slate">{{ t('reservations.stats.total') }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-green-600">{{ estadisticasViajes.completados }}</p>
-          <p class="text-sm text-neutral-slate">Completadas</p>
+          <p class="text-sm text-neutral-slate">{{ t('reservations.stats.completed') }}</p>
         </div>
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-lanzarote-blue">{{ totalGastado.toFixed(2) }}€</p>
-          <p class="text-sm text-neutral-slate">Total gastado</p>
+          <p class="text-sm text-neutral-slate">{{ t('reservations.stats.spent') }}</p>
         </div>
       </div>
 
@@ -33,8 +33,8 @@
           <p class="text-sm font-medium text-green-500">{{ mensajeInfo }}</p>
         </div>
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-lg font-semibold text-neutral-dark">Historial de Viajes</h2>
-          <span class="text-sm text-neutral-slate">{{ viajesFiltrados.length }} reservas</span>
+          <h2 class="text-lg font-semibold text-neutral-dark">{{ t('reservations.historyTitle') }}</h2>
+          <span class="text-sm text-neutral-slate">{{ t('reservations.historyCount', { count: viajesFiltrados.length }) }}</span>
         </div>
 
         <div class="space-y-4">
@@ -54,19 +54,19 @@
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
               <!-- Datos principales del viaje -->
               <div>
-                <p class="text-xs text-neutral-slate">Precio</p>
+                <p class="text-xs text-neutral-slate">{{ t('reservations.fields.price') }}</p>
                 <p class="text-lg font-bold text-lanzarote-blue">{{ viaje.price?.toFixed(2) }}€</p>
               </div>
               <div>
-                <p class="text-xs text-neutral-slate">Distancia</p>
+                <p class="text-xs text-neutral-slate">{{ t('reservations.fields.distance') }}</p>
                 <p class="font-medium text-neutral-dark">{{ viaje.distance?.toFixed(1) }} km</p>
               </div>
               <div>
-                <p class="text-xs text-neutral-slate">Pasajeros</p>
+                <p class="text-xs text-neutral-slate">{{ t('reservations.fields.passengers') }}</p>
                 <p class="font-medium text-neutral-dark">{{ viaje.pasajeros || 1 }}</p>
               </div>
               <div>
-                <p class="text-xs text-neutral-slate">Estado</p>
+                <p class="text-xs text-neutral-slate">{{ t('reservations.fields.status') }}</p>
                 <span :class="['px-2 py-1 rounded-full text-xs font-medium inline-block', obtenerDistintivoEstado(viaje.estado).class]">
                   {{ obtenerDistintivoEstado(viaje.estado).label }}
                 </span>
@@ -77,22 +77,22 @@
               <!-- Viaje finalizado/cancelado: se muestra estado del pago -->
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-neutral-slate">Pago:</span>
-                  <span v-if="obtenerEstadoPago(viaje).tipo === 'paid'" class="text-green-600 font-medium">Pagado</span>
-                  <span v-else-if="obtenerEstadoPago(viaje).tipo === 'free'" class="text-neutral-slate font-medium">No cobrado</span>
-                  <span v-else class="text-yellow-600 font-medium">Pendiente de pago</span>
+                  <span class="text-sm text-neutral-slate">{{ t('reservations.payment.label') }}</span>
+                  <span v-if="obtenerEstadoPago(viaje).tipo === 'paid'" class="text-green-600 font-medium">{{ t('reservations.payment.paid') }}</span>
+                  <span v-else-if="obtenerEstadoPago(viaje).tipo === 'free'" class="text-neutral-slate font-medium">{{ t('reservations.payment.free') }}</span>
+                  <span v-else class="text-yellow-600 font-medium">{{ t('reservations.payment.pending') }}</span>
                 </div>
 
                 <div v-if="viaje.estado === 'completed' && !viaje.valoracion" class="flex justify-end">
                   <button @click="abrirModalValoracion(viaje)" class="text-sm text-lanzarote-blue hover:text-lanzarote-yellow">
-                    Valorar viaje
+                    {{ t('reservations.rate.button') }}
                   </button>
                 </div>
               </div>
 
               <div v-if="viaje.valoracion" class="mt-3">
                 <div class="flex items-center gap-2">
-                  <span class="text-sm text-neutral-slate">Tu valoración:</span>
+                  <span class="text-sm text-neutral-slate">{{ t('reservations.rate.yourRating') }}</span>
                   <div class="flex text-sm">
                     <template v-for="i in 5" :key="i">
                       <span :class="i <= (viaje.valoracion || 0) ? 'text-yellow-400' : 'text-gray-300'">★</span>
@@ -107,7 +107,7 @@
               <!-- Viaje pendiente: permite cancelar la reserva -->
               <div class="flex justify-end">
                 <button @click="abrirConfirmacionCancelacion(viaje.id)" class="text-sm text-red-600 hover:text-red-800">
-                  Cancelar reserva
+                  {{ t('reservations.cancel.button') }}
                 </button>
               </div>
             </div>
@@ -116,14 +116,14 @@
               <!-- Viaje aceptado/en curso: acceso a seguimiento en tiempo real -->
               <div class="flex justify-end">
                 <button @click="irASeguimiento(viaje.id)" class="text-sm text-lanzarote-blue hover:text-lanzarote-yellow">
-                  Ver seguimiento en tiempo real
+                  {{ t('reservations.tracking.button') }}
                 </button>
               </div>
             </div>
           </div>
 
           <div v-if="viajesFiltrados.length === 0" class="text-center py-12">
-            <p class="text-neutral-slate">No hay viajes que mostrar</p>
+            <p class="text-neutral-slate">{{ t('reservations.empty') }}</p>
           </div>
         </div>
       </div>
@@ -134,12 +134,12 @@
       <div class="bg-white rounded-2xl p-6 max-w-lg w-full">
         <div class="flex items-start justify-between gap-4 mb-4">
           <div>
-            <h3 class="text-xl font-bold text-neutral-dark">Valorar viaje</h3>
+            <h3 class="text-xl font-bold text-neutral-dark">{{ t('reservations.rate.title') }}</h3>
             <p v-if="viajeParaValorar" class="text-sm text-neutral-slate mt-1">
               {{ viajeParaValorar.pickup_address || viajeParaValorar.pickup }} → {{ viajeParaValorar.dropoff_address || viajeParaValorar.dropoff }}
             </p>
           </div>
-          <button @click="cerrarModalValoracion" class="p-2 rounded-lg hover:bg-neutral-soft" aria-label="Cerrar">
+          <button @click="cerrarModalValoracion" class="p-2 rounded-lg hover:bg-neutral-soft" :aria-label="t('common.close')">
             <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
           </button>
         </div>
@@ -149,7 +149,7 @@
         </div>
 
         <div class="mb-5">
-          <p class="text-sm text-neutral-slate mb-2">Puntuación</p>
+          <p class="text-sm text-neutral-slate mb-2">{{ t('reservations.rate.score') }}</p>
           <div class="flex items-center gap-2">
             <button
               v-for="i in 5"
@@ -158,7 +158,7 @@
               @click="valoracionSeleccionada = i"
               class="text-2xl leading-none"
               :class="i <= valoracionSeleccionada ? 'text-yellow-400' : 'text-gray-300'"
-              :aria-label="`Puntuar con ${i} estrellas`"
+              :aria-label="t('reservations.rate.ariaStar', { i })"
             >
               ★
             </button>
@@ -166,23 +166,23 @@
         </div>
 
         <div class="mb-6">
-          <label class="block text-sm text-neutral-slate mb-2">Comentario (opcional)</label>
+          <label class="block text-sm text-neutral-slate mb-2">{{ t('reservations.rate.commentLabel') }}</label>
           <textarea
             v-model="comentarioValoracion"
             rows="4"
             maxlength="1000"
             class="w-full border border-neutral-volcanic rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-lanzarote-blue"
-            placeholder="Cuéntanos tu experiencia..."
+            :placeholder="t('reservations.rate.commentPlaceholder')"
           ></textarea>
-          <p class="text-xs text-neutral-slate mt-2">Máximo 1000 caracteres.</p>
+          <p class="text-xs text-neutral-slate mt-2">{{ t('reservations.rate.commentMax') }}</p>
         </div>
 
         <div class="flex gap-3">
           <button @click="cerrarModalValoracion" type="button" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
-            Cancelar
+            {{ t('common.cancel') }}
           </button>
           <button @click="enviarValoracion" type="button" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black" :disabled="enviandoValoracion">
-            {{ enviandoValoracion ? 'Enviando...' : 'Enviar valoración' }}
+            {{ enviandoValoracion ? t('common.sending') : t('reservations.rate.submit') }}
           </button>
         </div>
       </div>
@@ -194,11 +194,11 @@
     <!-- Confirmación de cancelación (evita confirm/alert nativos) -->
     <div v-if="idViajeConfirmacionCancelacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Cancelar reserva?</h3>
+        <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('reservations.cancel.title') }}</h3>
         <p class="text-neutral-slate mb-6">{{ textoConfirmacionCancelacion }}</p>
         <div class="flex space-x-3">
-          <button @click="confirmarCancelacionViaje" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">Sí, cancelar</button>
-          <button @click="cancelarConfirmacionCancelacion" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">No, volver</button>
+          <button @click="confirmarCancelacionViaje" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">{{ t('reservations.cancel.confirm') }}</button>
+          <button @click="cancelarConfirmacionCancelacion" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">{{ t('reservations.cancel.back') }}</button>
         </div>
       </div>
     </div>
@@ -207,6 +207,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 const mensajeError = ref('')
 const mensajeInfo = ref('')
 import DisposicionPasajero from '../../Disposiciones/DisposicionPasajero.vue'
@@ -216,6 +217,8 @@ import { useCarteraStore } from '../../Almacenes/almacenCartera.js'
 
 const viajeStore = useViajeStore()
 const carteraStore = useCarteraStore()
+
+const { t, locale } = useI18n()
 
 const filtroSeleccionado = ref('all')
 
@@ -272,11 +275,11 @@ const estadisticasViajes = computed(() => {
 const obtenerDistintivoEstado = (estado) => {
   // Traduce estado a etiqueta + clases de estilo
   const badges = {
-    'pendiente': { class: 'bg-yellow-100 text-yellow-800', label: 'Pendiente' },
-    'accepted': { class: 'bg-blue-100 text-blue-800', label: 'Aceptado' },
-    'in_progress': { class: 'bg-green-100 text-green-800', label: 'En curso' },
-    'completed': { class: 'bg-gray-100 text-gray-800', label: 'Finalizado' },
-    'cancelled': { class: 'bg-red-100 text-red-800', label: 'Cancelado' }
+    'pendiente': { class: 'bg-yellow-100 text-yellow-800', label: t('reservations.status.pending') },
+    'accepted': { class: 'bg-blue-100 text-blue-800', label: t('reservations.status.accepted') },
+    'in_progress': { class: 'bg-green-100 text-green-800', label: t('reservations.status.inProgress') },
+    'completed': { class: 'bg-gray-100 text-gray-800', label: t('reservations.status.completed') },
+    'cancelled': { class: 'bg-red-100 text-red-800', label: t('reservations.status.cancelled') }
   }
 
   return badges[estado] || badges.pendiente
@@ -301,10 +304,10 @@ const textoConfirmacionCancelacion = computed(() => {
   // Si está pendiente y no tiene conductor asignado, NO se cobra.
   const esSinCobro = !viaje || (viaje.estado === 'pendiente' && viaje.conductorEntityId == null)
   if (esSinCobro) {
-    return '¿Estás seguro de que deseas cancelar este viaje? Como aún no ha sido aceptado por ningún taxista, no se te cobrará nada.'
+    return t('reservations.cancel.textNoCharge')
   }
 
-  return '¿Estás seguro de que deseas cancelar este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera, se generará una deuda.'
+  return t('reservations.cancel.textWithCharge')
 })
 
 const obtenerEstadoPago = (viaje) => {
@@ -326,7 +329,7 @@ const confirmarCancelacionViaje = async () => {
   await viajeStore.cancelarViaje(viajeId)
   await carteraStore.obtenerSaldo()
   await carteraStore.obtenerResumenDeuda()
-  mensajeInfo.value = 'Reserva cancelada correctamente.'
+  mensajeInfo.value = t('reservations.cancel.success')
   setTimeout(() => { mensajeInfo.value = '' }, 4000)
   idViajeConfirmacionCancelacion.value = null
 }
@@ -344,7 +347,7 @@ const abrirModalPago = (viaje) => {
 const manejarPagoExitoso = async (pagoData) => {
   console.log('Pago exitoso:', pagoData)
   await viajeStore.obtenerViajes()
-  mensajeInfo.value = 'Pago procesado correctamente'
+  mensajeInfo.value = t('reservations.payment.success')
   setTimeout(() => { mensajeInfo.value = '' }, 4000)
 }
 
@@ -374,7 +377,7 @@ const enviarValoracion = async () => {
 
   const rating = Number(valoracionSeleccionada.value)
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    errorValoracion.value = 'Selecciona una puntuación entre 1 y 5.'
+    errorValoracion.value = t('reservations.rate.errors.invalidScore')
     return
   }
 
@@ -382,11 +385,11 @@ const enviarValoracion = async () => {
   try {
     await viajeStore.valorarViaje(viajeParaValorar.value.id, rating, comentarioValoracion.value)
     await viajeStore.obtenerViajes()
-    mensajeInfo.value = '¡Gracias! Tu valoración se ha guardado.'
+    mensajeInfo.value = t('reservations.rate.success')
     setTimeout(() => { mensajeInfo.value = '' }, 4000)
     cerrarModalValoracion()
   } catch (e) {
-    errorValoracion.value = e?.response?.data?.message || 'No se pudo guardar la valoración.'
+    errorValoracion.value = e?.response?.data?.message || t('reservations.rate.errors.saveFailed')
   } finally {
     enviandoValoracion.value = false
   }
@@ -395,8 +398,10 @@ const enviarValoracion = async () => {
 
 const formatearFecha = (cadenaFecha) => {
   const date = new Date(cadenaFecha)
+
+  const localeFecha = locale.value === 'en' ? 'en-GB' : 'es-ES'
   
-  return date.toLocaleDateString('es-ES', {
+  return date.toLocaleDateString(localeFecha, {
     day: '2-digit',
     month: 'short',
     year: 'numeric',
