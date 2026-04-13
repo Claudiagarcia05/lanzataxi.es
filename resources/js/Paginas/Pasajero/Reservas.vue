@@ -82,10 +82,25 @@
                   <span v-else-if="obtenerEstadoPago(viaje).tipo === 'free'" class="text-neutral-slate font-medium">No cobrado</span>
                   <span v-else class="text-yellow-600 font-medium">Pendiente de pago</span>
                 </div>
+
+                <div v-if="viaje.estado === 'completed' && !viaje.valoracion" class="flex justify-end">
+                  <button @click="abrirModalValoracion(viaje)" class="text-sm text-lanzarote-blue hover:text-lanzarote-yellow">
+                    Valorar viaje
+                  </button>
+                </div>
               </div>
 
-              <div v-if="viaje.valoracion" class="flex items-center gap-2 mt-2">
+              <div v-if="viaje.valoracion" class="mt-3">
+                <div class="flex items-center gap-2">
+                  <span class="text-sm text-neutral-slate">Tu valoración:</span>
+                  <div class="flex text-sm">
+                    <template v-for="i in 5" :key="i">
+                      <span :class="i <= (viaje.valoracion || 0) ? 'text-yellow-400' : 'text-gray-300'">★</span>
+                    </template>
+                  </div>
                 </div>
+                <p v-if="viaje.comment" class="text-sm text-neutral-slate mt-2">{{ viaje.comment }}</p>
+              </div>
             </div>
 
             <div v-else-if="viaje.estado === 'pendiente'" class="border-t border-neutral-volcanic pt-4 mt-2">
@@ -116,7 +131,62 @@
 
     <!-- Modal de valoración (actualmente sin contenido visible en este archivo) -->
     <div v-if="mostrarModalValoracion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div class="bg-white rounded-2xl p-6 max-w-lg w-full">
+        <div class="flex items-start justify-between gap-4 mb-4">
+          <div>
+            <h3 class="text-xl font-bold text-neutral-dark">Valorar viaje</h3>
+            <p v-if="viajeParaValorar" class="text-sm text-neutral-slate mt-1">
+              {{ viajeParaValorar.pickup_address || viajeParaValorar.pickup }} → {{ viajeParaValorar.dropoff_address || viajeParaValorar.dropoff }}
+            </p>
+          </div>
+          <button @click="cerrarModalValoracion" class="p-2 rounded-lg hover:bg-neutral-soft" aria-label="Cerrar">
+            <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
+          </button>
+        </div>
+
+        <div v-if="errorValoracion" class="mb-4 bg-red-50 border border-red-200 p-3 rounded-lg">
+          <p class="text-sm font-medium text-red-600">{{ errorValoracion }}</p>
+        </div>
+
+        <div class="mb-5">
+          <p class="text-sm text-neutral-slate mb-2">Puntuación</p>
+          <div class="flex items-center gap-2">
+            <button
+              v-for="i in 5"
+              :key="i"
+              type="button"
+              @click="valoracionSeleccionada = i"
+              class="text-2xl leading-none"
+              :class="i <= valoracionSeleccionada ? 'text-yellow-400' : 'text-gray-300'"
+              :aria-label="`Puntuar con ${i} estrellas`"
+            >
+              ★
+            </button>
+          </div>
+        </div>
+
+        <div class="mb-6">
+          <label class="block text-sm text-neutral-slate mb-2">Comentario (opcional)</label>
+          <textarea
+            v-model="comentarioValoracion"
+            rows="4"
+            maxlength="1000"
+            class="w-full border border-neutral-volcanic rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-lanzarote-blue"
+            placeholder="Cuéntanos tu experiencia..."
+          ></textarea>
+          <p class="text-xs text-neutral-slate mt-2">Máximo 1000 caracteres.</p>
+        </div>
+
+        <div class="flex gap-3">
+          <button @click="cerrarModalValoracion" type="button" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
+            Cancelar
+          </button>
+          <button @click="enviarValoracion" type="button" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black" :disabled="enviandoValoracion">
+            {{ enviandoValoracion ? 'Enviando...' : 'Enviar valoración' }}
+          </button>
+        </div>
       </div>
+    </div>
 
     <!-- Modal de pago reutilizable -->
     <ModalPago :show="mostrarModalPago" :viaje="viajePago" @close="mostrarModalPago = false" @success="manejarPagoExitoso"/>
@@ -153,6 +223,12 @@ const filtroSeleccionado = ref('all')
 const mostrarModalPago = ref(false)
 const viajePago = ref(null)
 const mostrarModalValoracion = ref(false)
+
+const viajeParaValorar = ref(null)
+const valoracionSeleccionada = ref(0)
+const comentarioValoracion = ref('')
+const errorValoracion = ref('')
+const enviandoValoracion = ref(false)
 
 const totalGastado = computed(() => {
   // Total gastado aproximado: suma viajes pagados menos deuda liquidada asociada
@@ -270,6 +346,50 @@ const manejarPagoExitoso = async (pagoData) => {
   await viajeStore.obtenerViajes()
   mensajeInfo.value = 'Pago procesado correctamente'
   setTimeout(() => { mensajeInfo.value = '' }, 4000)
+}
+
+const abrirModalValoracion = (viaje) => {
+  mensajeError.value = ''
+  mensajeInfo.value = ''
+  errorValoracion.value = ''
+  viajeParaValorar.value = viaje
+  valoracionSeleccionada.value = Number(viaje?.valoracion || 0)
+  comentarioValoracion.value = viaje?.comment || ''
+  mostrarModalValoracion.value = true
+}
+
+const cerrarModalValoracion = () => {
+  mostrarModalValoracion.value = false
+  viajeParaValorar.value = null
+  valoracionSeleccionada.value = 0
+  comentarioValoracion.value = ''
+  errorValoracion.value = ''
+  enviandoValoracion.value = false
+}
+
+const enviarValoracion = async () => {
+  if (!viajeParaValorar.value) return
+
+  errorValoracion.value = ''
+
+  const rating = Number(valoracionSeleccionada.value)
+  if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
+    errorValoracion.value = 'Selecciona una puntuación entre 1 y 5.'
+    return
+  }
+
+  enviandoValoracion.value = true
+  try {
+    await viajeStore.valorarViaje(viajeParaValorar.value.id, rating, comentarioValoracion.value)
+    await viajeStore.obtenerViajes()
+    mensajeInfo.value = '¡Gracias! Tu valoración se ha guardado.'
+    setTimeout(() => { mensajeInfo.value = '' }, 4000)
+    cerrarModalValoracion()
+  } catch (e) {
+    errorValoracion.value = e?.response?.data?.message || 'No se pudo guardar la valoración.'
+  } finally {
+    enviandoValoracion.value = false
+  }
 }
 
 

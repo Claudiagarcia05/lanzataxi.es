@@ -13,14 +13,45 @@
     use Illuminate\Support\Facades\Route;
     use Inertia\Inertia;
 
+    $obtenerOpinionesLanding = function () {
+        return Viaje::query()
+            ->where('status', 'completed')
+            ->whereNotNull('rating')
+            ->with(['pasajero:id,name'])
+            ->orderByDesc('end_time')
+            ->limit(6)
+            ->get()
+            ->map(function (Viaje $viaje) {
+                $nombreOriginal = (string) ($viaje->pasajero?->name ?? 'Usuario');
+                $partes = preg_split('/\s+/', trim($nombreOriginal)) ?: [];
+                $nombre = $partes[0] ?? 'Usuario';
+                if (isset($partes[1]) && $partes[1] !== '') {
+                    $nombre .= ' ' . mb_substr($partes[1], 0, 1) . '.';
+                }
+
+                return [
+                    'nombre' => $nombre,
+                    'valoracion' => (int) $viaje->rating,
+                    'texto' => $viaje->comment,
+                    'tieneMas' => false,
+                    'fecha' => $viaje->end_time?->diffForHumans() ?? null,
+                    'verificado' => true,
+                ];
+            })
+            ->values();
+    };
+
     // Landing / Inicio
     Route::get('/', function () {
+
+        $opiniones = $obtenerOpinionesLanding();
 
         return Inertia::render('Inicio', [
             'canLogin' => Route::has('login'),
             'canRegister' => Route::has('register'),
             'laravelVersion' => Application::VERSION,
             'phpVersion' => PHP_VERSION,
+            'opiniones' => $opiniones,
         ]);
     });
 
@@ -190,5 +221,9 @@
     // Útil para SPA con Inertia cuando el frontend maneja enlaces.
     Route::get('/{any}', function () {
 
-        return Inertia::render('Inicio');
+        $opiniones = $obtenerOpinionesLanding();
+
+        return Inertia::render('Inicio', [
+            'opiniones' => $opiniones,
+        ]);
     })->where('any', '.*');

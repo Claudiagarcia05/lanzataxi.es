@@ -573,15 +573,10 @@
                 return response()->json(['message' => 'viaje cannot be completed'], 400);
             }
 
-            $validado = $solicitud->validate([
-                'rating' => 'nullable|integer|min:1|max:5',
-                'comment' => 'nullable|string|max:1000',
-            ]);
-
+            // El taxista completa el viaje. La valoración pertenece al pasajero y se gestiona
+            // exclusivamente a través del endpoint `rate`.
             $viaje->update([
                 'status' => 'completed',
-                'rating' => $validado['rating'] ?? $viaje->rating,
-                'comment' => $validado['comment'] ?? $viaje->comment,
                 'end_time' => now(),
             ]);
 
@@ -634,6 +629,20 @@
                 'rating' => $validado['rating'],
                 'comment' => $validado['comment'] ?? null,
             ]);
+
+            // Recalcula la valoración media del conductor a partir de viajes completados valorados.
+            if ($viaje->conductor_id) {
+                $media = Viaje::where('conductor_id', $viaje->conductor_id)
+                    ->where('status', 'completed')
+                    ->whereNotNull('rating')
+                    ->avg('rating');
+
+                if ($media !== null && $viaje->conductor) {
+                    $viaje->conductor->update([
+                        'rating' => round((float) $media, 2),
+                    ]);
+                }
+            }
 
             return response()->json($viaje->fresh(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }

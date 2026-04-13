@@ -102,7 +102,7 @@
             <div class="flex text-orange-500 text-lg">
               <template v-for="i in 5">★</template>
             </div>
-            <span class="text-neutral-dark font-medium ml-1">18 reseñas</span>
+            <span class="text-neutral-dark font-medium ml-1">{{ testimonios.length }} reseñas</span>
             <!-- Logo externo de Google (reputación / reseñas) -->
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="h-5 ml-1">
           </div>
@@ -117,8 +117,10 @@
               </div>
             </div>
             <div class="flex items-center gap-1 mb-3">
-              <div class="flex text-yellow-400 text-[15px]">
-                <template v-for="i in 5">★</template>
+              <div class="flex text-[15px]">
+                <template v-for="i in 5" :key="i">
+                  <span :class="i <= (testimonio.valoracion || 0) ? 'text-yellow-400' : 'text-gray-300'">★</span>
+                </template>
               </div>
               <div v-if="testimonio.verificado" class="flex items-center justify-center w-4 h-4 rounded-full bg-blue-500">
                 <svg class="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,6 +265,13 @@ import { ref } from 'vue'
 import BarraNavegacion from '../Componentes/BarraNavegacion.vue'
 import ModalAutenticacion from '../Componentes/Autenticacion/ModalAutenticacion.vue'
 
+const props = defineProps({
+  opiniones: {
+    type: Array,
+    default: () => ([])
+  }
+})
+
 // Control de visibilidad del modal de autenticación
 const showAuthModal = ref(false)
 
@@ -324,8 +333,7 @@ const municipios = [
   }
 ]
 
-// Contenido de testimonios (ref por si se quiere actualizar dinámicamente)
-const testimonios = ref([
+const testimoniosMock = [
   {
     nombre: 'Angie',
     valoracion: 5,
@@ -374,7 +382,10 @@ const testimonios = ref([
     fecha: 'hace 2 semanas',
     verificado: true
   }
-])
+]
+
+// Contenido de testimonios (si llegan opiniones reales del servidor, se usan)
+const testimonios = ref((props.opiniones && props.opiniones.length > 0) ? props.opiniones : testimoniosMock)
 
 // Utilidad: scroll suave a una sección concreta
 const scrollToPasos = () => {
