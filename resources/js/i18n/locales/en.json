@@ -99,7 +99,7 @@
     },
     "placeholders": {
       "fullName": "Your name",
-      "email": "you@example.com",
+      "email": "you\\@example.com",
       "password": "••••••••",
       "confirmPassword": "••••••••"
     },
