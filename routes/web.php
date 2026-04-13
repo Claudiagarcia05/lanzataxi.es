@@ -56,7 +56,7 @@
         return back()->withCookie(cookie('locale', $validado['locale'], 60 * 24 * 365));
     })->name('locale.set');
 
-    Route::get('/', function () {
+    Route::get('/', function () use ($obtenerOpinionesLanding) {
 
         $opiniones = $obtenerOpinionesLanding();
 
@@ -233,7 +233,7 @@
 
     // Catch-all: cualquier ruta no definida renderiza Inicio
     // Útil para SPA con Inertia cuando el frontend maneja enlaces.
-    Route::get('/{any}', function () {
+    Route::get('/{any}', function () use ($obtenerOpinionesLanding) {
 
         $opiniones = $obtenerOpinionesLanding();
 
