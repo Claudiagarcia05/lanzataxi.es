@@ -57,8 +57,13 @@
         }
 
         $dominio = config('session.domain');
-        $segura = (bool) config('session.secure', false);
-        $sameSite = (string) config('session.same_site', 'lax');
+        $segura = config('session.secure');
+        $sameSite = strtolower((string) config('session.same_site', 'lax'));
+
+        // Los navegadores modernos rechazan cookies `SameSite=None` si no son `Secure`.
+        if ($sameSite === 'none') {
+            $segura = true;
+        }
 
         $cookieLocale = cookie(
             name: 'locale',
