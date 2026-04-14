@@ -49,11 +49,30 @@
 
     // Landing / Inicio
     Route::post('/locale', function (\Illuminate\Http\Request $request) {
-        $validado = $request->validate([
-            'locale' => 'required|in:es,en',
-        ]);
+        $locale = (string) $request->input('locale', '');
+        if (!in_array($locale, ['es', 'en'], true)) {
+            return response()->json([
+                'message' => 'Locale inválido',
+            ], 422);
+        }
 
-        return back()->withCookie(cookie('locale', $validado['locale'], 60 * 24 * 365));
+        $dominio = config('session.domain');
+        $segura = (bool) config('session.secure', false);
+        $sameSite = (string) config('session.same_site', 'lax');
+
+        $cookieLocale = cookie(
+            name: 'locale',
+            value: $locale,
+            minutes: 60 * 24 * 365,
+            path: '/',
+            domain: $dominio,
+            secure: $segura,
+            httpOnly: false,
+            raw: false,
+            sameSite: $sameSite
+        );
+
+        return response()->noContent()->withCookie($cookieLocale);
     })->name('locale.set');
 
     Route::get('/', function () use ($obtenerOpinionesLanding) {
