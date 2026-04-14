@@ -6,6 +6,12 @@
 import axios from 'axios';
 window.axios = axios;
 
+// En entornos SPA con Sanctum (statefulApi), necesitamos cookies de sesión + XSRF.
+// Esto evita respuestas 419 (CSRF token mismatch) en POST/PATCH/DELETE.
+window.axios.defaults.withCredentials = true;
+window.axios.defaults.xsrfCookieName = 'XSRF-TOKEN';
+window.axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
+
 // Headers comunes para peticiones XHR/JSON
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.axios.defaults.headers.common['Accept'] = 'application/json';
@@ -16,6 +22,10 @@ const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribut
 if (csrfToken) {
     window.axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 }
+
+// Sanctum CSRF cookie: establece XSRF-TOKEN (y sesión) para peticiones stateful.
+// Si Sanctum no está habilitado en algún entorno, no interrumpe la app.
+window.axios.get('/sanctum/csrf-cookie').catch(() => {});
 
 // Token JWT guardado en localStorage (si el usuario ya inició sesión anteriormente)
 const token = localStorage.getItem('token');
