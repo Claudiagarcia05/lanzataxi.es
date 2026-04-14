@@ -12,7 +12,9 @@ class EstablecerLocale {
     public function handle(Request $request, Closure $next) {
         $localesDisponibles = ['es', 'en'];
 
-        $locale = $request->cookie('locale');
+        // Compatibilidad: en algunos despliegues se ha usado `lanzataxi_locale`.
+        // Si no hay cookie, caerá a Accept-Language.
+        $locale = $request->cookie('locale') ?? $request->cookie('lanzataxi_locale');
 
         if (!$locale) {
             $accept = (string) $request->header('Accept-Language', '');

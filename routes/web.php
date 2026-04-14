@@ -56,7 +56,12 @@
             ], 422);
         }
 
-        $dominio = config('session.domain');
+        $host = (string) $request->getHost();
+        $dominioBase = str_starts_with($host, 'www.') ? substr($host, 4) : $host;
+
+        // Si SESSION_DOMAIN está vacío en producción, fijamos el dominio base para que
+        // la cookie aplique tanto a lanzataxi.es como a www.lanzataxi.es.
+        $dominio = config('session.domain') ?: $dominioBase;
         $segura = config('session.secure');
         $sameSite = strtolower((string) config('session.same_site', 'lax'));
 
@@ -77,7 +82,20 @@
             sameSite: $sameSite
         );
 
-        return response()->noContent()->withCookie($cookieLocale);
+        // Compatibilidad con despliegues previos
+        $cookieLegacy = cookie(
+            name: 'lanzataxi_locale',
+            value: $locale,
+            minutes: 60 * 24 * 365,
+            path: '/',
+            domain: $dominio,
+            secure: $segura,
+            httpOnly: false,
+            raw: false,
+            sameSite: $sameSite
+        );
+
+        return response()->noContent()->withCookie($cookieLocale)->withCookie($cookieLegacy);
     })->name('locale.set');
 
     Route::get('/', function () use ($obtenerOpinionesLanding) {
