@@ -1,6 +1,21 @@
 <template>
   <div class="min-h-screen bg-neutral-soft">
-    <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', barraLateralAbierta ? 'w-64' : 'w-20' ]">
+    <div
+      v-if="menuMovilAbierto"
+      class="fixed inset-0 z-30 bg-neutral-dark/30 md:hidden"
+      @click="menuMovilAbierto = false"
+      aria-hidden="true"
+    />
+
+    <aside
+      :class="[
+        'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg',
+        'w-64 max-w-[85vw] md:max-w-none',
+        barraLateralAbierta ? 'md:w-64' : 'md:w-20',
+        menuMovilAbierto ? 'translate-x-0' : '-translate-x-full',
+        'md:translate-x-0',
+      ]"
+    >
       <div class="relative flex items-center p-4 border-b border-neutral-volcanic h-20">
         <div v-if="barraLateralAbierta" class="flex items-center space-x-2 flex-1 min-w-0">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-auto object-contain">
@@ -9,6 +24,15 @@
         <div v-else class="flex-1 min-w-0 flex justify-center">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-10 object-contain">
         </div>
+
+        <button
+          class="ml-auto p-2 rounded-lg hover:bg-neutral-soft transition-colors md:hidden"
+          @click="menuMovilAbierto = false"
+          :aria-label="t('dashboard.pendingDrivers.close')"
+          type="button"
+        >
+          <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
+        </button>
       </div>
 
       <div class="relative p-4 border-b border-neutral-volcanic">
@@ -63,13 +87,24 @@
       </div>
     </aside>
 
-    <div :class="['transition-all duration-300', barraLateralAbierta ? 'ml-64' : 'ml-20']">
+    <div :class="['transition-all duration-300', 'ml-0', barraLateralAbierta ? 'md:ml-64' : 'md:ml-20']">
       <header class="bg-white shadow-sm sticky top-0 z-30">
-        <div class="flex justify-between items-center px-6 py-4">
+        <div class="flex justify-between items-center px-4 py-4 md:px-6">
           <div>
             <h1 class="text-xl font-semibold text-neutral-dark">{{ obtenerTituloPanel() }}</h1>
             <p class="text-sm text-neutral-slate">{{ fechaActualFormateada }}</p>
           </div>
+
+          <button
+            class="p-2 rounded-lg hover:bg-neutral-soft md:hidden"
+            type="button"
+            @click="menuMovilAbierto = true"
+            :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')"
+          >
+            <svg class="w-6 h-6 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          </button>
 
           <div v-if="!authStore.isAdmin" class="flex items-center space-x-4">
             <div class="relative">
@@ -110,7 +145,7 @@
         </div>
       </header>
 
-      <main class="p-6">
+      <main class="p-4 md:p-6">
         <slot />
       </main>
     </div>
@@ -118,7 +153,7 @@
 
   <div
     v-if="authStore.isAdmin && panelPendientesAbierto && adminStore.conductoresPendientes.length > 0"
-    class="fixed top-24 right-6 w-96 max-h-[calc(100vh-7rem)] overflow-auto bg-white rounded-2xl shadow-sm border border-neutral-volcanic z-40"
+    class="fixed top-20 right-2 w-[calc(100vw-1rem)] max-w-md max-h-[calc(100vh-6rem)] overflow-auto bg-white rounded-2xl shadow-sm border border-neutral-volcanic z-40 md:top-24 md:right-6 md:w-96 md:max-h-[calc(100vh-7rem)]"
   >
     <div class="p-4 border-b border-neutral-volcanic flex items-center justify-between">
       <h3 class="font-semibold text-neutral-dark">
@@ -177,6 +212,7 @@ const { t, locale } = useI18n()
 let idIntervaloSondeoPendientes = null
 
 const barraLateralAbierta = ref(true)
+const menuMovilAbierto = ref(false)
 const mostrarNotificaciones = ref(false)
 const panelPendientesAbierto = ref(true)
 const notificaciones = ref([
