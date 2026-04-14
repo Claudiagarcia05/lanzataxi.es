@@ -70,7 +70,22 @@
             $segura = true;
         }
 
-        $cookieLocale = cookie(
+        // Importante: pueden coexistir cookies con el mismo nombre pero distinto Domain (host-only vs domain cookie)
+        // y el navegador puede enviar ambas. Para evitar que al recargar se lea la "vieja" (p.ej. ES),
+        // escribimos SIEMPRE las dos variantes con el mismo valor.
+        $cookieLocaleHost = cookie(
+            name: 'locale',
+            value: $locale,
+            minutes: 60 * 24 * 365,
+            path: '/',
+            domain: null,
+            secure: $segura,
+            httpOnly: false,
+            raw: false,
+            sameSite: $sameSite
+        );
+
+        $cookieLocaleDomain = cookie(
             name: 'locale',
             value: $locale,
             minutes: 60 * 24 * 365,
@@ -83,7 +98,19 @@
         );
 
         // Compatibilidad con despliegues previos
-        $cookieLegacy = cookie(
+        $cookieLegacyHost = cookie(
+            name: 'lanzataxi_locale',
+            value: $locale,
+            minutes: 60 * 24 * 365,
+            path: '/',
+            domain: null,
+            secure: $segura,
+            httpOnly: false,
+            raw: false,
+            sameSite: $sameSite
+        );
+
+        $cookieLegacyDomain = cookie(
             name: 'lanzataxi_locale',
             value: $locale,
             minutes: 60 * 24 * 365,
@@ -95,7 +122,12 @@
             sameSite: $sameSite
         );
 
-        return response()->noContent()->withCookie($cookieLocale)->withCookie($cookieLegacy);
+        return response()
+            ->noContent()
+            ->withCookie($cookieLocaleHost)
+            ->withCookie($cookieLocaleDomain)
+            ->withCookie($cookieLegacyHost)
+            ->withCookie($cookieLegacyDomain);
     })->name('locale.set');
 
     Route::get('/', function () use ($obtenerOpinionesLanding) {
