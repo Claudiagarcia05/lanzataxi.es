@@ -23,16 +23,14 @@
                 'locale',
             ]);
 
-            // Locale basado en cookie (o Accept-Language como fallback)
-            $middleware->prepend([
-                \App\Http\Middleware\EstablecerLocale::class,
-            ]);
-
             $middleware->append([
                 \App\Http\Middleware\EncabezadosSeguridad::class,
             ]);
 
             $middleware->web(append: [
+                // Locale basado en cookie (o Accept-Language como fallback)
+                // Debe ejecutarse DESPUÉS de EncryptCookies para leer el valor desencriptado.
+                \App\Http\Middleware\EstablecerLocale::class,
                 \App\Http\Middleware\HandleInertiaRequests::class,
                 \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             ]);
