@@ -194,5 +194,130 @@
       "success": "Booking cancelled successfully."
     },
     "empty": "There are no trips to show"
+  },
+  "dashboard": {
+    "roles": {
+      "passenger": "Passenger",
+      "driver": "Driver",
+      "admin": "Administrator"
+    },
+    "toggleMenu": {
+      "collapse": "Collapse menu",
+      "expand": "Expand menu"
+    },
+    "logout": "Sign out",
+    "panels": {
+      "passenger": "Passenger dashboard",
+      "driver": "Driver dashboard",
+      "admin": "Admin dashboard"
+    },
+    "menu": {
+      "home": "Home",
+      "newBooking": "New booking",
+      "myBookings": "My bookings",
+      "myProfile": "My profile",
+      "myTrips": "My trips",
+      "earnings": "Earnings",
+      "drivers": "Drivers",
+      "clients": "Clients",
+      "admins": "Administrators"
+    },
+    "notifications": {
+      "title": "Notifications"
+    },
+    "pendingDrivers": {
+      "title": "Driver requests",
+      "close": "Close",
+      "license": "License",
+      "requestedAt": "Requested",
+      "approve": "Approve",
+      "reject": "Reject"
+    }
+  },
+  "driver": {
+    "panel": {
+      "title": "Driver dashboard",
+      "subtitle": "Manage requests, trips, and your vehicle",
+      "stats": {
+        "tripsToday": "Trips today",
+        "earningsToday": "Earnings today"
+      },
+      "requests": {
+        "pending": "Pending requests",
+        "origin": "Pickup",
+        "destination": "Drop-off",
+        "accept": "Accept",
+        "cancel": "Cancel"
+      },
+      "trip": {
+        "inProgress": "Trip in progress",
+        "passenger": "Passenger",
+        "status": "Status",
+        "accepted": "Accepted",
+        "inProgressStatus": "In progress"
+      },
+      "map": {
+        "view": "View map",
+        "modalTitle": "Trip map",
+        "modalSubtitle": "Pickup and drop-off"
+      },
+      "actions": {
+        "startTrip": "Start trip",
+        "completeTrip": "Complete trip"
+      },
+      "today": {
+        "title": "Today’s trips",
+        "busy": "Busy",
+        "free": "Available",
+        "time": "Time",
+        "passenger": "Passenger",
+        "origin": "Pickup",
+        "destination": "Drop-off",
+        "profit": "Earnings"
+      },
+      "vehicle": {
+        "title": "My vehicle",
+        "model": "Model",
+        "plate": "Plate",
+        "capacity": "Capacity",
+        "capacityPeople": "{count} people"
+      }
+    }
+  }
+  ,
+  "passenger": {
+    "newBooking": {
+      "heroTitle": "New booking",
+      "heroSubtitle": "Book your taxi in Lanzarote quickly and safely",
+      "tripDetails": "Trip details",
+      "dateTime": "Date and time",
+      "scheduleLater": "Schedule for later",
+      "options": "Trip options",
+      "notes": "Additional notes",
+      "confirm": "Confirm booking"
+    },
+    "tracking": {
+      "heroTitle": "Trip tracking",
+      "heroSubtitle": "Track your taxi in real time on Lanzarote roads",
+      "loadingMap": "Loading map…",
+      "tripStatus": "Trip status",
+      "requestSent": "Request sent",
+      "driverAssigned": "Driver assigned",
+      "tripInProgress": "Trip in progress",
+      "taxiMoving": "Taxi moving",
+      "waitingTaxi": "Waiting for the taxi",
+      "tripDetails": "Trip details",
+      "origin": "Pickup",
+      "destination": "Drop-off",
+      "distance": "Distance",
+      "price": "Price",
+      "back": "Go back",
+      "cancelRequest": "Cancel request",
+      "searchingDriver": "Looking for an available driver...",
+      "confirmCancelTitle": "Confirm cancellation?",
+      "confirmCancelText": "Do you confirm the cancellation of this trip? The full amount will be charged and, if your virtual wallet balance is insufficient, a debt will be created.",
+      "confirmCancelYes": "Yes, cancel",
+      "confirmCancelNo": "Cancel"
+    }
   }
 }

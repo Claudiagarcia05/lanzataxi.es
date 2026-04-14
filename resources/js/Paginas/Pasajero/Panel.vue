@@ -4,8 +4,8 @@
     <div class="max-w-7xl mx-auto">
       <!-- Cabecera / presentación de la sección -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-        <h1 class="text-3xl font-bold mb-2">Nueva Reserva</h1>
-        <p class="text-blue-100">Reserva tu taxi en Lanzarote de forma rápida y segura</p>
+        <h1 class="text-3xl font-bold mb-2">{{ t('passenger.newBooking.heroTitle') }}</h1>
+        <p class="text-blue-100">{{ t('passenger.newBooking.heroSubtitle') }}</p>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -30,7 +30,7 @@
             <form @submit.prevent="enviarReserva" class="space-y-6">
               <div class="border-b border-neutral-volcanic pb-6">
                 <!-- Sección: origen y destino -->
-                <h3 class="font-semibold text-neutral-dark mb-4">Detalles del viaje</h3>
+                <h3 class="font-semibold text-neutral-dark mb-4">{{ t('passenger.newBooking.tripDetails') }}</h3>
                 
                 <div class="space-y-4">
                   <div>
@@ -58,13 +58,13 @@
 
               <div class="border-b border-neutral-volcanic pb-6">
                 <!-- Sección: reserva inmediata vs programada -->
-                <h3 class="font-semibold text-neutral-dark mb-4">Fecha y hora</h3>
+                <h3 class="font-semibold text-neutral-dark mb-4">{{ t('passenger.newBooking.dateTime') }}</h3>
                 
                 <div class="space-y-4">
                   <div class="flex items-center gap-3">
                     <input v-model="formularioReserva.isScheduled" type="checkbox" id="scheduled" class="w-4 h-4 text-lanzarote-blue rounded"/>
                     <label for="scheduled" class="text-sm text-neutral-slate">
-                      Programar para más tarde
+                      {{ t('passenger.newBooking.scheduleLater') }}
                     </label>
                   </div>
 
@@ -87,7 +87,7 @@
 
               <div class="border-b border-neutral-volcanic pb-6">
                 <!-- Sección: pasajeros, maletas y método de pago -->
-                <h3 class="font-semibold text-neutral-dark mb-4">Opciones del viaje</h3>
+                <h3 class="font-semibold text-neutral-dark mb-4">{{ t('passenger.newBooking.options') }}</h3>
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
@@ -128,7 +128,7 @@
 
               <div class="border-b border-neutral-volcanic pb-6">
                 <!-- Sección: notas (opcional) -->
-                <h3 class="font-semibold text-neutral-dark mb-4">Notas adicionales</h3>
+                <h3 class="font-semibold text-neutral-dark mb-4">{{ t('passenger.newBooking.notes') }}</h3>
                 <textarea v-model="formularioReserva.notes" rows="3" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue resize-none" placeholder="Ej: Necesito silla para bebé, vuelo número..."></textarea>
               </div>
 
@@ -154,7 +154,7 @@
 
               <button type="submit" :disabled="!puedeEnviar" class="w-full bg-lanzarote-blue text-white font-bold py-4 px-6 rounded-xl text-lg hover:bg-lanzarote-yellow hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
                 <!-- Botón principal: se deshabilita si falta información, hay viaje activo o deuda impagada -->
-                Confirmar Reserva
+                {{ t('passenger.newBooking.confirm') }}
               </button>
             </form>
           </div>
@@ -174,6 +174,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 const mensajeError = ref('')
 const mensajeInfo = ref('')
 import DisposicionPasajero from '../../Disposiciones/DisposicionPasajero.vue'
@@ -188,6 +189,7 @@ import svgTaxiFront from 'bootstrap-icons/icons/taxi-front.svg?raw'
 const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const carteraStore = useCarteraStore()
+const { t } = useI18n()
 
 // Normaliza el SVG (bootstrap-icons) para poder inyectarlo con v-html
 const normalizarSvg = (raw) => raw

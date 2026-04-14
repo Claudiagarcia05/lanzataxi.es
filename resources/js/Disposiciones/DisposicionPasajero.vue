@@ -15,11 +15,11 @@
         <div class="flex items-center space-x-3 pr-12">
           <div v-if="barraLateralAbierta" class="overflow-hidden">
             <p class="font-semibold text-neutral-dark truncate">{{ authStore.usuario?.name }}</p>
-            <p class="text-xs text-neutral-slate">Pasajero</p>
+            <p class="text-xs text-neutral-slate">{{ t('dashboard.roles.passenger') }}</p>
           </div>
         </div>
 
-        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? 'Contraer menú' : 'Expandir menú'">
+        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')">
           <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path v-if="barraLateralAbierta" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
@@ -45,7 +45,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span v-if="barraLateralAbierta" class="text-sm font-medium">Cerrar sesión</span>
+          <span v-if="barraLateralAbierta" class="text-sm font-medium">{{ t('dashboard.logout') }}</span>
         </button>
       </div>
     </aside>
@@ -54,8 +54,8 @@
       <header class="bg-white shadow-sm sticky top-0 z-30">
         <div class="flex justify-between items-center px-6 py-4">
           <div>
-            <h1 class="text-xl font-semibold text-neutral-dark">Panel Pasajero</h1>
-            <p class="text-sm text-neutral-slate">{{ new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
+            <h1 class="text-xl font-semibold text-neutral-dark">{{ t('dashboard.panels.passenger') }}</h1>
+            <p class="text-sm text-neutral-slate">{{ fechaActualFormateada }}</p>
           </div>
 
           <!-- Eliminada campana y notificaciones -->
@@ -73,6 +73,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { router as inertiaRouter, usePage } from '@inertiajs/vue3'
+import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../Almacenes/almacenAutenticacion.js'
 import { useViajeStore } from '../Almacenes/almacenViaje.js'
 import axios from 'axios'
@@ -80,6 +81,7 @@ import axios from 'axios'
 const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const page = usePage()
+const { t, locale } = useI18n()
 
 const barraLateralAbierta = ref(true)
 
@@ -146,6 +148,17 @@ const rutaActual = computed(() => {
   return String(url).split('?')[0]
 })
 
+const localeFecha = computed(() => (String(locale.value || 'es').startsWith('en') ? 'en-GB' : 'es-ES'))
+
+const fechaActualFormateada = computed(() => {
+  return new Date().toLocaleDateString(localeFecha.value, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+})
+
 const notificacionesNoLeidas = computed(() => notificaciones.value.filter(n => !n.read_at).length)
 
 const avatarUsuario = computed(() => {
@@ -153,27 +166,31 @@ const avatarUsuario = computed(() => {
   return authStore.usuario?.avatar || null
 })
 
-const elementosMenu = computed(() => [
+const elementosMenu = computed(() => {
+  locale.value
+
+  return [
   {
-    label: 'Nueva Reserva',
+    label: t('dashboard.menu.newBooking'),
     icon: 'M12 6v6m0 0v6m0-6h6m-6 0H6',
     path: '/pasajero/home',
     activo: rutaActual.value === '/pasajero/home' || rutaActual.value === '/pasajero',
   },
   {
-    label: 'Mis Reservas',
+    label: t('dashboard.menu.myBookings'),
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
     path: '/pasajero/reservas',
     activo: rutaActual.value.includes('/pasajero/reservas'),
   },
   {
 
-    label: 'Mi Perfil',
+    label: t('dashboard.menu.myProfile'),
     icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
     path: '/pasajero/perfil',
     activo: rutaActual.value === '/pasajero/perfil',
   },
-])
+  ]
+})
 
 const navegarA = (path) => {
   inertiaRouter.visit(path)

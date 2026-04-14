@@ -21,7 +21,7 @@
           </div>
         </div>
 
-        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? 'Contraer menú' : 'Expandir menú'">
+        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')">
           <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path v-if="barraLateralAbierta" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
@@ -58,7 +58,7 @@
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
-          <span v-if="barraLateralAbierta" class="text-sm font-medium">Cerrar sesión</span>
+          <span v-if="barraLateralAbierta" class="text-sm font-medium">{{ t('dashboard.logout') }}</span>
         </button>
       </div>
     </aside>
@@ -68,7 +68,7 @@
         <div class="flex justify-between items-center px-6 py-4">
           <div>
             <h1 class="text-xl font-semibold text-neutral-dark">{{ obtenerTituloPanel() }}</h1>
-            <p class="text-sm text-neutral-slate">{{ new Date().toLocaleDateString('es-ES', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) }}</p>
+            <p class="text-sm text-neutral-slate">{{ fechaActualFormateada }}</p>
           </div>
 
           <div v-if="!authStore.isAdmin" class="flex items-center space-x-4">
@@ -84,7 +84,7 @@
 
               <div v-if="mostrarNotificaciones" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-volcanic">
                 <div class="p-3 border-b border-neutral-volcanic">
-                  <h3 class="font-semibold text-neutral-dark">Notificaciones</h3>
+                  <h3 class="font-semibold text-neutral-dark">{{ t('dashboard.notifications.title') }}</h3>
                 </div>
                 <div class="max-h-96 overflow-y-auto">
                   <div v-for="notif in notificaciones" :key="notif.id"
@@ -122,9 +122,9 @@
   >
     <div class="p-4 border-b border-neutral-volcanic flex items-center justify-between">
       <h3 class="font-semibold text-neutral-dark">
-        Solicitudes de taxista ({{ adminStore.conductoresPendientes.length }})
+        {{ t('dashboard.pendingDrivers.title') }} ({{ adminStore.conductoresPendientes.length }})
       </h3>
-      <button @click="panelPendientesAbierto = false" class="p-2 rounded-lg hover:bg-neutral-soft" aria-label="Cerrar">
+      <button @click="panelPendientesAbierto = false" class="p-2 rounded-lg hover:bg-neutral-soft" :aria-label="t('dashboard.pendingDrivers.close')">
         <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
       </button>
     </div>
@@ -139,16 +139,16 @@
           <div class="min-w-0">
             <p class="font-semibold text-neutral-dark truncate">{{ solicitud.name }}</p>
             <p class="text-xs text-neutral-slate mt-1 truncate">{{ solicitud.email }} · {{ solicitud.phone }}</p>
-            <p class="text-xs text-neutral-slate mt-1">Licencia: {{ solicitud.license_number || '—' }}</p>
-            <p class="text-xs text-neutral-slate">Solicitó: {{ (solicitud.created_at || '').split('T')[0] }}</p>
+            <p class="text-xs text-neutral-slate mt-1">{{ t('dashboard.pendingDrivers.license') }}: {{ solicitud.license_number || '—' }}</p>
+            <p class="text-xs text-neutral-slate">{{ t('dashboard.pendingDrivers.requestedAt') }}: {{ (solicitud.created_at || '').split('T')[0] }}</p>
           </div>
 
           <div class="flex flex-col gap-2 shrink-0">
             <button @click="adminStore.aprobarConductor(solicitud.id)" class="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors">
-              Aprobar
+              {{ t('dashboard.pendingDrivers.approve') }}
             </button>
             <button @click="adminStore.rechazarConductor(solicitud.id)" class="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors">
-              Rechazar
+              {{ t('dashboard.pendingDrivers.reject') }}
             </button>
           </div>
         </div>
@@ -165,12 +165,14 @@ import { useViajeStore } from '../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../Almacenes/almacenConductor.js'
 import { useAdminStore } from '../Almacenes/almacenAdministrador.js'
 import { router as inertiaRouter, usePage } from '@inertiajs/vue3'
+import { useI18n } from 'vue-i18n'
 
 const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
 const adminStore = useAdminStore()
 const page = usePage()
+const { t, locale } = useI18n()
 
 let idIntervaloSondeoPendientes = null
 
@@ -222,24 +224,35 @@ const rutaActual = computed(() => {
   return String(url).split('?')[0]
 })
 
+const localeFecha = computed(() => (String(locale.value || 'es').startsWith('en') ? 'en-GB' : 'es-ES'))
+
+const fechaActualFormateada = computed(() => {
+  return new Date().toLocaleDateString(localeFecha.value, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+})
+
 const obtenerTextoRolUsuario = () => {
   switch(authStore.usuario?.role) {
-    case 'pasajero': return 'Pasajero'
-    case 'conductor': return 'Taxista'
-    case 'admin': return 'Administrador'
+    case 'pasajero': return t('dashboard.roles.passenger')
+    case 'conductor': return t('dashboard.roles.driver')
+    case 'admin': return t('dashboard.roles.admin')
     default: return ''
   }
 }
 
 const obtenerTituloPanel = () => {
-  if (authStore.isAdmin) return 'Panel Administrador'
-  if (authStore.isconductor) return 'Panel Taxista'
-  if (authStore.ispasajero) return 'Panel Pasajero'
+  if (authStore.isAdmin) return t('dashboard.panels.admin')
+  if (authStore.isconductor) return t('dashboard.panels.driver')
+  if (authStore.ispasajero) return t('dashboard.panels.passenger')
 
-  if (rutaActual.value.includes('/conductor')) return 'Panel Taxista'
-  if (rutaActual.value.includes('/admin') || rutaActual.value.includes('/administradir')) return 'Panel Administrador'
+  if (rutaActual.value.includes('/conductor')) return t('dashboard.panels.driver')
+  if (rutaActual.value.includes('/admin') || rutaActual.value.includes('/administradir')) return t('dashboard.panels.admin')
 
-  return 'Panel Pasajero'
+  return t('dashboard.panels.passenger')
 }
 
 const notificacionesNoLeidas = computed(() => {
@@ -258,50 +271,52 @@ const navegarA = (path) => {
 }
 
 const elementosMenu = computed(() => {
+  locale.value
+
   const inicio = {
-    label: 'Inicio',
+    label: t('dashboard.menu.home'),
     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     path: authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard',
     activo: rutaActual.value === (authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard') || rutaActual.value === '/administradir/home'
   }
 
   const miPerfil = {
-    label: 'Mi Perfil',
+    label: t('dashboard.menu.myProfile'),
     icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
     path: '/perfil',
     activo: rutaActual.value === '/perfil'
   }
 
   const misViajes = {
-    label: 'Mis viajes',
+    label: t('dashboard.menu.myTrips'),
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
     path: authStore.ispasajero ? '/dashboard/viajes' : '/conductor/viajes',
     activo: rutaActual.value.includes('viajes')
   }
 
   const ganancias = {
-    label: 'Ganancias',
+    label: t('dashboard.menu.earnings'),
     icon: 'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
     path: '/conductor/ganancias',
     activo: rutaActual.value.includes('/conductor/ganancias')
   }
 
   const taxistas = {
-    label: 'Taxistas',
+    label: t('dashboard.menu.drivers'),
     icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
     path: '/admin/taxistas',
     activo: rutaActual.value.includes('/admin/taxistas')
   }
 
   const clientes = {
-    label: 'Clientes',
+    label: t('dashboard.menu.clients'),
     icon: 'M16 11c1.657 0 3-1.343 3-3S17.657 5 16 5s-3 1.343-3 3 1.343 3 3 3zM8 11c1.657 0 3-1.343 3-3S9.657 5 8 5 5 6.343 5 8s1.343 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h10v-2c0-1.29.84-2.4 2.1-3.25C11.2 13.29 9.56 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45v2h7v-2c0-2.66-5.33-4-8-4z',
     path: '/admin/clientes',
     activo: rutaActual.value.includes('/admin/clientes')
   }
 
   const administradores = {
-    label: 'Administradores',
+    label: t('dashboard.menu.admins'),
     icon: 'M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5s-3 1.343-3 3 1.343 3 3 3zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
     path: '/admin/admins',
     activo: rutaActual.value.includes('/admin/admins')

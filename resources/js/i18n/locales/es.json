@@ -194,5 +194,130 @@
       "success": "Reserva cancelada correctamente."
     },
     "empty": "No hay viajes que mostrar"
+  },
+  "dashboard": {
+    "roles": {
+      "passenger": "Pasajero",
+      "driver": "Taxista",
+      "admin": "Administrador"
+    },
+    "toggleMenu": {
+      "collapse": "Contraer menú",
+      "expand": "Expandir menú"
+    },
+    "logout": "Cerrar sesión",
+    "panels": {
+      "passenger": "Panel Pasajero",
+      "driver": "Panel Taxista",
+      "admin": "Panel Administrador"
+    },
+    "menu": {
+      "home": "Inicio",
+      "newBooking": "Nueva Reserva",
+      "myBookings": "Mis Reservas",
+      "myProfile": "Mi Perfil",
+      "myTrips": "Mis viajes",
+      "earnings": "Ganancias",
+      "drivers": "Taxistas",
+      "clients": "Clientes",
+      "admins": "Administradores"
+    },
+    "notifications": {
+      "title": "Notificaciones"
+    },
+    "pendingDrivers": {
+      "title": "Solicitudes de taxista",
+      "close": "Cerrar",
+      "license": "Licencia",
+      "requestedAt": "Solicitó",
+      "approve": "Aprobar",
+      "reject": "Rechazar"
+    }
+  },
+  "driver": {
+    "panel": {
+      "title": "Panel del taxista",
+      "subtitle": "Gestiona solicitudes, viajes y tu vehículo",
+      "stats": {
+        "tripsToday": "Viajes hoy",
+        "earningsToday": "Ganancias hoy"
+      },
+      "requests": {
+        "pending": "Solicitudes pendientes",
+        "origin": "Origen",
+        "destination": "Destino",
+        "accept": "Aceptar",
+        "cancel": "Cancelar"
+      },
+      "trip": {
+        "inProgress": "Viaje en curso",
+        "passenger": "Pasajero",
+        "status": "Estado",
+        "accepted": "Aceptado",
+        "inProgressStatus": "En curso"
+      },
+      "map": {
+        "view": "Ver mapa",
+        "modalTitle": "Mapa del viaje",
+        "modalSubtitle": "Origen y destino del viaje"
+      },
+      "actions": {
+        "startTrip": "Iniciar viaje",
+        "completeTrip": "Completar viaje"
+      },
+      "today": {
+        "title": "Viajes de hoy",
+        "busy": "Ocupado",
+        "free": "Libre",
+        "time": "Hora",
+        "passenger": "Pasajero",
+        "origin": "Origen",
+        "destination": "Destino",
+        "profit": "Ganancia"
+      },
+      "vehicle": {
+        "title": "Mi vehículo",
+        "model": "Modelo",
+        "plate": "Matrícula",
+        "capacity": "Capacidad",
+        "capacityPeople": "{count} personas"
+      }
+    }
+  }
+  ,
+  "passenger": {
+    "newBooking": {
+      "heroTitle": "Nueva Reserva",
+      "heroSubtitle": "Reserva tu taxi en Lanzarote de forma rápida y segura",
+      "tripDetails": "Detalles del viaje",
+      "dateTime": "Fecha y hora",
+      "scheduleLater": "Programar para más tarde",
+      "options": "Opciones del viaje",
+      "notes": "Notas adicionales",
+      "confirm": "Confirmar Reserva"
+    },
+    "tracking": {
+      "heroTitle": "Seguimiento del Viaje",
+      "heroSubtitle": "Sigue tu taxi en tiempo real por las carreteras de Lanzarote",
+      "loadingMap": "Cargando mapa…",
+      "tripStatus": "Estado del viaje",
+      "requestSent": "Solicitud enviada",
+      "driverAssigned": "Taxista asignado",
+      "tripInProgress": "Viaje en curso",
+      "taxiMoving": "Taxi en movimiento",
+      "waitingTaxi": "Esperando al taxi",
+      "tripDetails": "Detalles del viaje",
+      "origin": "Origen",
+      "destination": "Destino",
+      "distance": "Distancia",
+      "price": "Precio",
+      "back": "Volver atrás",
+      "cancelRequest": "Cancelar solicitud",
+      "searchingDriver": "Buscando taxista disponible...",
+      "confirmCancelTitle": "¿Confirmar cancelación?",
+      "confirmCancelText": "¿Confirmas la cancelación de este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera virtual, se generará una deuda.",
+      "confirmCancelYes": "Sí, cancelar",
+      "confirmCancelNo": "Cancelar"
+    }
   }
 }

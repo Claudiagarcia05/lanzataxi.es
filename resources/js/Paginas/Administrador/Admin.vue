@@ -15,7 +15,6 @@
     <div class="bg-white rounded-xl shadow-sm">
       <div class="p-6 border-b border-neutral-volcanic">
         <h3 class="font-semibold text-neutral-dark">Crear administrador</h3>
-        <p class="text-sm text-neutral-slate mt-1">El email debe terminar en @admin.es</p>
       </div>
 
       <form @submit.prevent="crear" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -57,7 +56,6 @@
     <div class="bg-white rounded-xl shadow-sm mt-6">
       <div class="p-6 border-b border-neutral-volcanic">
         <h3 class="font-semibold text-neutral-dark">Administradores</h3>
-        <p class="text-sm text-neutral-slate mt-1">Listado rápido (nombre, email y estado)</p>
       </div>
 
       <div class="p-6">

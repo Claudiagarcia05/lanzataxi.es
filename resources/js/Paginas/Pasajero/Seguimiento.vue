@@ -6,8 +6,8 @@
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <div class="flex items-center justify-between">
           <div>
-            <h1 class="text-3xl font-bold mb-2">Seguimiento del Viaje</h1>
-            <p class="text-blue-100">Sigue tu taxi en tiempo real por las carreteras de Lanzarote</p>
+            <h1 class="text-3xl font-bold mb-2">{{ t('passenger.tracking.heroTitle') }}</h1>
+            <p class="text-blue-100">{{ t('passenger.tracking.heroSubtitle') }}</p>
           </div>
         </div>
       </div>
@@ -21,7 +21,7 @@
                 <MapaSeguimiento ref="referenciaMapa" :pickupLat="viaje.pickupLat" :pickupLng="viaje.pickupLng" :dropoffLat="viaje.dropoffLat" :dropoffLng="viaje.dropoffLng" :taxiLat="ubicacionTaxi?.lat" :taxiLng="ubicacionTaxi?.lng" :estado="viaje.estado" />
               </div>
               <div v-else class="h-full flex items-center justify-center bg-neutral-soft">
-                <p class="text-sm text-neutral-slate">Cargando mapa…</p>
+                <p class="text-sm text-neutral-slate">{{ t('passenger.tracking.loadingMap') }}</p>
               </div>
             </div>
           </div>
@@ -32,7 +32,7 @@
             <!-- Línea de tiempo del estado del viaje -->
             <h3 class="font-semibold text-neutral-dark mb-4 flex items-center gap-2">
               <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="svgIconoTaxi"></svg>
-              Estado del viaje
+              {{ t('passenger.tracking.tripStatus') }}
             </h3>
             
             <div class="space-y-4">
@@ -42,14 +42,14 @@
                 <div class="relative pl-8 pb-4">
                   <div class="absolute left-0 w-4 h-4 rounded-full" :class="viaje?.estado === 'pendiente' ? 'bg-yellow-500 ring-4 ring-yellow-100' : 'bg-green-500'">
                   </div>
-                  <p class="text-sm font-medium">Solicitud enviada</p>
+                  <p class="text-sm font-medium">{{ t('passenger.tracking.requestSent') }}</p>
                   <p class="text-xs text-neutral-slate">{{ formatearFecha(viaje?.created_at) }}</p>
                 </div>
 
                 <div class="relative pl-8 pb-4">
                   <div class="absolute left-0 w-4 h-4 rounded-full" :class="viaje?.estado === 'accepted' || viaje?.estado === 'in_progress' || viaje?.estado === 'completed' ? 'bg-green-500' : 'bg-neutral-volcanic'">
                   </div>
-                  <p class="text-sm font-medium">Taxista asignado</p>
+                  <p class="text-sm font-medium">{{ t('passenger.tracking.driverAssigned') }}</p>
                   <p v-if="viaje?.conductorName" class="text-xs text-neutral-slate">
                     {{ viaje.conductorName }}
                   </p>
@@ -58,9 +58,9 @@
                 <div class="relative pl-8 pb-4">
                   <div class="absolute left-0 w-4 h-4 rounded-full" :class="viaje?.estado === 'in_progress' || viaje?.estado === 'completed' ? 'bg-green-500' : 'bg-neutral-volcanic'">
                   </div>
-                  <p class="text-sm font-medium">Viaje en curso</p>
+                  <p class="text-sm font-medium">{{ t('passenger.tracking.tripInProgress') }}</p>
                   <p v-if="viaje?.estado === 'in_progress'" class="text-xs text-neutral-slate">
-                    {{ ubicacionTaxi ? 'Taxi en movimiento' : 'Esperando al taxi' }}
+                    {{ ubicacionTaxi ? t('passenger.tracking.taxiMoving') : t('passenger.tracking.waitingTaxi') }}
                   </p>
                 </div>
               </div>
@@ -69,30 +69,30 @@
 
           <div class="bg-white rounded-xl shadow-sm p-6">
             <!-- Detalles resumidos del viaje (origen, destino, distancia y precio) -->
-            <h3 class="font-semibold text-neutral-dark mb-4">Detalles del viaje</h3>
+            <h3 class="font-semibold text-neutral-dark mb-4">{{ t('passenger.tracking.tripDetails') }}</h3>
             
             <div class="space-y-3">
               <div>
-                <p class="text-xs text-neutral-slate">Origen</p>
+                <p class="text-xs text-neutral-slate">{{ t('passenger.tracking.origin') }}</p>
                 <p class="font-medium">{{ viaje?.pickup_address || viaje?.pickup }}</p>
               </div>
               
               <div>
-                <p class="text-xs text-neutral-slate">Destino</p>
+                <p class="text-xs text-neutral-slate">{{ t('passenger.tracking.destination') }}</p>
                 <p class="font-medium">{{ viaje?.dropoff_address || viaje?.dropoff }}</p>
               </div>
 
               <div class="grid grid-cols-2 gap-4 pt-2 border-t border-neutral-volcanic">
                 <div>
-                  <p class="text-xs text-neutral-slate">Distancia</p>
+                  <p class="text-xs text-neutral-slate">{{ t('passenger.tracking.distance') }}</p>
                   <p class="font-semibold text-lanzarote-blue">{{ viaje?.distance || 0 }} km</p>
 
                   <button type="button" @click="volverAReservas" class="mt-3 w-full border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
-                    Volver atrás
+                    {{ t('passenger.tracking.back') }}
                   </button>
                 </div>
                 <div>
-                  <p class="text-xs text-neutral-slate">Precio</p>
+                  <p class="text-xs text-neutral-slate">{{ t('passenger.tracking.price') }}</p>
                   <p class="font-semibold text-lanzarote-blue">{{ viaje?.price || 0 }} €</p>
                 </div>
               </div>
@@ -100,10 +100,10 @@
               <div v-if="['pendiente', 'accepted'].includes(viaje?.estado)" class="mt-4">
                 <!-- Cancelación: solo disponible mientras el viaje esté pendiente o aceptado -->
                 <button type="button" @click.stop.prevent="abrirConfirmacionCancelacion" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors">
-                  Cancelar solicitud
+                  {{ t('passenger.tracking.cancelRequest') }}
                 </button>
                 <p v-if="viaje?.estado === 'pendiente'" class="text-xs text-center text-neutral-slate mt-2">
-                  Buscando taxista disponible...
+                  {{ t('passenger.tracking.searchingDriver') }}
                 </p>
               </div>
             </div>
@@ -115,11 +115,11 @@
     <!-- Modal de confirmación de cancelación (evita confirm/alert nativos) -->
     <div v-if="mostrarConfirmacionCancelacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Confirmar cancelación?</h3>
-        <p class="text-neutral-slate mb-6">¿Confirmas la cancelación de este viaje? Se cobrará el importe completo y, si no hay saldo suficiente en tu cartera virtual, se generará una deuda.</p>
+        <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('passenger.tracking.confirmCancelTitle') }}</h3>
+        <p class="text-neutral-slate mb-6">{{ t('passenger.tracking.confirmCancelText') }}</p>
         <div class="flex space-x-3">
-          <button @click="confirmarCancelacionViaje" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">Sí, cancelar</button>
-          <button @click="cancelarCancelacionViaje" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">Cancelar</button>
+          <button @click="confirmarCancelacionViaje" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">{{ t('passenger.tracking.confirmCancelYes') }}</button>
+          <button @click="cancelarCancelacionViaje" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">{{ t('passenger.tracking.confirmCancelNo') }}</button>
         </div>
       </div>
     </div>
@@ -130,6 +130,7 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { router as inertiaRouter } from '@inertiajs/vue3'
+import { useI18n } from 'vue-i18n'
 import DisposicionPasajero from '../../Disposiciones/DisposicionPasajero.vue'
 import MapaSeguimiento from '../../Componentes/MapaSeguimiento.vue'
 import { useViajeStore } from '../../Almacenes/almacenViaje.js'
@@ -147,6 +148,7 @@ const props = defineProps({
 
 const viajeStore = useViajeStore()
 const referenciaMapa = ref(null)
+const { t, locale } = useI18n()
 
 // Normaliza el SVG (bootstrap-icons) para poder inyectarlo con v-html
 const extraerInteriorSvg = (raw) => raw
@@ -211,7 +213,10 @@ const volverAReservas = () => {
 
 const formatearFecha = (dateString) => {
   if (!dateString) return ''
-  return new Date(dateString).toLocaleString('es-ES', {
+
+  const localeFecha = String(locale.value || 'es').startsWith('en') ? 'en-GB' : 'es-ES'
+
+  return new Date(dateString).toLocaleString(localeFecha, {
     hour: '2-digit',
     minute: '2-digit',
     day: '2-digit',

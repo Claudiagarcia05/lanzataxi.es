@@ -2,8 +2,8 @@
   <DisposicionConductor>
     <div class="max-w-7xl mx-auto">
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-        <h1 class="text-3xl font-bold mb-2">Panel del taxista</h1>
-        <p class="text-blue-100">Gestiona solicitudes, viajes y tu vehículo</p>
+        <h1 class="text-3xl font-bold mb-2">{{ t('driver.panel.title') }}</h1>
+        <p class="text-blue-100">{{ t('driver.panel.subtitle') }}</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
@@ -23,7 +23,7 @@
       <div class="p-4 border-b border-neutral-volcanic flex items-center justify-between">
         <h3 class="font-semibold text-neutral-dark">
           <svg class="inline-block w-5 h-5 mr-2" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('fileText')"></svg>
-          Solicitudes pendientes ({{ solicitudesPendientes.length }})
+          {{ t('driver.panel.requests.pending') }} ({{ solicitudesPendientes.length }})
         </h3>
       </div>
 
@@ -37,10 +37,10 @@
             <div class="min-w-0">
               <p class="font-semibold text-neutral-dark truncate">{{ solicitud.pasajeroName }}</p>
               <p class="text-xs text-neutral-slate mt-1">
-                <span class="font-medium text-neutral-dark">Origen:</span> {{ solicitud.pickup }}
+                <span class="font-medium text-neutral-dark">{{ t('driver.panel.requests.origin') }}:</span> {{ solicitud.pickup }}
               </p>
               <p class="text-xs text-neutral-slate">
-                <span class="font-medium text-neutral-dark">Destino:</span> {{ solicitud.dropoff }}
+                <span class="font-medium text-neutral-dark">{{ t('driver.panel.requests.destination') }}:</span> {{ solicitud.dropoff }}
               </p>
 
               <div class="flex flex-wrap gap-2 mt-2 text-xs">
@@ -60,11 +60,11 @@
             <div class="flex flex-col gap-2 shrink-0">
               <button @click="aceptarViaje(solicitud.id)" class="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors">
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('checkLg')"></svg>
-                Aceptar
+                {{ t('driver.panel.requests.accept') }}
               </button>
               <button @click="viajeStore.descartarOferta(solicitud.id)" class="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors">
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('xLg')"></svg>
-                Cancelar
+                {{ t('driver.panel.requests.cancel') }}
               </button>
             </div>
           </div>
@@ -75,16 +75,16 @@
     <div v-if="viajesAceptados.length > 0" class="mb-8">
       <h3 class="font-semibold text-neutral-dark mb-4 text-lg">
         <svg class="inline-block w-5 h-5 mr-2" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('taxiFront')"></svg>
-        Viaje en curso
+        {{ t('driver.panel.trip.inProgress') }}
       </h3>
       <div v-for="viaje in viajesAceptados" :key="viaje.id" class="bg-lanzarote-yellow/20 border border-lanzarote-yellow rounded-xl p-6">
         <div class="flex justify-between items-start mb-4">
           <div>
             <h4 class="font-semibold text-neutral-dark">
               <svg class="inline-block w-5 h-5 mr-2" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('personCircle')"></svg>
-              Pasajero: {{ viaje.pasajeroName }}
+              {{ t('driver.panel.trip.passenger') }}: {{ viaje.pasajeroName }}
             </h4>
-            <p class="text-sm text-neutral-slate">Estado: {{ viaje.estado === 'accepted' ? 'Aceptado' : 'En curso' }}</p>
+            <p class="text-sm text-neutral-slate">{{ t('driver.panel.trip.status') }}: {{ viaje.estado === 'accepted' ? t('driver.panel.trip.accepted') : t('driver.panel.trip.inProgressStatus') }}</p>
           </div>
           <span class="bg-lanzarote-blue text-white px-3 py-1 rounded-full text-sm">
             <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -98,14 +98,14 @@
           <div class="bg-white/50 p-3 rounded-lg">
             <p class="text-xs text-neutral-slate">
               <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('geoAltFill')"></svg>
-              Origen
+              {{ t('driver.panel.today.origin') }}
             </p>
             <p class="font-medium">{{ viaje.pickup }}</p>
           </div>
           <div class="bg-white/50 p-3 rounded-lg">
             <p class="text-xs text-neutral-slate">
               <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('flagFill')"></svg>
-              Destino
+              {{ t('driver.panel.today.destination') }}
             </p>
             <p class="font-medium">{{ viaje.dropoff }}</p>
           </div>
@@ -114,14 +114,14 @@
         <div class="flex space-x-3">
           <button v-if="viaje.estado === 'accepted'" @click="iniciarViaje(viaje.id)" class="bg-green-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-green-600">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('playFill')"></svg>
-            Iniciar viaje
+            {{ t('driver.panel.actions.startTrip') }}
           </button>
           <button v-if="['accepted','in_progress'].includes(viaje.estado)" @click="abrirMapa(viaje)" class="bg-white text-neutral-dark px-4 py-2 rounded-lg text-sm border border-neutral-volcanic hover:bg-neutral-soft">
-            Ver mapa
+            {{ t('driver.panel.map.view') }}
           </button>
           <button v-if="viaje.estado === 'in_progress'" @click="completarViaje(viaje.id)" class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('check2Circle')"></svg>
-            Completar viaje
+            {{ t('driver.panel.actions.completeTrip') }}
           </button>
         </div>
       </div>
@@ -132,8 +132,8 @@
       <div class="w-full max-w-5xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
-            <h3 class="font-semibold text-neutral-dark">Mapa del viaje</h3>
-            <p class="text-sm text-neutral-slate">Origen y destino del viaje</p>
+            <h3 class="font-semibold text-neutral-dark">{{ t('driver.panel.map.modalTitle') }}</h3>
+            <p class="text-sm text-neutral-slate">{{ t('driver.panel.map.modalSubtitle') }}</p>
           </div>
           <button @click="cerrarMapa" class="p-2 rounded-lg hover:bg-neutral-soft">
             <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
@@ -160,11 +160,11 @@
     <div class="bg-white rounded-xl shadow-sm">
       <div class="p-6 border-b border-neutral-volcanic flex items-center justify-between gap-4">
         <h3 class="font-semibold text-neutral-dark">
-          Viajes de hoy
+          {{ t('driver.panel.today.title') }}
         </h3>
 
         <span class="px-3 py-1 rounded-full text-sm font-medium select-none" :class="estaOcupado ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'" aria-live="polite">
-          {{ estaOcupado ? 'Ocupado' : 'Libre' }}
+          {{ estaOcupado ? t('driver.panel.today.busy') : t('driver.panel.today.free') }}
         </span>
       </div>
       <div class="overflow-x-auto">
@@ -173,25 +173,25 @@
             <tr>
               <th class="text-left p-4 text-sm font-medium text-neutral-slate">
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('clock')"></svg>
-                Hora
+                {{ t('driver.panel.today.time') }}
               </th>
               <th class="text-left p-4 text-sm font-medium text-neutral-slate">
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('person')"></svg>
-                Pasajero
+                {{ t('driver.panel.today.passenger') }}
               </th>
               <th class="text-left p-4 text-sm font-medium text-neutral-slate">
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('geoAlt')"></svg>
-                Origen
+                {{ t('driver.panel.today.origin') }}
               </th>
               <th class="text-left p-4 text-sm font-medium text-neutral-slate">
                 <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('flag')"></svg>
-                Destino
+                {{ t('driver.panel.today.destination') }}
               </th>
               <th class="text-left p-4 text-sm font-medium text-neutral-slate">
                 <svg class="inline-block w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath('money')" />
                 </svg>
-                Ganancia
+                {{ t('driver.panel.today.profit') }}
               </th>
             </tr>
           </thead>
@@ -209,28 +209,28 @@
     </div>
 
     <div v-if="conductorStore.perfil" class="mt-8 bg-white rounded-xl shadow-sm p-6">
-      <h3 class="font-semibold text-neutral-dark mb-4">Mi vehículo</h3>
+      <h3 class="font-semibold text-neutral-dark mb-4">{{ t('driver.panel.vehicle.title') }}</h3>
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div>
           <p class="text-xs text-neutral-slate">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('carFront')"></svg>
-            Modelo
+            {{ t('driver.panel.vehicle.model') }}
           </p>
           <p class="font-medium">{{ conductorStore.perfil.vehiculo.modelo }}</p>
         </div>
         <div>
           <p class="text-xs text-neutral-slate">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('upcScan')"></svg>
-            Matrícula
+            {{ t('driver.panel.vehicle.plate') }}
           </p>
           <p class="font-medium">{{ conductorStore.perfil.vehiculo.matricula }}</p>
         </div>
         <div>
           <p class="text-xs text-neutral-slate">
             <svg class="inline-block w-4 h-4 mr-1" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('people')"></svg>
-            Capacidad
+            {{ t('driver.panel.vehicle.capacity') }}
           </p>
-          <p class="font-medium">{{ conductorStore.perfil.vehiculo.capacidad ? `${conductorStore.perfil.vehiculo.capacidad} personas` : '' }}</p>
+          <p class="font-medium">{{ conductorStore.perfil.vehiculo.capacidad ? t('driver.panel.vehicle.capacityPeople', { count: conductorStore.perfil.vehiculo.capacidad }) : '' }}</p>
         </div>
       </div>
     </div>
@@ -241,6 +241,7 @@
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DisposicionConductor from '../../Disposiciones/DisposicionConductor.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useViajeStore } from '../../Almacenes/almacenViaje.js'
@@ -268,6 +269,7 @@ import svgPeople from 'bootstrap-icons/icons/people.svg?raw'
 const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
+const { t, locale } = useI18n()
 
 const modalMapaAbierto = ref(false)
 const viajeMapa = ref(null)
@@ -308,6 +310,8 @@ const iconos = {
 const icon = (name) => iconos[name] || ''
 
 const estadisticas = computed(() => {
+  locale.value
+
   const today = new Date().toDateString()
   const viajesHoy = viajeStore.viajesConductor
     .filter(t => new Date(t.date).toDateString() === today)
@@ -315,8 +319,8 @@ const estadisticas = computed(() => {
   const earnings = viajesHoy.reduce((sum, t) => sum + (t.price || 0), 0)
 
   return [
-    { label: 'Viajes hoy', value: viajesHoy.length, iconType: 'path', icon: 'calendar' },
-    { label: 'Ganancias hoy', value: `${earnings.toFixed(2)} €`, iconType: 'path', icon: 'money' }
+    { label: t('driver.panel.stats.tripsToday'), value: viajesHoy.length, iconType: 'path', icon: 'calendar' },
+    { label: t('driver.panel.stats.earningsToday'), value: `${earnings.toFixed(2)} €`, iconType: 'path', icon: 'money' }
   ]
 })
 
