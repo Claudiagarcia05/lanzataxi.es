@@ -122,12 +122,26 @@ const localeSeleccionado = ref(localeActual.value)
 locale.value = localeActual.value
 
 const cambiarIdioma = async () => {
+  const anterior = locale.value
+  const nuevo = localeSeleccionado.value
+
+  // Aplicar inmediatamente en el frontend (mejor UX)
+  locale.value = nuevo
   try {
-    await axios.post('/locale', { locale: localeSeleccionado.value })
-    window.location.reload()
+    document.documentElement.lang = nuevo
+  } catch {
+  }
+
+  try {
+    await axios.post('/locale', { locale: nuevo })
   } catch (e) {
-    // Si falla, volvemos al locale actual
-    localeSeleccionado.value = localeActual.value
+    // Si falla la persistencia, revertimos el UI
+    locale.value = anterior
+    localeSeleccionado.value = anterior
+    try {
+      document.documentElement.lang = anterior
+    } catch {
+    }
   }
 }
 
