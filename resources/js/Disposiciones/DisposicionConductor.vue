@@ -1,21 +1,8 @@
 <template>
   <div class="min-h-screen bg-neutral-soft">
-    <div
-      v-if="menuMovilAbierto"
-      class="fixed inset-0 z-30 bg-neutral-dark/30 md:hidden"
-      @click="menuMovilAbierto = false"
-      aria-hidden="true"
-    />
+    <div v-if="menuMovilAbierto" class="fixed inset-0 z-30 bg-neutral-dark/30 md:hidden" @click="menuMovilAbierto = false" aria-hidden="true"/>
 
-    <aside
-      :class="[
-        'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg',
-        'w-64 max-w-[85vw] md:max-w-none',
-        barraLateralAbierta ? 'md:w-64' : 'md:w-20',
-        menuMovilAbierto ? 'translate-x-0' : '-translate-x-full',
-        'md:translate-x-0',
-      ]"
-    >
+    <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', 'w-64 max-w-[85vw] md:max-w-none', barraLateralAbierta ? 'md:w-64' : 'md:w-20', menuMovilAbierto ? 'translate-x-0' : '-translate-x-full', 'md:translate-x-0',]">
       <div class="relative flex items-center p-4 border-b border-neutral-volcanic h-20">
         <div v-if="barraLateralAbierta" class="flex items-center space-x-2 flex-1 min-w-0">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-auto object-contain">
@@ -25,12 +12,7 @@
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-10 object-contain">
         </div>
 
-        <button
-          class="ml-auto p-2 rounded-lg hover:bg-neutral-soft transition-colors md:hidden"
-          @click="menuMovilAbierto = false"
-          :aria-label="t('dashboard.pendingDrivers.close')"
-          type="button"
-        >
+        <button class="ml-auto p-2 rounded-lg hover:bg-neutral-soft transition-colors md:hidden" @click="menuMovilAbierto = false" :aria-label="t('dashboard.pendingDrivers.close')" type="button">
           <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
         </button>
       </div>
@@ -82,12 +64,7 @@
             <p class="text-sm text-neutral-slate">{{ fechaActualFormateada }}</p>
           </div>
 
-          <button
-            class="p-2 rounded-lg hover:bg-neutral-soft md:hidden"
-            type="button"
-            @click="menuMovilAbierto = true"
-            :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')"
-          >
+          <button class="p-2 rounded-lg hover:bg-neutral-soft md:hidden" type="button" @click="menuMovilAbierto = true" :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')">
             <svg class="w-6 h-6 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -111,6 +88,16 @@ import { useAuthStore } from '../Almacenes/almacenAutenticacion.js'
 import { useViajeStore } from '../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../Almacenes/almacenConductor.js'
 
+/**
+ * Disposición (layout) del panel de conductor.
+ *
+ * Responsabilidades:
+ * - Renderiza sidebar + header comunes para el rol conductor.
+ * - En `onMounted` verifica autenticación, carga viajes y arranca sondeo.
+ * - Carga el perfil del conductor para mostrar nombre/estado.
+ * - En `onUnmounted` detiene el sondeo para evitar consumo innecesario.
+ */
+
 const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
@@ -121,6 +108,7 @@ const barraLateralAbierta = ref(true)
 const menuMovilAbierto = ref(false)
 
 const alternarBarraLateral = () => {
+  // Colapsa/expande sidebar en desktop.
   barraLateralAbierta.value = !barraLateralAbierta.value
 }
 
@@ -129,6 +117,7 @@ const rutaActual = computed(() => page.url)
 const localeFecha = computed(() => (String(locale.value || 'es').startsWith('en') ? 'en-GB' : 'es-ES'))
 
 const fechaActualFormateada = computed(() => {
+  
   return new Date().toLocaleDateString(localeFecha.value, {
     weekday: 'long',
     year: 'numeric',
@@ -138,6 +127,7 @@ const fechaActualFormateada = computed(() => {
 })
 
 onMounted(() => {
+  // Inicialización del panel: auth -> datos -> sondeo.
   if (!authStore.inicializado) {
     authStore.verificarAutenticacion().finally(() => {
       viajeStore.obtenerViajes()
@@ -151,10 +141,12 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+  // Importante: parar sondeo al salir de la vista.
   viajeStore.detenerSondeo()
 })
 
 const elementosMenu = computed(() => {
+  // Dependemos de `locale` para recalcular labels al cambiar idioma.
   locale.value
 
   return [
@@ -180,10 +172,12 @@ const elementosMenu = computed(() => {
 })
 
 const navegarA = (path) => {
+  // Navegación mediante Inertia.
   inertiaRouter.visit(path)
 }
 
 const cerrarSesion = async () => {
+  // Cierra sesión y vuelve a landing.
   await authStore.cerrarSesion()
   inertiaRouter.visit('/')
 }

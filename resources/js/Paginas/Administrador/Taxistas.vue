@@ -68,7 +68,6 @@
       </div>
     </div>
 
-    <!-- Modal Conductor -->
     <div v-if="modalConductorAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
@@ -169,12 +168,17 @@
   </DisposicionAdministrador>
 </template>
 
+
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 import axios from 'axios'
 import { jsPDF } from 'jspdf'
+
+// Página de Administración: gestión de taxistas y sus vehículos.
+// - Ver detalle del conductor, editar taxi asociado, dar de baja y generar informe (PDF).
+// - Incluye refresco periódico del listado para ver estado online/disabled actualizado.
 
 const adminStore = useAdminStore()
 
@@ -196,6 +200,7 @@ let intervaloRefrescoConductores = null
 let refrescoEnCurso = false
 
 const refrescarConductores = async () => {
+  // Evita solapes si el request tarda más que el intervalo.
   if (refrescoEnCurso) return
 
   refrescoEnCurso = true
@@ -203,22 +208,24 @@ const refrescarConductores = async () => {
     await adminStore.obtenerConductores()
 
     if (conductorSeleccionado.value?.id) {
+      // Si el modal está abierto, intentamos re-sincronizar el conductor seleccionado.
       const actualizado = adminStore.conductores.find(c => c.id === conductorSeleccionado.value.id)
       if (actualizado) {
         conductorSeleccionado.value = actualizado
       }
     }
   } catch {
-    // No interrumpir UX por fallos puntuales de refresco.
+
   } finally {
     refrescoEnCurso = false
   }
 }
 
 onMounted(async () => {
+  // Carga inicial (usuarios + conductores + datos relacionados).
   await adminStore.obtenerTodosLosDatos()
 
-  // Refresco automático del estado (conectado/desconectado).
+  // Refresco de la lista cada 10s para mantener estado (conectado/desconectado).
   intervaloRefrescoConductores = setInterval(refrescarConductores, 10000)
 })
 
@@ -237,6 +244,7 @@ const abrirModalConductor = (conductor) => {
   modalConductorAbierto.value = true
 
   const taxi = conductor.taxi || null
+  // Algunos registros usan placeholders mientras el taxi no está completo.
   const esPlatePlaceholder = String(taxi?.plate || '').startsWith('PENDIENTE-') || String(taxi?.plate || '').startsWith('TMP-')
   formularioTaxi.value = {
     id: taxi?.id ?? null,
@@ -246,6 +254,7 @@ const abrirModalConductor = (conductor) => {
     color: taxi?.color ?? '',
   }
 
+  // Limpieza UX: si el taxi viene con valores “pendientes” por defecto, dejamos el formulario vacío.
   if ((esPlatePlaceholder || String(taxi?.model || '').trim().toLowerCase() === 'pendiente') && Number(formularioTaxi.value.capacity || 0) === 4) {
     formularioTaxi.value.capacity = null
   }
@@ -263,6 +272,7 @@ const darDeBaja = async (idUsuario) => {
   mensajeInfo.value = ''
 
   try {
+    // Baja administrada del usuario asociado al conductor.
     await adminStore.darDeBajaUsuario(idUsuario)
     if (conductorSeleccionado.value?.user_id === idUsuario) {
       conductorSeleccionado.value.is_disabled = true
@@ -284,12 +294,14 @@ const guardarTaxi = async () => {
   try {
     const payload = {}
 
+    // Matrícula española típica: 4 números, espacio, 3 letras (formato 1234 ABC).
     const plate = String(formularioTaxi.value.plate || '').trim()
     if (plate) {
       const valido = /^\d{4}\s[A-Z]{3}$/.test(plate)
       if (!valido) {
         mensajeError.value = 'La matrícula debe tener formato 1234 ABC (4 números, espacio, 3 letras).'
         setTimeout(() => { mensajeError.value = '' }, 5000)
+
         return
       }
       payload.plate = plate
@@ -300,6 +312,7 @@ const guardarTaxi = async () => {
     }
     if (formularioTaxi.value.color !== undefined) payload.color = (formularioTaxi.value.color || '').trim() || null
 
+    // Update parcial: solo enviamos los campos que el admin haya rellenado.
     await axios.put(`/api/taxis/${formularioTaxi.value.id}`, payload)
 
     await adminStore.obtenerConductores()
@@ -317,6 +330,7 @@ const guardarTaxi = async () => {
 }
 
 const formatearMatriculaInput = (e) => {
+  // Formateo “en vivo”: limita a 4 dígitos + 3 letras, y pone espacio automático.
   const raw = String(e?.target?.value ?? formularioTaxi.value.plate ?? '')
 
   const digits = raw.replace(/\D/g, '').slice(0, 4)
@@ -330,6 +344,7 @@ const formatearMatriculaInput = (e) => {
 }
 
 const formatearMes = (yyyyMm) => {
+  // Helper de formateo a "Mes año" (es-ES) cuando el backend entregue yyyy-mm.
   const valor = String(yyyyMm || '').trim()
   const match = valor.match(/^(\d{4})-(\d{2})$/)
   if (!match) return valor || '—'
@@ -337,6 +352,7 @@ const formatearMes = (yyyyMm) => {
   const [_, y, m] = match
   const fecha = new Date(Number(y), Number(m) - 1, 1)
   const texto = fecha.toLocaleDateString('es-ES', { year: 'numeric', month: 'long' })
+
   return texto.charAt(0).toUpperCase() + texto.slice(1)
 }
 
@@ -361,12 +377,14 @@ const obtenerClaseAprobacion = (estadoAprobacion) => {
 const descargarInformeConductor = async (idConductor) => {
   if (!idConductor) return
 
+  // Endpoint admin que devuelve { conductor, trips } con ganancias por viaje.
   const response = await axios.get(`/api/admin/conductors/${idConductor}/earnings-report`)
   const data = response?.data
   const conductorInfo = data?.conductor || null
   const viajes = Array.isArray(data?.trips) ? data.trips : []
 
   const archivoADataUrl = (file) => new Promise((resolve, reject) => {
+    // Utilidad: convertir a DataURL para incrustar en jsPDF.
     const reader = new FileReader()
     reader.onload = () => resolve(reader.result)
     reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
@@ -374,6 +392,7 @@ const descargarInformeConductor = async (idConductor) => {
   })
 
   const cargarImagenPublicaPng = async (url) => {
+    // Carga el logo desde /public sin cache para evitar versiones antiguas.
     const respuesta = await fetch(url, { cache: 'no-store' })
     if (!respuesta.ok) return null
     const blob = await respuesta.blob()
@@ -413,6 +432,7 @@ const descargarInformeConductor = async (idConductor) => {
   const logo = await cargarImagenPublicaPng('/images/logo.png').catch(() => null)
 
   const renderizarEncabezado = ({ incluirDatosConductor } = { incluirDatosConductor: true }) => {
+    // Encabezado reutilizable: en primera página incluye datos; en el resto, se omite.
     let y = marginTop
 
     if (logo?.dataUrl) {
@@ -486,6 +506,7 @@ const descargarInformeConductor = async (idConductor) => {
   }
 
   const renderizarEncabezadoTabla = (y) => {
+    // Tabla: fecha/estado/ganancia/ruta (ruta es la columna “elástica”).
     const tableX = marginX
     const rowH = 18
 
@@ -510,6 +531,7 @@ const descargarInformeConductor = async (idConductor) => {
 
     doc.setTextColor(0)
     doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
+    
     return {
       y: y + rowH,
       widths: { colFechaW, colEstadoW, colGananciaW, colRutaW },
@@ -548,6 +570,7 @@ const descargarInformeConductor = async (idConductor) => {
     const lineasRuta = doc.splitTextToSize(ruta || '—', tabla.widths.colRutaW - 12)
     const altoContenido = Math.max(tabla.rowH, lineasRuta.length * alturaLinea + 6)
 
+    // Salto de página por límite de filas o falta de espacio vertical.
     const necesitaNuevaPaginaPorCantidad = filasEnPagina >= 7
     const necesitaNuevaPaginaPorEspacio = y + altoContenido > limiteInferiorSeguro
     if (necesitaNuevaPaginaPorCantidad || necesitaNuevaPaginaPorEspacio) {

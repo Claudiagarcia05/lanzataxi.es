@@ -2,6 +2,16 @@
 import { useAuthStore } from './almacenAutenticacion'
 import axios from 'axios'
 
+/**
+ * Store de viajes.
+ *
+ * Responsabilidades:
+ * - listar viajes para pasajero/conductor/admin (endpoint cambia según contexto)
+ * - crear/aceptar/iniciar/completar/cancelar/valorar viajes
+ * - sondeo (polling) para refrescar la lista
+ *
+ * Nota: este store traduce algunos estados del backend a strings usados en UI.
+ */
 export const useViajeStore = defineStore('viaje', {
     state: () => ({
         viajes: [],
@@ -38,6 +48,10 @@ export const useViajeStore = defineStore('viaje', {
     },
 
     actions: {
+        /**
+         * Convierte un valor a número finito o null.
+         * Útil cuando el backend devuelve strings/valores vacíos.
+         */
         parsearNumeroFinito(valor) {
             const numero = typeof valor === 'number' ? valor : parseFloat(valor)
             
@@ -50,6 +64,7 @@ export const useViajeStore = defineStore('viaje', {
             const rutaActual = typeof window !== 'undefined' ? window.location.pathname : ''
             const esContextoConductor = autenticacion.isconductor || rutaActual.startsWith('/conductor')
 
+            // Mapa de estados del backend -> estados mostrados en UI.
             const statusMap = {
                 pending: 'pendiente',
                 accepted: 'accepted',
@@ -80,6 +95,7 @@ export const useViajeStore = defineStore('viaje', {
                 endTime: viaje.end_time,
                 end_time: viaje.end_time,
                 scheduled_for: viaje.scheduled_for,
+                // `estado` es el estado normalizado para UI.
                 estado: statusMap[viaje.status] || viaje.status,
                 price: viaje.price ? Number(viaje.price) : 0,
                 distance: viaje.distance ? Number(viaje.distance) : 0,
@@ -95,6 +111,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         iniciarSondeo(intervaloMs = 5000) {
+            // Polling para refrescar viajes (se detiene/reinicia automáticamente).
             this.detenerSondeo()
             this.idSondeo = setInterval(() => {
                 this.obtenerViajes()
@@ -109,6 +126,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         async obtenerViajes() {
+            // Obtiene viajes según rol/contexto. En conductor, además añade ofertas disponibles.
             this.cargando = true
             this.error = null
             try {
@@ -129,11 +147,13 @@ export const useViajeStore = defineStore('viaje', {
                     const respuestaMisViajes = await axios.get(endpoint)
                     const misViajes = (respuestaMisViajes.data || []).map(this.mapearViaje)
 
+                    // Si el conductor ya tiene un viaje en curso/aceptado, no se muestran ofertas.
                     const conductorOcupado = misViajes.some(t => ['accepted', 'in_progress'].includes(t.estado))
 
                     let disponibles = []
                     if (!conductorOcupado) {
                         try {
+                            // Ofertas disponibles para aceptar. Se filtran las descartadas localmente.
                             const respuestaDisponibles = await axios.get('/api/conductor/viajes/available')
                             disponibles = (respuestaDisponibles.data || [])
                                 .map(this.mapearViaje)
@@ -146,6 +166,7 @@ export const useViajeStore = defineStore('viaje', {
 
                     this.viajes = [...disponibles, ...misViajes]
                 } else {
+                    // Pasajero o admin: una lista simple desde el endpoint correspondiente.
                     const respuesta = await axios.get(endpoint)
                     console.log('✅ Respuesta de obtenerViajes:', respuesta.data)
                     this.viajes = respuesta.data.map(this.mapearViaje)
@@ -161,6 +182,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         async crearViaje(datosViaje) {
+            // Crea un viaje desde los datos del mapa/form.
             this.cargando = true
             try {
                 const respuesta = await axios.post('/api/viajes', {
@@ -195,6 +217,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         async aceptarViaje(viajeId) {
+            // Acepta un viaje (flujo conductor). Maneja 400/409 de forma amigable.
             try {
                 const response = await axios.patch(`/api/viajes/${viajeId}/accept`)
                 const viajeActualizado = this.mapearViaje(response.data)
@@ -235,6 +258,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         descartarOferta(viajeId) {
+            // Permite ocultar una oferta localmente sin avisar al servidor.
             if (!this.idsOfertasIgnoradas.includes(viajeId)) {
                 this.idsOfertasIgnoradas.push(viajeId)
             }
@@ -242,6 +266,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         async iniciarViaje(viajeId) {
+            // Marca el inicio del viaje.
             const response = await axios.patch(`/api/viajes/${viajeId}/start`)
             const viajeActualizado = this.mapearViaje(response.data)
             this.viajes = this.viajes.map(t => t.id === viajeId ? viajeActualizado : t)
@@ -256,6 +281,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         async completarViaje(viajeId, valoracion = null, comment = '') {
+            // Completa el viaje y (opcionalmente) envía valoración/comentario.
             const response = await axios.patch(`/api/viajes/${viajeId}/complete`, {
                 rating: valoracion,
                 comment,
@@ -274,6 +300,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         async cancelarViaje(viajeId) {
+            // Cancela el viaje.
             const response = await axios.patch(`/api/viajes/${viajeId}/cancel`)
             const viajeActualizado = this.mapearViaje(response.data)
             this.viajes = this.viajes.map(t => t.id === viajeId ? viajeActualizado : t)
@@ -281,6 +308,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         simularMovimientoConductor(viajeId) {
+            // Solo para demo/UI: simula progreso del conductor entre pickup y dropoff.
             const viaje = this.viajes.find(t => t.id === viajeId)
             if (!viaje) return
 
@@ -303,6 +331,7 @@ export const useViajeStore = defineStore('viaje', {
         },
 
         async valorarViaje(viajeId, valoracion, comment = '') {
+            // Envía una valoración posterior al viaje.
             const viaje = this.viajes.find(t => t.id === viajeId)
             if (!viaje) return
 

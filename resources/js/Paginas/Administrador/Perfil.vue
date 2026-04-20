@@ -84,7 +84,7 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Nueva contraseña</label>
-              <input v-model="contrasena.nueva" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.nueva && !esContrasenaFuerte }" @input="comprobarFuerzaContrasena">
+              <input v-model="contrasena.nueva" type="password" name="new_password" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.nueva && !esContrasenaFuerte }" @input="comprobarFuerzaContrasena">
               <div v-if="contrasena.nueva" class="mt-2">
                 <div class="flex space-x-1 h-1 mb-2">
                   <div class="flex-1 h-full rounded" :class="colorFuerza(1)"></div>
@@ -114,7 +114,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Confirmar nueva contraseña</label>
-              <input v-model="contrasena.confirmacion" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion }">
+              <input v-model="contrasena.confirmacion" type="password" name="new_password_confirmation" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion }">
               <p v-if="contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion" class="text-xs text-red-500 mt-1">
                 Las contraseñas no coinciden
               </p>
@@ -175,6 +175,10 @@ import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import axios from 'axios'
 import { router } from '@inertiajs/vue3'
 
+// Página de Administración: perfil del usuario (admin).
+// - Permite: actualizar email/teléfono, subir avatar, cambiar contraseña y eliminar cuenta.
+// - Nota: validaciones del lado cliente son UX; el backend debe validar y autorizar.
+
 const authStore = useAuthStore()
 const perfil = computed(() => authStore.usuario)
 
@@ -184,6 +188,8 @@ const vistaPreviaAvatar = ref(null)
 const mostrarConfirmacionEliminacion = ref(false)
 
 const normalizarUrlAvatar = (avatar) => {
+  // Normaliza diferentes formatos que pueden venir de backend (ruta relativa/absoluta).
+  // Objetivo: que la UI siempre reciba una URL navegable.
   if (typeof avatar !== 'string') return null
 
   const recortado = avatar.trim()
@@ -221,6 +227,7 @@ const preferencias = reactive({
 })
 
 const esContrasenaFuerte = computed(() => {
+  // Política de fortaleza en frontend (mínimos razonables).
   return contrasena.nueva?.length >= 8 &&
          /[A-Z]/.test(contrasena.nueva) &&
          /[a-z]/.test(contrasena.nueva) &&
@@ -229,6 +236,7 @@ const esContrasenaFuerte = computed(() => {
 })
 
 const puedeCambiarContrasena = computed(() => {
+  // Habilita el botón solo cuando cumple fortaleza y coincide confirmación.
   return esContrasenaFuerte.value &&
          contrasena.nueva === contrasena.confirmacion
 })
@@ -274,12 +282,14 @@ const colorTextoFuerza = computed(() => {
 const manejarSubidaAvatar = async (event) => {
   const archivo = event.target.files[0]
   if (archivo) {
+    // Límite para evitar cargas excesivas y mala experiencia.
     if (archivo.size > 2 * 1024 * 1024) {
       mensajeError.value = 'La imagen no puede superar los 2MB'
       setTimeout(() => { mensajeError.value = '' }, 4000)
 
       return
     }
+    // Comprobación rápida del tipo de archivo (el backend debe validar igual).
     if (!archivo.type.startsWith('image/')) {
       mensajeError.value = 'Solo se permiten imágenes'
       setTimeout(() => { mensajeError.value = '' }, 4000)
@@ -298,6 +308,7 @@ const manejarSubidaAvatar = async (event) => {
 const guardarAvatar = async (archivo) => {
   if (!archivo) return
   try {
+    // Subida multipart para el avatar. El endpoint devuelve la ruta/URL del avatar.
     const datosFormulario = new FormData()
     datosFormulario.append('avatar', archivo)
     const response = await axios.post('/api/user/avatar', datosFormulario, {
@@ -341,12 +352,14 @@ const cancelarEdicionPersonal = () => {
 }
 
 const validarCorreo = (email) => {
+  // Validación básica (no intenta cubrir todos los casos RFC).
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   return re.test(email)
 }
 
 const validarTelefono = (phone) => {
+  // Teléfono ES típico: 9 dígitos (se limpia a solo números en el input).
   const re = /^[0-9]{9}$/
 
   return re.test(phone)
@@ -369,6 +382,7 @@ const guardarInfoPersonal = async () => {
   }
 
   try {
+    // Actualiza los datos en backend y sincroniza el store local.
     await axios.put('/api/user/profile', {
       email: form.email,
       phone: form.phone
@@ -391,6 +405,7 @@ const guardarInfoPersonal = async () => {
 const cambiarContrasena = async () => {
   if (!puedeCambiarContrasena.value) return
   try {
+    // El backend decide la política final; aquí solo prevenimos errores obvios.
     await axios.put('/api/user/password', {
       new_password: contrasena.nueva,
       new_password_confirmation: contrasena.confirmacion
@@ -407,6 +422,7 @@ const cambiarContrasena = async () => {
 
 const eliminarCuenta = async () => {
   try {
+    // Solicita eliminación en backend. Aunque falle, cerramos sesión para seguridad.
     await axios.delete('/api/user')
   } catch (error) {
   }
@@ -416,6 +432,7 @@ const eliminarCuenta = async () => {
 }
 
 onMounted(async () => {
+  // Aseguramos tener el perfil cargado (p.ej. tras recargar la página).
   if (!perfil.value) {
     await authStore.verificarAutenticacion()
   }
@@ -424,6 +441,7 @@ onMounted(async () => {
 watch(
   () => perfil.value?.avatar,
   (avatar) => {
+    // Mantiene el avatar mostrado alineado con el estado global.
     avatarUsuario.value = normalizarUrlAvatar(avatar)
   },
   { immediate: true }

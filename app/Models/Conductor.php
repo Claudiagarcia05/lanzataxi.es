@@ -6,6 +6,12 @@
     use Illuminate\Database\Eloquent\Model;
     use App\Models\Taxi;
 
+    /**
+     * Modelo Conductor.
+     *
+     * Representa al taxista (perfil asociado a un `User`).
+     * Incluye campos de estado (activo/aprobación) y métricas de tiempo conectado.
+     */
     class Conductor extends Model {
         use HasFactory;
 
@@ -33,32 +39,45 @@
             'online_seconds_month' => 'integer',
         ];
 
+        /**
+         * Usuario propietario del perfil de conductor.
+         */
         public function user() {
 
             return $this->belongsTo(User::class);
         }
 
+        /**
+         * Taxi asociado al conductor.
+         */
         public function taxi() {
 
             return $this->hasOne(Taxi::class);
         }
 
+        /**
+         * Asegura que el conductor tenga un taxi asociado.
+         *
+         * Caso de uso: cuando se necesita mostrar/usar un taxi aunque el registro
+         * todavía no exista (p.ej. conductor recién creado).
+         *
+         * Nota: la matrícula generada es un placeholder y NO es una matrícula real.
+         */
         public function ensureTaxiExists(string $statusIfCreate = 'available'): Taxi
         {
             if ($this->relationLoaded('taxi') && $this->taxi) {
+
                 return $this->taxi;
             }
 
             $existingTaxi = $this->taxi()->first();
             if ($existingTaxi) {
                 $this->setRelation('taxi', $existingTaxi);
+
                 return $existingTaxi;
             }
 
-            // NOTA de negocio:
-            // Al crear un taxista nuevo, el vehículo debe aparecer vacío en el panel
-            // hasta que el admin lo edite. Como la tabla `taxis` requiere plate/model/capacity,
-            // generamos una matrícula placeholder (no mostrable) y dejamos el resto vacío.
+            // Genera una matrícula placeholder única.
             $plateBase = 'PENDIENTE-' . $this->id . '-' . strtoupper(bin2hex(random_bytes(3)));
             $plate = $plateBase;
             $suffix = 0;
@@ -76,14 +95,21 @@
             ]);
 
             $this->setRelation('taxi', $createdTaxi);
+            
             return $createdTaxi;
         }
 
+        /**
+         * Viajes asignados a este conductor.
+         */
         public function viajes() {
 
             return $this->hasMany(Viaje::class);
         }
 
+        /**
+         * Historial de ubicaciones del conductor.
+         */
         public function ubicacions() {
 
             return $this->hasMany(Ubicacion::class);

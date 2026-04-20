@@ -1,8 +1,15 @@
 <template>
   <DisposicionPasajero>
-    <!-- Página del pasajero: seguimiento del viaje en tiempo real y cancelación (si aplica) -->
     <div class="max-w-7xl mx-auto">
-      <!-- Cabecera con estado resumido -->
+      <!--
+        Seguimiento del viaje (pasajero).
+        - Muestra el mapa con origen/destino y, si existe, la ubicación del taxi.
+        - Sincroniza el estado del viaje desde el store y hace polling de `/track`.
+        - Permite cancelar mientras está en 'pendiente' o 'accepted'.
+
+        Nota: el polling es intencionado (cada 3s) para refrescar ubicación en UI;
+        el backend debe aplicar rate-limits y validar permisos.
+      -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <div class="flex items-center justify-between">
           <div>
@@ -15,7 +22,6 @@
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div class="lg:col-span-2 relative z-0">
           <div class="bg-white rounded-xl shadow-sm p-6">
-            <!-- Mapa de seguimiento -->
             <div class="h-[500px] rounded-lg overflow-hidden">
               <div v-if="puedeRenderMapa" class="h-full">
                 <MapaSeguimiento ref="referenciaMapa" :pickupLat="viaje.pickupLat" :pickupLng="viaje.pickupLng" :dropoffLat="viaje.dropoffLat" :dropoffLng="viaje.dropoffLng" :taxiLat="ubicacionTaxi?.lat" :taxiLng="ubicacionTaxi?.lng" :estado="viaje.estado" />
@@ -29,7 +35,6 @@
 
         <div class="lg:col-span-1 space-y-4 relative z-10">
           <div class="bg-white rounded-xl shadow-sm p-6">
-            <!-- Línea de tiempo del estado del viaje -->
             <h3 class="font-semibold text-neutral-dark mb-4 flex items-center gap-2">
               <svg class="w-6 h-6" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="svgIconoTaxi"></svg>
               {{ t('passenger.tracking.tripStatus') }}
@@ -68,7 +73,6 @@
           </div>
 
           <div class="bg-white rounded-xl shadow-sm p-6">
-            <!-- Detalles resumidos del viaje (origen, destino, distancia y precio) -->
             <h3 class="font-semibold text-neutral-dark mb-4">{{ t('passenger.tracking.tripDetails') }}</h3>
             
             <div class="space-y-3">
@@ -98,7 +102,6 @@
               </div>
 
               <div v-if="['pendiente', 'accepted'].includes(viaje?.estado)" class="mt-4">
-                <!-- Cancelación: solo disponible mientras el viaje esté pendiente o aceptado -->
                 <button type="button" @click.stop.prevent="abrirConfirmacionCancelacion" class="w-full bg-red-500 text-white py-3 rounded-lg hover:bg-red-600 transition-colors">
                   {{ t('passenger.tracking.cancelRequest') }}
                 </button>
@@ -112,7 +115,6 @@
       </div>
     </div>
 
-    <!-- Modal de confirmación de cancelación (evita confirm/alert nativos) -->
     <div v-if="mostrarConfirmacionCancelacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('passenger.tracking.confirmCancelTitle') }}</h3>
@@ -150,7 +152,6 @@ const viajeStore = useViajeStore()
 const referenciaMapa = ref(null)
 const { t, locale } = useI18n()
 
-// Normaliza el SVG (bootstrap-icons) para poder inyectarlo con v-html
 const extraerInteriorSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
   .replace(/<\/svg>\s*$/i, '')
@@ -164,22 +165,25 @@ let idIntervaloActualizacion = null
 const mostrarConfirmacionCancelacion = ref(false)
 
 const puedeRenderMapa = computed(() => {
-  // Evita renderizar el mapa si faltan coordenadas
+  // Renderizamos el mapa solo si tenemos coordenadas válidas de origen y destino.
+  // Esto evita inicializar el componente del mapa con NaN/null.
   const v = viaje.value
   if (!v) return false
   const hasPickup = Number.isFinite(v.pickupLat) && Number.isFinite(v.pickupLng)
   const hasDropoff = Number.isFinite(v.dropoffLat) && Number.isFinite(v.dropoffLng)
+  
   return hasPickup && hasDropoff
 })
 
 const viajeIdNumber = computed(() => Number(props.viajeId))
 
 const viajeFromStore = computed(() => {
+  // Fuente de verdad local: buscamos el viaje por ID dentro del store.
   return viajeStore.viajesPasajero.find(t => t.id === viajeIdNumber.value) || null
 })
 
 const cargarViaje = async () => {
-  // Carga el viaje desde el store; si no existe, refresca y redirige si sigue sin encontrarse
+  // Intentamos cargar desde el store; si no está, forzamos fetch.
   viaje.value = viajeFromStore.value
 
   if (!viaje.value) {
@@ -192,6 +196,7 @@ const cargarViaje = async () => {
   }
 
   if (!viaje.value) {
+    // Si el viaje no existe/no es accesible, salimos a reservas.
     inertiaRouter.visit('/pasajero/reservas')
   }
 }
@@ -204,6 +209,7 @@ const obtenerTextoEstado = (estado) => {
     'completed': 'Finalizado',
     'cancelled': 'Cancelado'
   }
+
   return estados[estado] || estado
 }
 
@@ -225,7 +231,7 @@ const formatearFecha = (dateString) => {
 }
 
 const refrescarUbicacionTaxi = async () => {
-  // Consulta periódica de la ubicación del taxi (solo cuando tiene sentido)
+  // Polling de ubicación: sólo tiene sentido si el viaje está aceptado o en progreso.
   if (!viaje.value) return
   if (!['accepted', 'in_progress'].includes(viaje.value.estado)) return
 
@@ -237,12 +243,12 @@ const refrescarUbicacionTaxi = async () => {
 }
 
 const abrirConfirmacionCancelacion = () => {
-  // Abre el modal de confirmación
   mostrarConfirmacionCancelacion.value = true
 }
 
 const confirmarCancelacionViaje = async () => {
-  // Confirma la cancelación y vuelve al listado
+  // Cancela el viaje y vuelve al historial.
+  // El backend debe aplicar reglas (si es cobrable o no, etc.).
   try {
     await viajeStore.cancelarViaje(viaje.value.id)
     mostrarConfirmacionCancelacion.value = false
@@ -257,23 +263,24 @@ const cancelarCancelacionViaje = () => {
 }
 
 onMounted(() => {
-  // Carga inicial + polling de estado/ubicación
   cargarViaje()
 
   idIntervaloActualizacion = setInterval(() => {
+    // Sincroniza el viaje desde el store y refresca la ubicación del taxi.
     viaje.value = viajeFromStore.value
     refrescarUbicacionTaxi()
   }, 3000)
 })
 
 onUnmounted(() => {
-  // Limpieza del intervalo al salir de la página
+  // Limpieza del intervalo para evitar fugas y requests innecesarias.
   if (idIntervaloActualizacion) {
     clearInterval(idIntervaloActualizacion)
   }
 })
 
 watch(viajeFromStore, (next) => {
+  // Si el store cambia (p.ej. por un fetch global), actualizamos la vista.
   viaje.value = next
 })
 </script>

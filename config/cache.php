@@ -1,8 +1,16 @@
 <?php
 
+    /**
+     * Configuración de caché.
+     *
+     * Controla el store por defecto y las conexiones para cache/locks.
+     * Nota: en producción suele usarse Redis; en local, database o file.
+     */
+
     use Illuminate\Support\Str;
 
     return [
+        // Store por defecto (`database`, `redis`, etc.).
         'default' => env('CACHE_STORE', 'database'),
 
         'stores' => [
@@ -72,5 +80,6 @@
             ],
         ],
 
+        // Prefijo para evitar colisiones cuando varias apps comparten el mismo backend.
         'prefix' => env('CACHE_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-cache-'),
     ];

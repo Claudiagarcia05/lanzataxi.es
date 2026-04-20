@@ -11,7 +11,20 @@
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Str;
 
+    /**
+     * Registro / Login vía API.
+     *
+     * Incluye validación con reCAPTCHA v3 (si está habilitado) y reglas de
+     * dominio para diferenciar admin / conductor / pasajero.
+     */
     class AutenticacionController extends Controller {
+        /**
+         * Registra un usuario.
+         *
+         * Reglas de rol/email:
+         * - Admin: NO se permite registrar desde este endpoint (bloqueo por dominio @admin.es).
+         * - Conductor: debe usar dominio @taxi.es y queda en estado `pending` hasta aprobación.
+         */
         public function register(Request $solicitud) {
             $recaptcha = app(RecaptchaV3::class);
 
@@ -24,7 +37,6 @@
                     'unique:users,email',
                 ])),
                 'password' => 'required|string|min:6|confirmed',
-                // Nota: el rol admin NO se crea por registro público. Solo pasajero/conductor.
                 'role' => 'nullable|in:pasajero,conductor',
                 'phone' => 'nullable|string|max:50',
                 'recaptcha_token' => $recaptcha->isEnabled() ? 'required|string' : 'nullable|string',
@@ -34,6 +46,7 @@
             ]);
 
             if ($recaptcha->isEnabled()) {
+                // Verifica el token con la acción esperada para reducir abuso/bots.
                 $recaptcha->verifyOrFail(
                     $validado['recaptcha_token'] ?? '',
                     (string) config('recaptcha.actions.register', 'register'),
@@ -41,19 +54,16 @@
                 );
             }
 
-            // Reglas de negocio (registro público):
-            // - Los emails @admin.es están reservados: no se permite registrarlos públicamente.
-            // - Coherencia Taxista ⇔ @taxi.es
-            //   - Si el rol es conductor, el email debe terminar en @taxi.es
-            //   - Si el email termina en @taxi.es, el rol debe ser conductor
             $rol = $validado['role'] ?? 'pasajero';
             $correo = strtolower(trim($validado['email'] ?? ''));
             $esCorreoAdmin = str_ends_with($correo, '@admin.es');
             $esCorreoConductor = str_ends_with($correo, '@taxi.es');
 
+            // Mensaje genérico para evitar filtrar reglas internas (dominios/roles).
             $mensajeGenericoCredenciales = 'Credenciales inválidas. Por favor verifica tu email y contraseña.';
 
             if ($esCorreoAdmin) {
+                
                 return response()->json([
                     'message' => $mensajeGenericoCredenciales,
                     'errors' => [
@@ -63,6 +73,7 @@
             }
 
             if ($rol === 'conductor' && !$esCorreoConductor) {
+
                 return response()->json([
                     'message' => $mensajeGenericoCredenciales,
                     'errors' => [
@@ -72,6 +83,7 @@
             }
 
             if ($rol !== 'conductor' && $esCorreoConductor) {
+
                 return response()->json([
                     'message' => $mensajeGenericoCredenciales,
                     'errors' => [
@@ -91,6 +103,7 @@
             ]);
 
             if ($rol === 'conductor') {
+                // Crea el perfil de conductor en estado pendiente y asegura que exista un taxi asociado.
                 $licencia = 'LIC-' . Str::upper(Str::random(10));
                 while (Conductor::where('license_number', $licencia)->exists()) {
                     $licencia = 'LIC-' . Str::upper(Str::random(10));
@@ -109,6 +122,7 @@
                 $conductor->ensureTaxiExists('offline');
             }
 
+            // Token Sanctum para autenticación vía API.
             $token = $usuario->createToken('api')->plainTextToken;
 
             return response()->json([
@@ -126,6 +140,13 @@
             ], 201);
         }
 
+        /**
+         * Inicia sesión y devuelve un token.
+         *
+         * Consideraciones:
+         * - Si la cuenta está deshabilitada se devuelve 403.
+         * - Si el usuario es conductor, debe estar aprobado para poder acceder.
+         */
         public function login(Request $solicitud) {
             $recaptcha = app(RecaptchaV3::class);
 
@@ -136,6 +157,7 @@
             ]);
 
             if ($recaptcha->isEnabled()) {
+                // Verifica el token con la acción esperada para reducir abuso/bots.
                 $recaptcha->verifyOrFail(
                     $validado['recaptcha_token'] ?? '',
                     (string) config('recaptcha.actions.login', 'login'),
@@ -146,6 +168,7 @@
             $usuario = User::where('email', $validado['email'])->first();
 
             if (!$usuario || !Hash::check($validado['password'], $usuario->password)) {
+
                 return response()->json([
                     'message' => 'Credenciales inválidas. Por favor verifica tu email y contraseña.',
                     'errors' => [
@@ -155,25 +178,28 @@
             }
 
             if (!empty($usuario->is_disabled)) {
+
                 return response()->json([
                     'message' => 'Tu cuenta está desactivada.',
                 ], 403);
             }
 
-            // Regla de negocio: un taxista debe estar aprobado por un admin.
             if (($usuario->role ?? null) === 'conductor') {
                 $usuario->loadMissing('conductor');
                 if (($usuario->conductor?->approval_status ?? null) !== 'approved') {
+
                     return response()->json([
                         'message' => 'No tienes permiso de taxista',
                     ], 403);
                 }
             }
 
+            // Revoca tokens anteriores para mantener una sola sesión API activa.
             $usuario->tokens()->delete();
 
             $token = $usuario->createToken('api')->plainTextToken;
 
+            // Mantiene sesión web si aplica (además del token API).
             auth()->login($usuario);
 
             return response()->json([
@@ -191,13 +217,17 @@
             ]);
         }
 
+        /**
+         * Devuelve el usuario autenticado.
+         */
         public function me(Request $solicitud) {
-
             return response()->json($solicitud->user());
         }
 
+        /**
+         * Cierra la sesión API eliminando el token actual.
+         */
         public function logout(Request $solicitud) {
-
             $token = $solicitud->user()->currentAccessToken();
             if ($token && $token instanceof \Laravel\Sanctum\PersonalAccessToken) {
                 $token->delete();

@@ -1,12 +1,9 @@
 <template>
-  <!-- Página de Inicio (Landing) -->
   <div class="min-h-screen bg-neutral-soft">
-    <!-- Barra de navegación superior (logo + enlaces) -->
     <BarraNavegacion />
 
-    <!-- Contenido principal; el enlace "Saltar al contenido" apunta aquí -->
     <main id="main-content">
-      <!-- Hero: propuesta de valor + CTA -->
+      <!-- Hero: CTA principal. Abre el modal de autenticación -->
       <section class="pt-20 bg-lanzarote-blue text-white">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div class="grid md:grid-cols-2 gap-12 items-center">
@@ -18,7 +15,10 @@
                 {{ t('home.hero.subtitle') }}
               </p>
               <div class="flex flex-wrap gap-4">
-                <!-- CTA: abre modal de autenticación para reservar -->
+                <!--
+                  CTA: no navega a otra ruta; simplemente abre el componente ModalAutenticacion.
+                  El propio modal gestiona login/registro.
+                -->
                 <button @click="showAuthModal = true" class="bg-lanzarote-yellow text-black px-8 py-3 rounded-lg font-semibold hover:bg-opacity-90 transition-all shadow-lg">
                   {{ t('home.hero.cta') }}
                 </button>
@@ -28,7 +28,7 @@
         </div>
       </section>
 
-    <!-- Sección: Cómo funciona -->
+    <!-- Sección educativa: pasos de cómo funciona la reserva -->
     <section id="como-funciona-section" class="py-20 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
@@ -40,7 +40,6 @@
           </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
-          <!-- Pasos (contenido estático definido en el script) -->
           <div v-for="paso in pasosReserva" :key="paso.numero" class="text-center relative">
             <div class="text-8xl font-bold text-neutral-volcanic/30 absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/4">
               {{ paso.numero }}
@@ -57,7 +56,7 @@
       </div>
     </section>
 
-    <!-- Sección: Municipios / teléfonos (enlaces tel:) -->
+  <!-- Sección informativa: teléfonos de radio-taxi por municipio -->
     <section id="municipios-section" class="py-20 bg-neutral-soft">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
@@ -78,7 +77,6 @@
               <div>
                 <span class="text-sm font-medium text-neutral-dark mb-2 block">{{ t('home.municipalities.radioTaxi') }}</span>
                 <div class="space-y-2">
-                  <!-- Se genera un enlace de llamada por cada teléfono del municipio -->
                   <a v-for="telefono in municipio.telefonos" :key="telefono" :href="`tel:${telefono.replace(/\s/g, '')}`" class="flex items-center space-x-2 text-lanzarote-blue hover:text-lanzarote-blue/80 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
@@ -93,7 +91,7 @@
       </div>
     </section>
 
-    <!-- Sección: Opiniones / testimonios -->
+  <!-- Sección de prueba social: testimonios (mock o desde props) -->
     <section id="testimonios-section" class="py-20 bg-lanzarote-yellow">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col items-center mb-16">
@@ -103,12 +101,10 @@
               <template v-for="i in 5">★</template>
             </div>
             <span class="text-neutral-dark font-medium ml-1">{{ t('home.reviews.count', { count: testimonios.length }) }}</span>
-            <!-- Logo externo de Google (reputación / reseñas) -->
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="h-5 ml-1">
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <!-- Tarjeta por testimonio (contenido definido en el script) -->
           <div v-for="testimonio in testimonios" :key="testimonio.nombre" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-fit">
             <div class="flex justify-between items-start mb-1">
               <h4 class="font-bold text-gray-900 text-[15px] leading-tight">{{ testimonio.nombre }}</h4>
@@ -140,10 +136,9 @@
       </div>
     </section>
 
-      <!-- Modal de autenticación (login/registro) -->
+      <!-- Modal global de autenticación (login/registro) -->
       <ModalAutenticacion v-model="showAuthModal" />
 
-      <!-- Footer: enlaces informativos + contacto + redes -->
       <footer id="contacto-footer" class="bg-lanzarote-blue text-white mt-16" role="contentinfo">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
           <div class="mb-12">
@@ -275,10 +270,10 @@ const props = defineProps({
   }
 })
 
-// Control de visibilidad del modal de autenticación
+// Controla la visibilidad del modal (v-model). Se abre desde el CTA del hero.
 const showAuthModal = ref(false)
 
-// Contenido estático: pasos explicativos del proceso de reserva
+// Pasos mostrados en “Cómo funciona”. Se recalculan con i18n (t) para que traduzcan.
 const pasosReserva = computed(() => ([
   {
     numero: '1',
@@ -297,7 +292,7 @@ const pasosReserva = computed(() => ([
   }
 ]))
 
-// Contenido estático: municipios y teléfonos de radio taxi
+// Lista de municipios y teléfonos. El texto descriptivo viene de i18n.
 const municipios = computed(() => ([
   {
     nombre: 'Arrecife',
@@ -336,6 +331,7 @@ const municipios = computed(() => ([
   }
 ]))
 
+// Testimonios de fallback (mock) para desarrollo o si no llegan opiniones desde backend.
 const testimoniosMock = [
   {
     nombre: 'Angie',
@@ -387,10 +383,10 @@ const testimoniosMock = [
   }
 ]
 
-// Contenido de testimonios (si llegan opiniones reales del servidor, se usan)
+// Si `props.opiniones` tiene contenido, se usa; si no, se muestran los mocks.
 const testimonios = ref((props.opiniones && props.opiniones.length > 0) ? props.opiniones : testimoniosMock)
 
-// Utilidad: scroll suave a una sección concreta
+// Helper de scroll (actualmente no se usa desde el template, pero sirve para anclas internas).
 const scrollToPasos = () => {
   const pasos = document.getElementById('como-funciona-section')
   if (pasos) {
@@ -398,10 +394,10 @@ const scrollToPasos = () => {
   }
 }
 
-// Año actual para el copyright del footer
 const currentYear = new Date().getFullYear()
 
-// Estructura de enlaces del footer (por bloques)
+// Estructura preparada para enlaces de footer. En este template se usan traducciones (t)
+// directamente, pero se conserva por si se decide renderizar el footer por configuración.
 const footerSections = {
   empresa: {
     title: 'Empresa',
@@ -440,14 +436,14 @@ const footerSections = {
   }
 }
 
-// Información de contacto (se muestra en el footer)
+// Datos de contacto visibles en el footer.
 const contactInfo = {
   email: 'info@lanzataxi.es',
   phone: '+34 928 123 456',
   address: 'Arrecife, Lanzarote'
 }
 
-// Utilidad genérica: scroll suave a un id de sección
+// Scroll genérico a una sección por id (útil para navegación de una sola página).
 const scrollToSection = (sectionId) => {
   const element = document.getElementById(sectionId)
   if (element) {

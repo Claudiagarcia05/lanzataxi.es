@@ -1,6 +1,18 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+/**
+ * Store de cartera (wallet).
+ *
+ * Gestiona saldo, transacciones y deuda pendiente del usuario.
+ * Endpoints esperados:
+ * - GET  `/api/wallet/balance`
+ * - GET  `/api/wallet/transactions`
+ * - GET  `/api/wallet/debts`
+ * - POST `/api/wallet/add`
+ * - POST `/api/wallet/withdraw`
+ * - POST `/api/wallet/use`
+ */
 export const useCarteraStore = defineStore('cartera', {
   state: () => ({
     saldo: 0,
@@ -18,6 +30,7 @@ export const useCarteraStore = defineStore('cartera', {
 
   actions: {
     async obtenerSaldo() {
+      // Recupera el saldo actual.
       try {
         const respuesta = await axios.get('/api/wallet/balance')
         this.saldo = parseFloat(respuesta.data.balance) || 0
@@ -27,6 +40,7 @@ export const useCarteraStore = defineStore('cartera', {
     },
 
     async obtenerResumenDeuda() {
+      // Recupera deuda pendiente agregada (si existe).
       try {
         const respuesta = await axios.get('/api/wallet/debts')
         this.deudaPendiente = parseFloat(respuesta.data.pending_debt) || 0
@@ -36,6 +50,7 @@ export const useCarteraStore = defineStore('cartera', {
     },
 
     async obtenerTransacciones() {
+      // Lista transacciones y normaliza `amount` a número.
       try {
         const respuesta = await axios.get('/api/wallet/transactions')
         this.transacciones = respuesta.data.map((transaccion) => ({
@@ -48,6 +63,7 @@ export const useCarteraStore = defineStore('cartera', {
     },
 
     async anadirFondos(monto) {
+      // Añade saldo a la cartera.
       this.cargando = true
       try {
         const respuesta = await axios.post('/api/wallet/add', { 
@@ -72,6 +88,7 @@ export const useCarteraStore = defineStore('cartera', {
     },
 
     async retirarFondos(monto) {
+      // Retira saldo (si el backend lo permite).
       try {
         const respuesta = await axios.post('/api/wallet/withdraw', { 
           amount: parseFloat(monto) 
@@ -93,6 +110,7 @@ export const useCarteraStore = defineStore('cartera', {
     },
 
     async usarFondos(monto, viajeId) {
+      // Usa fondos para un viaje concreto (p.ej. para pagar/cubrir deuda).
       try {
         const respuesta = await axios.post('/api/wallet/use', { 
           amount: parseFloat(monto), 

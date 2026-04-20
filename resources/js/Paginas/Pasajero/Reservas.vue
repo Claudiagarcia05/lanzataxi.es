@@ -1,14 +1,22 @@
 <template>
   <DisposicionPasajero>
-    <!-- Página del pasajero: historial de reservas y acceso a seguimiento en tiempo real -->
     <div class="max-w-7xl mx-auto">
+      <!--
+        Historial de reservas del pasajero.
+        - Muestra métricas (total, completados, gasto total).
+        - Permite cancelar viajes pendientes.
+        - Permite ir a seguimiento en viajes activos.
+        - Permite valorar viajes completados.
+        - Integra `ModalPago` para gestionar pagos pendientes si aplica.
+
+        Importante: algunas reglas (p.ej. si una cancelación genera cobro) se reflejan en UI,
+        pero el backend debe calcular y aplicar el cargo de forma definitiva.
+      -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-        <!-- Título de la sección -->
         <h1 class="text-3xl font-bold mb-2">{{ t('reservations.title') }}</h1>
         <p class="text-blue-100">{{ t('reservations.subtitle') }}</p>
       </div>
 
-      <!-- Tarjetas resumen (totales) -->
       <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-neutral-dark">{{ estadisticasViajes.total }}</p>
@@ -25,7 +33,6 @@
       </div>
 
       <div class="bg-white rounded-xl shadow-sm p-6">
-        <!-- Mensajes de estado (errores e información) -->
         <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
           <p class="text-sm font-medium text-red-500">{{ mensajeError }}</p>
         </div>
@@ -38,7 +45,6 @@
         </div>
 
         <div class="space-y-4">
-          <!-- Listado de viajes (filtrados y ordenados por fecha) -->
           <div v-for="viaje in viajesFiltrados" :key="viaje.id" class="border border-neutral-volcanic rounded-xl p-5 hover:shadow-md transition-shadow">
             <div class="flex flex-col md:flex-row md:items-start justify-between mb-4">
               <div>
@@ -52,7 +58,6 @@
             </div>
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-              <!-- Datos principales del viaje -->
               <div>
                 <p class="text-xs text-neutral-slate">{{ t('reservations.fields.price') }}</p>
                 <p class="text-lg font-bold text-lanzarote-blue">{{ viaje.price?.toFixed(2) }}€</p>
@@ -74,7 +79,6 @@
             </div>
 
             <div v-if="['completed', 'cancelled'].includes(viaje.estado)" class="border-t border-neutral-volcanic pt-4 mt-2">
-              <!-- Viaje finalizado/cancelado: se muestra estado del pago -->
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-2">
                   <span class="text-sm text-neutral-slate">{{ t('reservations.payment.label') }}</span>
@@ -104,7 +108,6 @@
             </div>
 
             <div v-else-if="viaje.estado === 'pendiente'" class="border-t border-neutral-volcanic pt-4 mt-2">
-              <!-- Viaje pendiente: permite cancelar la reserva -->
               <div class="flex justify-end">
                 <button @click="abrirConfirmacionCancelacion(viaje.id)" class="text-sm text-red-600 hover:text-red-800">
                   {{ t('reservations.cancel.button') }}
@@ -113,7 +116,6 @@
             </div>
 
             <div v-else-if="['accepted', 'in_progress'].includes(viaje.estado)" class="border-t border-neutral-volcanic pt-4 mt-2">
-              <!-- Viaje aceptado/en curso: acceso a seguimiento en tiempo real -->
               <div class="flex justify-end">
                 <button @click="irASeguimiento(viaje.id)" class="text-sm text-lanzarote-blue hover:text-lanzarote-yellow">
                   {{ t('reservations.tracking.button') }}
@@ -129,7 +131,6 @@
       </div>
     </div>
 
-    <!-- Modal de valoración (actualmente sin contenido visible en este archivo) -->
     <div v-if="mostrarModalValoracion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div class="bg-white rounded-2xl p-6 max-w-lg w-full">
         <div class="flex items-start justify-between gap-4 mb-4">
@@ -188,10 +189,8 @@
       </div>
     </div>
 
-    <!-- Modal de pago reutilizable -->
     <ModalPago :show="mostrarModalPago" :viaje="viajePago" @close="mostrarModalPago = false" @success="manejarPagoExitoso"/>
   </DisposicionPasajero>
-    <!-- Confirmación de cancelación (evita confirm/alert nativos) -->
     <div v-if="idViajeConfirmacionCancelacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
         <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('reservations.cancel.title') }}</h3>
@@ -234,11 +233,12 @@ const errorValoracion = ref('')
 const enviandoValoracion = ref(false)
 
 const totalGastado = computed(() => {
-  // Total gastado aproximado: suma viajes pagados menos deuda liquidada asociada
+  // Total gastado “neto”.
+  // - Suma viajes completados y cancelaciones cobrables.
+  // - Resta `debt_paid` si existe (deuda ya pagada/compensada).
   let total = 0;
   let deudaPagada = 0;
   viajeStore.viajesPasajero.forEach(t => {
-    // NOTA: una cancelación SIN aceptar (sin conductor asignado) no se cobra.
     const cancelacionCobrable = t.estado === 'cancelled' && t.conductorEntityId != null
 
     if (t.estado === 'completed' || cancelacionCobrable) {
@@ -251,7 +251,7 @@ const totalGastado = computed(() => {
 })
 
 const viajesFiltrados = computed(() => {
-  // Aplica el filtro seleccionado y ordena por fecha (más reciente primero)
+  // Filtro por estado + orden por fecha (más reciente primero).
   let viajes = [...viajeStore.viajesPasajero]
 
   if (filtroSeleccionado.value !== 'all') {
@@ -262,7 +262,7 @@ const viajesFiltrados = computed(() => {
 })
 
 const estadisticasViajes = computed(() => {
-  // Estadísticas rápidas para la cabecera
+  // Contadores para las tarjetas de resumen.
   const total = viajeStore.viajesPasajero.length
   const completados = viajeStore.viajesPasajero.filter(t => t.estado === 'completed').length
   const pendientes = viajeStore.viajesPasajero.filter(t => t.estado === 'pendiente').length
@@ -273,7 +273,7 @@ const estadisticasViajes = computed(() => {
 })
 
 const obtenerDistintivoEstado = (estado) => {
-  // Traduce estado a etiqueta + clases de estilo
+  // Mapea estado → etiqueta + clases para la “pill” de UI.
   const badges = {
     'pendiente': { class: 'bg-yellow-100 text-yellow-800', label: t('reservations.status.pending') },
     'accepted': { class: 'bg-blue-100 text-blue-800', label: t('reservations.status.accepted') },
@@ -286,7 +286,7 @@ const obtenerDistintivoEstado = (estado) => {
 }
 
 const abrirConfirmacionCancelacion = async (viajeId) => {
-  // Abre el modal de confirmación; no cancela directamente
+  // Abre el modal de confirmación y deja preparado el viaje seleccionado.
   mensajeError.value = ''
   mensajeInfo.value = ''
   idViajeConfirmacionCancelacion.value = viajeId
@@ -296,14 +296,18 @@ const idViajeConfirmacionCancelacion = ref(null)
 const viajeConfirmacionCancelacion = computed(() => {
   const id = idViajeConfirmacionCancelacion.value
   if (!id) return null
+  
   return viajeStore.viajesPasajero.find(v => v.id === id) || null
 })
 
 const textoConfirmacionCancelacion = computed(() => {
+  // Texto dinámico:
+  // - Si aún no se asignó conductor, la cancelación no debería generar cobro.
+  // - Si ya hubo asignación, puede ser cobrable (según reglas del backend).
   const viaje = viajeConfirmacionCancelacion.value
-  // Si está pendiente y no tiene conductor asignado, NO se cobra.
   const esSinCobro = !viaje || (viaje.estado === 'pendiente' && viaje.conductorEntityId == null)
   if (esSinCobro) {
+
     return t('reservations.cancel.textNoCharge')
   }
 
@@ -311,12 +315,17 @@ const textoConfirmacionCancelacion = computed(() => {
 })
 
 const obtenerEstadoPago = (viaje) => {
-  // Cancelación sin aceptar (sin conductor asignado) => no se cobra.
+  // Estado de pago que se muestra en UI.
+  // - Cancelación sin conductor asignado: “gratis” (sin cobro).
+  // - Pago marcado como paid: “pagado”.
+  // - Resto: “pendiente” (puede requerir ModalPago según backend).
   if (viaje?.estado === 'cancelled' && viaje?.conductorEntityId == null) {
+
     return { tipo: 'free' }
   }
 
   if (viaje?.pago && viaje.pago.status === 'paid') {
+
     return { tipo: 'paid' }
   }
 
@@ -324,7 +333,7 @@ const obtenerEstadoPago = (viaje) => {
 }
 
 const confirmarCancelacionViaje = async () => {
-  // Confirma la cancelación y refresca cartera/deuda
+  // Cancela el viaje y refresca saldo/deuda porque una cancelación puede generar cargo/deuda.
   const viajeId = idViajeConfirmacionCancelacion.value
   await viajeStore.cancelarViaje(viajeId)
   await carteraStore.obtenerSaldo()
@@ -345,6 +354,7 @@ const abrirModalPago = (viaje) => {
 }
 
 const manejarPagoExitoso = async (pagoData) => {
+  // Tras un pago, refrescamos viajes para que el estado se refleje correctamente.
   console.log('Pago exitoso:', pagoData)
   await viajeStore.obtenerViajes()
   mensajeInfo.value = t('reservations.payment.success')
@@ -352,6 +362,7 @@ const manejarPagoExitoso = async (pagoData) => {
 }
 
 const abrirModalValoracion = (viaje) => {
+  // Abre el modal para puntuar/comentar un viaje completado.
   mensajeError.value = ''
   mensajeInfo.value = ''
   errorValoracion.value = ''
@@ -371,6 +382,7 @@ const cerrarModalValoracion = () => {
 }
 
 const enviarValoracion = async () => {
+  // Guardado de valoración. Validamos rango 1..5 en frontend para UX.
   if (!viajeParaValorar.value) return
 
   errorValoracion.value = ''
@@ -378,6 +390,7 @@ const enviarValoracion = async () => {
   const rating = Number(valoracionSeleccionada.value)
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     errorValoracion.value = t('reservations.rate.errors.invalidScore')
+
     return
   }
 
@@ -411,7 +424,8 @@ const formatearFecha = (cadenaFecha) => {
 }
 
 const irASeguimiento = (viajeId) => {
-  // Navegación al detalle de seguimiento
+  // Navegación a la página de seguimiento del viaje.
+  // (Se usa location.href para asegurar carga directa de la ruta con parámetro.)
   window.location.href = `/pasajero/seguimiento/${viajeId}`
 }
 

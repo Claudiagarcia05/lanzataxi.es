@@ -1,21 +1,8 @@
 <template>
   <div class="min-h-screen bg-neutral-soft">
-    <div
-      v-if="menuMovilAbierto"
-      class="fixed inset-0 z-30 bg-neutral-dark/30 md:hidden"
-      @click="menuMovilAbierto = false"
-      aria-hidden="true"
-    />
+    <div v-if="menuMovilAbierto" class="fixed inset-0 z-30 bg-neutral-dark/30 md:hidden" @click="menuMovilAbierto = false" aria-hidden="true"/>
 
-    <aside
-      :class="[
-        'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg',
-        'w-64 max-w-[85vw] md:max-w-none',
-        barraLateralAbierta ? 'md:w-64' : 'md:w-20',
-        menuMovilAbierto ? 'translate-x-0' : '-translate-x-full',
-        'md:translate-x-0',
-      ]"
-    >
+    <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', 'w-64 max-w-[85vw] md:max-w-none', barraLateralAbierta ? 'md:w-64' : 'md:w-20', menuMovilAbierto ? 'translate-x-0' : '-translate-x-full', 'md:translate-x-0',]">
       <div class="relative flex items-center p-4 border-b border-neutral-volcanic h-20">
         <div v-if="barraLateralAbierta" class="flex items-center space-x-2 flex-1 min-w-0">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-auto object-contain">
@@ -25,12 +12,7 @@
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-10 object-contain">
         </div>
 
-        <button
-          class="ml-auto p-2 rounded-lg hover:bg-neutral-soft transition-colors md:hidden"
-          @click="menuMovilAbierto = false"
-          :aria-label="t('dashboard.pendingDrivers.close')"
-          type="button"
-        >
+        <button class="ml-auto p-2 rounded-lg hover:bg-neutral-soft transition-colors md:hidden" @click="menuMovilAbierto = false" :aria-label="t('dashboard.pendingDrivers.close')" type="button">
           <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
         </button>
       </div>
@@ -56,10 +38,7 @@
       <nav class="p-4">
         <ul class="space-y-1">
           <li v-for="item in elementosMenu" :key="item.label">
-            <button
-              @click="navegarA(item.path)"
-              :class="[ 'flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark hover:bg-neutral-soft' ]"
-            >
+            <button @click="navegarA(item.path)" :class="[ 'flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark hover:bg-neutral-soft' ]">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
               </svg>
@@ -70,9 +49,7 @@
       </nav>
 
       <div v-if="authStore.isconductor && barraLateralAbierta" class="px-4 mt-4">
-        <button
-          :class="[ 'w-full py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2', ]"
-        >
+        <button :class="[ 'w-full py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2', ]">
           <span>🟢</span>
         </button>
       </div>
@@ -95,12 +72,7 @@
             <p class="text-sm text-neutral-slate">{{ fechaActualFormateada }}</p>
           </div>
 
-          <button
-            class="p-2 rounded-lg hover:bg-neutral-soft md:hidden"
-            type="button"
-            @click="menuMovilAbierto = true"
-            :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')"
-          >
+          <button class="p-2 rounded-lg hover:bg-neutral-soft md:hidden" type="button" @click="menuMovilAbierto = true" :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')">
             <svg class="w-6 h-6 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
             </svg>
@@ -151,10 +123,7 @@
     </div>
   </div>
 
-  <div
-    v-if="authStore.isAdmin && panelPendientesAbierto && adminStore.conductoresPendientes.length > 0"
-    class="fixed top-20 right-2 w-[calc(100vw-1rem)] max-w-md max-h-[calc(100vh-6rem)] overflow-auto bg-white rounded-2xl shadow-sm border border-neutral-volcanic z-40 md:top-24 md:right-6 md:w-96 md:max-h-[calc(100vh-7rem)]"
-  >
+  <div v-if="authStore.isAdmin && panelPendientesAbierto && adminStore.conductoresPendientes.length > 0" class="fixed top-20 right-2 w-[calc(100vw-1rem)] max-w-md max-h-[calc(100vh-6rem)] overflow-auto bg-white rounded-2xl shadow-sm border border-neutral-volcanic z-40 md:top-24 md:right-6 md:w-96 md:max-h-[calc(100vh-7rem)]">
     <div class="p-4 border-b border-neutral-volcanic flex items-center justify-between">
       <h3 class="font-semibold text-neutral-dark">
         {{ t('dashboard.pendingDrivers.title') }} ({{ adminStore.conductoresPendientes.length }})
@@ -165,11 +134,7 @@
     </div>
 
     <div class="p-4 space-y-3">
-      <div
-        v-for="solicitud in adminStore.conductoresPendientes"
-        :key="solicitud.id"
-        class="bg-neutral-soft rounded-xl p-4 border border-neutral-volcanic"
-      >
+      <div v-for="solicitud in adminStore.conductoresPendientes" :key="solicitud.id" class="bg-neutral-soft rounded-xl p-4 border border-neutral-volcanic">
         <div class="flex items-start justify-between gap-3">
           <div class="min-w-0">
             <p class="font-semibold text-neutral-dark truncate">{{ solicitud.name }}</p>
@@ -202,6 +167,21 @@ import { useAdminStore } from '../Almacenes/almacenAdministrador.js'
 import { router as inertiaRouter, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 
+/**
+ * Disposición (layout) principal del panel.
+ *
+ * Se usa como “marco” común para el dashboard (pasajero, conductor y admin):
+ * - Sidebar responsive (desktop colapsable + overlay móvil)
+ * - Header con fecha formateada según `vue-i18n`
+ * - Slot principal para el contenido de cada vista
+ * - Notificaciones (en admin: panel de conductores pendientes)
+ *
+ * Importante:
+ * - Este layout inicializa/consulta datos en `onMounted` dependiendo del rol.
+ * - Para admin se activa un sondeo (`setInterval`) de conductores pendientes.
+ * - Aseguramos limpiar el intervalo en `onUnmounted` para evitar leaks.
+ */
+
 const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const conductorStore = useConductorStore()
@@ -222,10 +202,12 @@ const notificaciones = ref([
 ])
 onMounted(() => {
   ;(async () => {
+    // Garantiza que el store de auth tenga usuario/rol antes de cargar datos.
     if (!authStore.inicializado || !authStore.usuario) {
       await authStore.verificarAutenticacion()
     }
 
+    // Carga inicial específica por rol.
     if (authStore.ispasajero) {
       viajeStore.obtenerViajes()
     } else if (authStore.isconductor) {
@@ -234,6 +216,7 @@ onMounted(() => {
     } else if (authStore.isAdmin) {
       adminStore.obtenerTodosLosDatos()
 
+      // Sondeo de “conductores pendientes”: refresca la lista periódicamente.
       idIntervaloSondeoPendientes = setInterval(() => {
         adminStore.obtenerConductoresPendientes({ abrirModalSiHayNuevos: false })
       }, 15000)
@@ -246,7 +229,7 @@ onUnmounted(() => {
 })
 
 const cerrarSesion = async () => {
-  // Eliminado control de estado en línea para conductor (excepto Mi Perfil)
+  // Cierra sesión en el store y vuelve a la landing.
   authStore.cerrarSesion()
   inertiaRouter.visit('/')
 }
@@ -256,13 +239,16 @@ const alternarBarraLateral = () => {
 }
 
 const rutaActual = computed(() => {
+  // Normaliza el path actual (sin query) para poder marcar el menú activo.
   const url = page.url || (typeof window !== 'undefined' ? window.location.pathname : '/')
+
   return String(url).split('?')[0]
 })
 
 const localeFecha = computed(() => (String(locale.value || 'es').startsWith('en') ? 'en-GB' : 'es-ES'))
 
 const fechaActualFormateada = computed(() => {
+
   return new Date().toLocaleDateString(localeFecha.value, {
     weekday: 'long',
     year: 'numeric',
@@ -272,6 +258,7 @@ const fechaActualFormateada = computed(() => {
 })
 
 const obtenerTextoRolUsuario = () => {
+  // Texto del rol usando i18n.
   switch(authStore.usuario?.role) {
     case 'pasajero': return t('dashboard.roles.passenger')
     case 'conductor': return t('dashboard.roles.driver')
@@ -281,6 +268,7 @@ const obtenerTextoRolUsuario = () => {
 }
 
 const obtenerTituloPanel = () => {
+  // Título del panel. Prioriza flags del store y mantiene compatibilidad con rutas legacy.
   if (authStore.isAdmin) return t('dashboard.panels.admin')
   if (authStore.isconductor) return t('dashboard.panels.driver')
   if (authStore.ispasajero) return t('dashboard.panels.passenger')
@@ -292,27 +280,31 @@ const obtenerTituloPanel = () => {
 }
 
 const notificacionesNoLeidas = computed(() => {
-  
+  // Notificaciones mock (estado local) para UI.
   return notificaciones.value.filter(n => !n.read).length
 })
 
 const marcarComoLeida = (id) => {
+  // Marca en memoria como leída (no persiste en backend).
   const notif = notificaciones.value.find(n => n.id === id)
   if (notif) notif.read = true
 }
 
 const navegarA = (path) => {
+  // Navega con Inertia y re-expande el menú si estaba colapsado.
   inertiaRouter.visit(path)
   if (!barraLateralAbierta.value) alternarBarraLateral()
 }
 
 const elementosMenu = computed(() => {
+  // Dependemos de `locale` para recalcular labels al cambiar idioma.
   locale.value
 
   const inicio = {
     label: t('dashboard.menu.home'),
     icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
     path: authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard',
+    // Incluye ruta legacy `/administradir/home`.
     activo: rutaActual.value === (authStore.ispasajero ? '/dashboard' : authStore.isconductor ? '/conductor/dashboard' : '/admin/dashboard') || rutaActual.value === '/administradir/home'
   }
 

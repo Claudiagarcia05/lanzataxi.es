@@ -14,7 +14,13 @@
     use Inertia\Inertia;
     use Inertia\Response;
 
+    /**
+     * Restablecimiento de contraseña (pantalla y acción).
+     */
     class NewPasswordController extends Controller {
+        /**
+         * Muestra el formulario de reset (requiere token en la URL).
+         */
         public function create(Request $solicitud): Response {
 
             return Inertia::render('Auth/ResetPassword', [
@@ -24,9 +30,10 @@
         }
 
         /**
-         * Handle an incoming new password request.
+         * Procesa el reseteo de contraseña.
          *
-         * @throws \Illuminate\Validation\ValidationException
+         * Usa el broker de passwords de Laravel, que valida token/email y ejecuta
+         * el closure para persistir la nueva contraseña.
          */
         public function store(Request $solicitud): RedirectResponse {
             $solicitud->validate([
@@ -38,11 +45,13 @@
             $estado = Password::reset(
                 $solicitud->only('email', 'password', 'password_confirmation', 'token'),
                 function ($usuario) use ($solicitud) {
+                    // `forceFill` evita problemas con atributos fillable/guarded.
                     $usuario->forceFill([
                         'password' => Hash::make($solicitud->password),
                         'remember_token' => Str::random(60),
                     ])->save();
 
+                    // Dispara evento estándar (auditoría/listeners).
                     event(new PasswordReset($usuario));
                 }
             );

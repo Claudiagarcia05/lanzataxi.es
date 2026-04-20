@@ -1,6 +1,13 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+/**
+ * Normaliza rutas/URLs de avatar.
+ *
+ * En la app pueden venir distintos formatos desde backend o desde storage
+ * (absoluto, relativo, /storage, etc.). Esta función intenta unificar para
+ * que el frontend renderice de forma consistente.
+ */
 const normalizarUrlAvatar = (avatar) => {
     if (typeof avatar !== 'string') return avatar
 
@@ -18,6 +25,9 @@ const normalizarUrlAvatar = (avatar) => {
     return avatarRecortado
 }
 
+/**
+ * Normaliza el objeto usuario para garantizar propiedades usadas por el frontend.
+ */
 const normalizarUsuario = (usuario) => {
     if (!usuario || typeof usuario !== 'object') return usuario
 
@@ -29,6 +39,16 @@ const normalizarUsuario = (usuario) => {
     }
 }
 
+/**
+ * Store de autenticación.
+ *
+ * Responsabilidades:
+ * - login/registro vía API (`/api/login`, `/api/register`)
+ * - persistencia del token (localStorage + cookie)
+ * - sincronización del usuario (`/api/me`)
+ *
+ * Nota: se configura el header global de axios `Authorization: Bearer <token>`.
+ */
 export const useAuthStore = defineStore('auth', {
     state: () => ({
         usuario: null,
@@ -49,6 +69,7 @@ export const useAuthStore = defineStore('auth', {
 
     actions: {
         async iniciarSesion(credenciales) {
+            // Inicia sesión contra la API. Si va bien, guarda token/usuario.
             this.cargando = true
             this.error = null
 
@@ -66,6 +87,7 @@ export const useAuthStore = defineStore('auth', {
                 fechaExpiracion.setDate(fechaExpiracion.getDate() + 7)
                 document.cookie = `token=${token}; path=/; SameSite=Lax; expires=${fechaExpiracion.toUTCString()}`
 
+                // Header por defecto para el resto de requests.
                 axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
                 return { success: true }
@@ -74,6 +96,7 @@ export const useAuthStore = defineStore('auth', {
                 const mensaje = errorCapturado.response?.data?.message || 'No se pudo iniciar sesión'
 
                 if (estado === 401) {
+                    // Si el token/credenciales no son válidos, limpiamos estado local.
                     this.usuario = null
                     this.token = null
                     localStorage.removeItem('token')
@@ -90,6 +113,7 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async registrar(datosUsuario) {
+            // Registro vía API. Devuelve token y usuario.
             this.cargando = true
             this.error = null
 
@@ -122,6 +146,8 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async cerrarSesion() {
+            // Intenta cerrar sesión tanto en web (`/logout`) como en API (`/api/logout`).
+            // Se ignoran errores para asegurar limpieza del estado local.
             try {
                 await axios.post('/logout')
             } catch {
@@ -144,6 +170,8 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async verificarAutenticacion() {
+            // Sincroniza token/usuario desde localStorage o cookie.
+            // Si no hay nada local, intenta descubrir sesión válida vía `/api/me`.
             const obtenerCookie = (nombreCookie) => {
                 const valorCookie = `; ${document.cookie}`
                 const partesCookie = valorCookie.split(`; ${nombreCookie}=`)
@@ -157,6 +185,7 @@ export const useAuthStore = defineStore('auth', {
 
             if (!token && !cadenaUsuario) {
                 try {
+                    // Caso: sesión server-side válida aunque no tengamos token en local.
                     const response = await axios.get('/api/me')
                     const usuarioNormalizado = normalizarUsuario(response.data)
                     this.usuario = usuarioNormalizado
@@ -202,6 +231,7 @@ export const useAuthStore = defineStore('auth', {
                     }
                 } else {
                     try {
+                        // Si tenemos usuario en localStorage, lo reutilizamos para arrancar rápido.
                         const usuario = JSON.parse(cadenaUsuario)
                         const usuarioNormalizado = normalizarUsuario(usuario)
                         this.usuario = usuarioNormalizado
@@ -229,6 +259,7 @@ export const useAuthStore = defineStore('auth', {
         },
 
         obtenerRutaDashboard() {
+            // Determina la ruta post-login según rol.
             if (!this.usuario) return '/'
             
             switch (this.usuario.role) {
@@ -246,6 +277,7 @@ export const useAuthStore = defineStore('auth', {
         },
 
         async sincronizarUsuario() {
+            // Vuelve a pedir el usuario al servidor para refrescar datos (avatar/phone/rol...).
             if (!this.token) return false
 
             try {

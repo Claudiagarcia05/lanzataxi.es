@@ -60,11 +60,7 @@
 
       <div class="p-6">
         <div class="max-h-56 overflow-y-auto border border-neutral-volcanic rounded-lg">
-          <div
-            v-for="a in administradores"
-            :key="a.id"
-            class="flex items-center justify-between gap-3 px-4 py-3 border-b border-neutral-volcanic last:border-b-0"
-          >
+          <div v-for="a in administradores" :key="a.id" class="flex items-center justify-between gap-3 px-4 py-3 border-b border-neutral-volcanic last:border-b-0">
             <div class="min-w-0">
               <p class="text-sm font-medium text-neutral-dark truncate">{{ a.name }}</p>
               <p class="text-xs text-neutral-slate truncate">{{ a.email }}</p>
@@ -89,6 +85,9 @@ import { computed, onMounted, ref } from 'vue'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 
+// Página de Administración: alta de nuevos administradores y listado.
+// Nota: las validaciones aquí son para UX; el backend debe reforzarlas siempre.
+
 const adminStore = useAdminStore()
 
 const cargando = ref(false)
@@ -105,9 +104,9 @@ const form = ref({
 
 onMounted(async () => {
   try {
+    // Cargamos usuarios para poder filtrar administradores en el listado.
     await adminStore.obtenerUsuarios()
   } catch (_) {
-    // Silencioso: si falla la carga, el alta sigue funcionando.
   }
 })
 
@@ -127,24 +126,30 @@ const crear = async () => {
   mensajeError.value = ''
   mensajeInfo.value = ''
 
+  // Regla de negocio/seguridad: los admins deben usar correo corporativo.
   const correo = (form.value.email || '').trim().toLowerCase()
   if (!correo.endsWith('@admin.es')) {
     mensajeError.value = 'El email del administrador debe terminar en @admin.es.'
+
     return
   }
 
+  // Validaciones mínimas en cliente para evitar requests innecesarias.
   if (!form.value.password || form.value.password.length < 6) {
     mensajeError.value = 'La contraseña debe tener al menos 6 caracteres.'
+
     return
   }
 
   if (form.value.password !== form.value.password_confirmation) {
     mensajeError.value = 'Las contraseñas no coinciden.'
+    
     return
   }
 
   cargando.value = true
   try {
+    // Delegamos en el store la llamada API y actualización de estado.
     await adminStore.crearAdmin({
       name: form.value.name?.trim(),
       email: form.value.email?.trim(),
@@ -157,6 +162,7 @@ const crear = async () => {
     mensajeInfo.value = 'Administrador creado correctamente.'
     setTimeout(() => { mensajeInfo.value = '' }, 4000)
   } catch (e) {
+    // Priorizamos mensajes del backend (message / errors) y caemos a un genérico.
     const msg = e.response?.data?.message
       || Object.values(e.response?.data?.errors || {})?.flat()?.[0]
       || 'No se pudo crear el administrador.'

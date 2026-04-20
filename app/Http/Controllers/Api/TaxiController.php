@@ -6,18 +6,25 @@
     use App\Models\Taxi;
     use Illuminate\Http\Request;
 
+    /**
+     * CRUD y consultas de taxis.
+     */
     class TaxiController extends Controller {
-        private function normalizePlate(?string $plate): ?string
-        {
+        /**
+         * Normaliza matrícula a formato español típico: `1234 ABC`.
+         *
+         * - Elimina separadores y caracteres no alfanuméricos.
+         * - Inserta espacio si encaja con el patrón 4 dígitos + 3 letras.
+         */
+        private function normalizePlate(?string $plate): ?string {
             if ($plate === null) return null;
 
             $raw = strtoupper(trim($plate));
-            // Quitar espacios y guiones para permitir entradas tipo "1234ABC" o "1234-ABC".
             $compact = preg_replace('/[^A-Z0-9]/', '', $raw);
             if (!is_string($compact)) $compact = '';
 
-            // Formato esperado: 4 números + 3 letras
             if (preg_match('/^(\d{4})([A-Z]{3})$/', $compact, $m)) {
+
                 return $m[1] . ' ' . $m[2];
             }
 
@@ -25,10 +32,13 @@
         }
 
         public function index() {
-            
+            // Lista para administración/gestión.
             return response()->json(Taxi::with('conductor.user:id,name')->latest()->get());
         }
 
+        /**
+         * Crea un taxi (normaliza matrícula antes de validar/guardar).
+         */
         public function store(Request $solicitud) {
             if ($solicitud->has('plate')) {
                 $solicitud->merge([
@@ -50,11 +60,17 @@
             return response()->json($taxi, 201);
         }
 
+        /**
+         * Muestra un taxi.
+         */
         public function show(Taxi $taxi) {
 
             return response()->json($taxi->load('conductor.user:id,name,email,phone'));
         }
 
+        /**
+         * Actualiza un taxi (normaliza matrícula si viene incluida).
+         */
         public function update(Request $solicitud, Taxi $taxi) {
             if ($solicitud->has('plate')) {
                 $solicitud->merge([
@@ -76,12 +92,20 @@
             return response()->json($taxi);
         }
 
+        /**
+         * Elimina un taxi.
+         */
         public function destroy(Taxi $taxi) {
             $taxi->delete();
 
             return response()->json(['message' => 'Taxi deleted']);
         }
 
+        /**
+         * Lista taxis disponibles.
+         *
+         * Nota: filtra también por existencia de conductor->user.
+         */
         public function available() {
             try {
                 $taxis = Taxi::with('conductor.user:id,name')

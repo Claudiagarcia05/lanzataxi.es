@@ -1,6 +1,14 @@
 <?php
 
+    /**
+     * Configuración de colas (jobs).
+     *
+     * La app usa por defecto `database` (requiere tablas jobs/failed_jobs).
+     * Para workers en producción: configurar supervisor o equivalente.
+     */
+
     return [
+        // Conexión de cola por defecto.
         'default' => env('QUEUE_CONNECTION', 'database'),
 
         'connections' => [
@@ -13,7 +21,9 @@
                 'connection' => env('DB_QUEUE_CONNECTION'),
                 'table' => env('DB_QUEUE_TABLE', 'jobs'),
                 'queue' => env('DB_QUEUE', 'default'),
+                // Segundos antes de reintentar un job que no ha terminado.
                 'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 90),
+                // Si true, sólo despacha jobs tras commit de la transacción.
                 'after_commit' => false,
             ],
 
@@ -69,6 +79,7 @@
         ],
 
         'failed' => [
+            // Dónde se registran jobs fallidos.
             'driver' => env('QUEUE_FAILED_DRIVER', 'database-uuids'),
             'database' => env('DB_CONNECTION', 'sqlite'),
             'table' => 'failed_jobs',

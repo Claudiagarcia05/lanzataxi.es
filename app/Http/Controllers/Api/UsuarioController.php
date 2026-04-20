@@ -9,7 +9,16 @@
     use Illuminate\Support\Facades\Storage;
     use Illuminate\Validation\Rules\Password;
 
+    /**
+     * Perfil del usuario (datos, avatar, contraseña, preferencias).
+     */
     class UsuarioController extends Controller {
+        /**
+         * Actualiza campos del perfil.
+         *
+         * Implementación: reglas de validación dinámicas basadas en qué campos llegan
+         * en la petición (evita exigir campos no enviados).
+         */
         public function updateProfile(Request $solicitud) {
             $usuario = $solicitud->user();
 
@@ -48,6 +57,7 @@
 
             if ($solicitud->hasFile('avatar')) {
                 if ($usuario->avatar) {
+                    // Limpieza del avatar anterior para no dejar basura en storage.
                     Storage::disk('public')->delete($usuario->avatar);
                 }
                 
@@ -70,6 +80,11 @@
             ]);
         }
 
+        /**
+         * Sube avatar.
+         *
+         * Incluye checks explícitos de mime/tamaño para respuestas más claras.
+         */
         public function uploadAvatar(Request $solicitud) {
             if (!$solicitud->hasFile('avatar')) {
 
@@ -116,6 +131,7 @@
             $usuario = $solicitud->user();
 
             if ($usuario->avatar && Storage::disk('public')->exists($usuario->avatar)) {
+                // Borra el anterior si existe.
                 Storage::disk('public')->delete($usuario->avatar);
             }
 
@@ -130,6 +146,9 @@
             ]);
         }
 
+        /**
+         * Actualiza la contraseña del usuario.
+         */
         public function updatePassword(Request $solicitud) {
             $validado = $solicitud->validate([
                 'new_password' => ['required', 'confirmed', Password::min(8)],
@@ -147,6 +166,11 @@
             ]);
         }
 
+        /**
+         * Actualiza preferencias del perfil de pasajero.
+         *
+         * Nota: se guardan como JSON string.
+         */
         public function updatePreferences(Request $solicitud) {
             $validado = $solicitud->validate([
                 'preferences' => 'required|array',
@@ -170,6 +194,11 @@
             ]);
         }
 
+        /**
+         * Elimina la cuenta del usuario autenticado.
+         *
+         * Nota: borra avatar del storage público si existía.
+         */
         public function deleteAccount(Request $solicitud) {
             $usuario = $solicitud->user();
             

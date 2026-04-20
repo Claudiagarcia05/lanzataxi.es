@@ -1,5 +1,11 @@
 <?php
 
+    /**
+     * Servicios de terceros.
+     *
+     * Llaves/tokens se cargan desde `.env` para no versionar secretos.
+     */
+
     return [
         'postmark' => [
             'key' => env('POSTMARK_API_KEY'),

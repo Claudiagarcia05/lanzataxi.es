@@ -1,6 +1,14 @@
 <?php
 
+    /**
+     * Configuración de correo.
+     *
+     * Define el mailer por defecto y los transportes disponibles.
+     * En local se suele usar `log` o `array` para no enviar emails reales.
+     */
+
     return [
+        // Mailer por defecto.
         'default' => env('MAIL_MAILER', 'log'),
 
         'mailers' => [
@@ -62,6 +70,7 @@
         ],
 
         'from' => [
+            // Remitente por defecto (si el Mailable no lo especifica).
             'address' => env('MAIL_FROM_ADDRESS', 'hello@example.com'),
             'name' => env('MAIL_FROM_NAME', 'Example'),
         ],

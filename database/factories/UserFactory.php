@@ -1,46 +1,50 @@
 <?php
 
-namespace Database\Factories;
+    namespace Database\Factories;
 
-use Illuminate\Database\Eloquent\Factories\Factory;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Str;
-
-/**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\User>
- */
-class UserFactory extends Factory
-{
-    /**
-     * The current password being used by the factory.
-     */
-    protected static ?string $password;
+    use Illuminate\Database\Eloquent\Factories\Factory;
+    use Illuminate\Support\Facades\Hash;
+    use Illuminate\Support\Str;
 
     /**
-     * Define the model's default state.
+     * Factory de usuarios.
      *
-     * @return array<string, mixed>
+     * Genera usuarios válidos para tests/seed con:
+     * - email verificado por defecto
+     * - contraseña conocida ("password") hasheada una sola vez (cacheada)
+     * - rol por defecto `pasajero`
      */
-    public function definition(): array
-    {
-        return [
-            'name' => fake()->name(),
-            'email' => fake()->unique()->safeEmail(),
-            'email_verified_at' => now(),
-            'password' => static::$password ??= Hash::make('password'),
-            'remember_token' => Str::random(10),
-            'role' => 'pasajero',
-        ];
-    }
+    class UserFactory extends Factory {
+        /**
+         * Cachea el hash para no recalcularlo por cada usuario generado.
+         */
+        protected static ?string $password;
 
-    /**
-     * Indicate that the model's email address should be unverified.
-     */
-    public function unverified(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'email_verified_at' => null,
-        ]);
-    }
-}
+        /**
+         * Valores por defecto del usuario.
+         */
+        public function definition(): array {
 
+            return [
+                'name' => fake()->name(),
+                'email' => fake()->unique()->safeEmail(),
+                // Para tests suele convenir partir con email verificado.
+                'email_verified_at' => now(),
+                // NOTA: "password" es una contraseña de desarrollo/tests.
+                'password' => static::$password ??= Hash::make('password'),
+                'remember_token' => Str::random(10),
+                // Rol por defecto. Otros factories pueden sobreescribirlo con state().
+                'role' => 'pasajero',
+            ];
+        }
+
+        /**
+         * Estado: usuario sin email verificado.
+         */
+        public function unverified(): static {
+
+            return $this->state(fn (array $attributes) => [
+                'email_verified_at' => null,
+            ]);
+        }
+    }

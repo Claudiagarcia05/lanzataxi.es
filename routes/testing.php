@@ -1,17 +1,20 @@
 <?php
 
-    // Rutas de testing (solo para desarrollo / diagnóstico).
-    // Recomendación: NO exponer en producción.
+    /*
+    |--------------------------------------------------------------------------
+    | Testing / Diagnostic Routes
+    |--------------------------------------------------------------------------
+    | Rutas de prueba para facilitar validaciones manuales durante desarrollo.
+    | IMPORTANTE: en producción conviene protegerlas (por entorno, IP, auth o
+    | deshabilitarlas) porque pueden crear usuarios y emitir tokens.
+    */
 
     use App\Http\Controllers\AuthSessionController;
     use App\Models\User;
     use Illuminate\Support\Facades\Route;
 
-    // Prueba de flujo de login:
-    // - Crea un usuario de test
-    // - Genera un token Sanctum
-    // - Devuelve una URL para establecer sesión web con ese token
     Route::get('/test-login-flow', function () {
+        // Crea/rehace un usuario de prueba y devuelve un token + URL para establecer sesión.
         User::where('email', 'test@test.com')->delete();
         
         $usuario = User::create([
@@ -28,6 +31,7 @@
             'session_login_url' => "/auth/session-login?token=" . urlencode($token),
             'user_id' => $usuario->id,
             'instructions' => [
+                // Instrucciones pensadas para tests manuales en navegador.
                 '1. Navigate to session_login_url in browser',
                 '2. Check if you land on /dashboard/home or /login',
                 '3. Check browser console for logs'
@@ -35,9 +39,8 @@
         ]);
     });
 
-    // Prueba rápida para inspeccionar la sesión actual
     Route::get('/test-check-session', function () {
-        
+        // Devuelve información útil para depurar si la sesión está establecida.
         return response()->json([
             'authenticated' => auth()->check(),
             'user' => auth()->user() ? [

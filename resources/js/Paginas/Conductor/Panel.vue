@@ -1,6 +1,13 @@
 ﻿<template>
   <DisposicionConductor>
     <div class="max-w-7xl mx-auto">
+      <!--
+        Panel principal del conductor.
+        - Muestra estadísticas del día.
+        - Presenta solicitudes pendientes (ofertas) cuando el conductor está libre.
+        - Permite aceptar/iniciar/completar viajes.
+        - Incluye un modal con mapa para seguimiento (origen/destino + ubicación del taxi).
+      -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <h1 class="text-3xl font-bold mb-2">{{ t('driver.panel.title') }}</h1>
         <p class="text-blue-100">{{ t('driver.panel.subtitle') }}</p>
@@ -19,6 +26,10 @@
         </div>
       </div>
 
+    <!--
+      Bandeja flotante de solicitudes:
+      sólo se enseña si el conductor NO está ocupado, para evitar aceptar varias a la vez.
+    -->
     <div v-if="!estaOcupado && solicitudesPendientes.length > 0" class="fixed top-24 right-6 w-96 max-h-[calc(100vh-7rem)] overflow-auto bg-white rounded-2xl shadow-sm border border-neutral-volcanic z-40">
       <div class="p-4 border-b border-neutral-volcanic flex items-center justify-between">
         <h3 class="font-semibold text-neutral-dark">
@@ -73,6 +84,11 @@
     </div>
 
     <div v-if="viajesAceptados.length > 0" class="mb-8">
+      <!--
+        Viajes “en curso”:
+        - accepted: oferta aceptada pero aún no iniciada
+        - in_progress: viaje iniciado
+      -->
       <h3 class="font-semibold text-neutral-dark mb-4 text-lg">
         <svg class="inline-block w-5 h-5 mr-2" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="icon('taxiFront')"></svg>
         {{ t('driver.panel.trip.inProgress') }}
@@ -127,8 +143,12 @@
       </div>
     </div>
 
-    <!-- Modal Mapa (conductor) -->
     <div v-if="modalMapaAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+      <!--
+        Modal del mapa:
+        `MapaSeguimiento` necesita coordenadas (origen/destino) y opcionalmente la
+        ubicación actual del taxi desde el store del conductor.
+      -->
       <div class="w-full max-w-5xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
@@ -142,16 +162,7 @@
 
         <div class="p-5">
           <div class="h-[60vh] min-h-[360px]">
-            <MapaSeguimiento
-              v-if="viajeMapa"
-              :pickupLat="viajeMapa.pickupLat"
-              :pickupLng="viajeMapa.pickupLng"
-              :dropoffLat="viajeMapa.dropoffLat"
-              :dropoffLng="viajeMapa.dropoffLng"
-              :taxiLat="conductorStore.ubicacionActual?.lat ?? null"
-              :taxiLng="conductorStore.ubicacionActual?.lng ?? null"
-              :estado="viajeMapa.estado"
-            />
+            <MapaSeguimiento v-if="viajeMapa" :pickupLat="viajeMapa.pickupLat" :pickupLng="viajeMapa.pickupLng" :dropoffLat="viajeMapa.dropoffLat" :dropoffLng="viajeMapa.dropoffLng" :taxiLat="conductorStore.ubicacionActual?.lat ?? null" :taxiLng="conductorStore.ubicacionActual?.lng ?? null" :estado="viajeMapa.estado"/>
           </div>
         </div>
       </div>
@@ -282,6 +293,8 @@ const iconPaths = {
 
 const iconPath = (name) => iconPaths[name] || ''
 
+// Los iconos bootstrap se importan como SVG “raw” para inyectarlos con v-html.
+// Se recorta la etiqueta <svg> para poder controlar tamaño/color desde el contenedor.
 const innerSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
   .replace(/<\/svg>\s*$/i, '')
@@ -310,6 +323,7 @@ const iconos = {
 const icon = (name) => iconos[name] || ''
 
 const estadisticas = computed(() => {
+  // Truco: accedemos a locale para que este computed se recalcule al cambiar idioma.
   locale.value
 
   const today = new Date().toDateString()
@@ -325,19 +339,19 @@ const estadisticas = computed(() => {
 })
 
 const solicitudesPendientes = computed(() => {
-  
+  // Ofertas que todavía no han sido asignadas a un conductor.
   return viajeStore.viajesPendientes.filter(t => !t.conductorId)
 })
 
 const viajesAceptados = computed(() => {
-
+  // Viajes asignados al conductor que aún no están finalizados.
   return viajeStore.viajesConductor.filter(t => ['accepted', 'in_progress'].includes(t.estado))
 })
 
 const estaOcupado = computed(() => viajesAceptados.value.length > 0)
 
 const viajesHoy = computed(() => {
-
+  // Listado “resumen” del día, incluyendo completados.
   const today = new Date().toDateString()
   
   return viajeStore.viajesConductor
@@ -346,24 +360,29 @@ const viajesHoy = computed(() => {
 })
 
 const aceptarViaje = async (viajeId) => {
+  // Acepta una oferta: el backend debe validar disponibilidad real y evitar carreras.
   await conductorStore.aceptarViaje(viajeId)
 }
 
 const iniciarViaje = async (viajeId) => {
+  // Marca el viaje como iniciado.
   await viajeStore.iniciarViaje(viajeId)
 }
 
 const completarViaje = async (viajeId) => {
+  // Completa el viaje y refresca estadísticas (por ejemplo: ingresos del día).
   await viajeStore.completarViaje(viajeId)
   await conductorStore.actualizarEstadisticas()
 }
 
 const abrirMapa = (viaje) => {
+  // Guardamos el viaje a visualizar y abrimos el modal.
   viajeMapa.value = viaje || null
   modalMapaAbierto.value = true
 }
 
 const cerrarMapa = () => {
+  // Limpieza para evitar mostrar datos “anteriores” al reabrir.
   modalMapaAbierto.value = false
   viajeMapa.value = null
 }

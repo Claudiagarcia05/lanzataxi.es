@@ -1,8 +1,16 @@
 <?php
 
+    /**
+     * Configuración de base de datos.
+     *
+     * Define conexiones (MySQL/MariaDB/SQLite/etc.) y opciones de Redis.
+     * Valores sensibles (host, usuario, password) vienen de `.env`.
+     */
+
     use Illuminate\Support\Str;
 
     return [
+        // Conexión por defecto (normalmente `mysql`).
         'default' => env('DB_CONNECTION', 'mysql'),
 
         'connections' => [
@@ -31,9 +39,11 @@
                 'collation' => env('DB_COLLATION', 'utf8mb4_unicode_ci'),
                 'prefix' => '',
                 'prefix_indexes' => true,
+                // `strict` ayuda a detectar datos inválidos en vez de truncarlos silenciosamente.
                 'strict' => true,
                 'engine' => null,
                 'options' => extension_loaded('pdo_mysql') ? array_filter([
+                    // Permite configurar CA para SSL si tu servidor lo requiere.
                     (PHP_VERSION_ID >= 80500 ? \Pdo\Mysql::ATTR_SSL_CA : \PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
                 ]) : [],
             ],
@@ -90,6 +100,7 @@
 
         'migrations' => [
             'table' => 'migrations',
+            // Mantiene `updated_at` al publicar migraciones (útil en monorepos/paquetes).
             'update_date_on_publish' => true,
         ],
 
@@ -98,7 +109,9 @@
 
             'options' => [
                 'cluster' => env('REDIS_CLUSTER', 'redis'),
+                // Prefijo para separar llaves cuando varias apps comparten Redis.
                 'prefix' => env('REDIS_PREFIX', Str::slug((string) env('APP_NAME', 'laravel')).'-database-'),
+                // Conexiones persistentes pueden mejorar rendimiento, pero hay que dimensionar bien.
                 'persistent' => env('REDIS_PERSISTENT', false),
             ],
 

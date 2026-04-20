@@ -10,16 +10,29 @@
     use Illuminate\Support\Str;
     use Illuminate\Validation\ValidationException;
 
+    /**
+     * FormRequest para el login web.
+     *
+     * Responsabilidades:
+     * - Validar credenciales (email/password).
+     * - Verificar reCAPTCHA v3 si está habilitado.
+     * - Aplicar rate limiting para mitigar fuerza bruta.
+     */
     class LoginRequest extends FormRequest {
+        /**
+         * Autorización del request.
+         *
+         * El login es accesible para usuarios no autenticados, por eso devuelve true.
+         */
         public function authorize(): bool {
 
             return true;
         }
 
         /**
-         * Get the validation rules that apply to the request.
+         * Reglas de validación.
          *
-         * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+         * `recaptcha_token` se vuelve obligatorio solo si el servicio está activo.
          */
         public function rules(): array {
 
@@ -28,20 +41,24 @@
             return [
                 'email' => ['required', 'string', 'email'],
                 'password' => ['required', 'string'],
+                // Token de reCAPTCHA v3: requerido si está habilitado.
                 'recaptcha_token' => $recaptcha->isEnabled() ? ['required', 'string'] : ['nullable', 'string'],
             ];
         }
 
         /**
-         * Attempt to authenticate the request's credentials.
+         * Intenta autenticar al usuario.
          *
-         * @throws \Illuminate\Validation\ValidationException
+         * - Primero valida que no se exceda el rate limit.
+         * - Luego verifica reCAPTCHA (si aplica).
+         * - Finalmente ejecuta `Auth::attempt`.
          */
         public function authenticate(): void {
             $this->ensureIsNotRateLimited();
 
             $recaptcha = app(RecaptchaV3::class);
             if ($recaptcha->isEnabled()) {
+                // Acción esperada: `login`.
                 $recaptcha->verifyOrFail(
                     (string) $this->input('recaptcha_token', ''),
                     (string) config('recaptcha.actions.login', 'login'),
@@ -50,6 +67,7 @@
             }
 
             if (! Auth::attempt($this->only('email', 'password'), $this->boolean('remember'))) {
+                // Si falla el login, incrementa el contador de intentos.
                 RateLimiter::hit($this->throttleKey());
 
                 throw ValidationException::withMessages([
@@ -57,13 +75,12 @@
                 ]);
             }
 
+            // Si fue correcto, se limpian intentos fallidos acumulados.
             RateLimiter::clear($this->throttleKey());
         }
 
         /**
-         * Ensure the login request is not rate limited.
-         *
-         * @throws \Illuminate\Validation\ValidationException
+         * Lanza excepción si hay demasiados intentos recientes.
          */
         public function ensureIsNotRateLimited(): void {
             if (! RateLimiter::tooManyAttempts($this->throttleKey(), 5)) {
@@ -83,6 +100,11 @@
             ]);
         }
 
+        /**
+         * Clave usada para el rate limiting.
+         *
+         * Combina email (normalizado) + IP para acotar intentos por origen.
+         */
         public function throttleKey(): string {
 
             return Str::transliterate(Str::lower($this->string('email')).'|'.$this->ip());

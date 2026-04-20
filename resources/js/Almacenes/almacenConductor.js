@@ -3,6 +3,14 @@ import { useAuthStore } from './almacenAutenticacion'
 import { useViajeStore } from './almacenViaje'
 import axios from 'axios'
 
+/**
+ * Store del conductor.
+ *
+ * Encapsula:
+ * - Perfil del conductor (incluye taxi) y estado laboral (en línea / fuera de línea)
+ * - Métricas de tiempo conectado (totales y por mes)
+ * - Envío de ubicación al backend mientras está en línea
+ */
 export const useConductorStore = defineStore('conductor', {
   state: () => ({
     perfil: null,
@@ -34,6 +42,7 @@ export const useConductorStore = defineStore('conductor', {
 
   actions: {
     async obtenerEstadoConductor() {
+      // Obtiene estado laboral y métricas básicas.
       const respuestaEstado = await axios.get('/api/conductor/status')
 
       this.estaEnLinea = Boolean(respuestaEstado.data.is_active)
@@ -51,6 +60,7 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     async obtenerPerfilConductor() {
+      // Carga perfil + estado en paralelo y normaliza placeholders de taxi.
       this.cargando = true
       try {
         const [respuestaPerfil, respuestaEstado] = await Promise.all([
@@ -79,6 +89,7 @@ export const useConductorStore = defineStore('conductor', {
         const avatar = datosPerfil.user?.avatar || null
 
         if (datosPerfil.user) {
+          // Mantiene el store de auth sincronizado (nombre/email/teléfono/avatar).
           auth.usuario = {
             ...(auth.usuario || {}),
             name: datosPerfil.user.name,
@@ -126,11 +137,13 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     cambiarEstadoEnLinea() {
+      // Toggle del estado de disponibilidad.
       this.establecerEstadoEnLinea(!this.estaEnLinea)
     },
 
     async establecerEstadoEnLinea(valor) {
       try {
+        // Actualización optimista; si falla, se revertirá vía la respuesta/throw.
         this.estaEnLinea = valor
         const respuesta = await axios.patch('/api/conductor/status', { is_active: valor })
 
@@ -152,6 +165,7 @@ export const useConductorStore = defineStore('conductor', {
           this.estadoActualizadoEnMs = Date.now()
         }
         if (this.estaEnLinea) {
+          // Al ponerse en línea, inicia el seguimiento de ubicación.
           this.iniciarSeguimientoUbicacion()
         } else {
           this.detenerSeguimientoUbicacion()
@@ -163,6 +177,8 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     iniciarSeguimientoUbicacion() {
+      // Envía coordenadas periódicamente usando `watchPosition`.
+      // Nota: el backend debe tolerar pérdidas/intermitencias.
       if (navigator.geolocation) {
         this.observadorUbicacion = navigator.geolocation.watchPosition(
           (position) => {
@@ -183,6 +199,7 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     detenerSeguimientoUbicacion() {
+      // Detiene el watch de geolocalización.
       if (this.observadorUbicacion) {
         navigator.geolocation.clearWatch(this.observadorUbicacion)
         this.observadorUbicacion = null
@@ -190,6 +207,7 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     async actualizarEstadisticas() {
+      // Calcula estadísticas en base al store de viajes ya cargado.
       const storeViaje = useViajeStore()
       const auth = useAuthStore()
       const idUsuarioConductor = this.perfil?.id || auth.usuario?.id
@@ -205,6 +223,7 @@ export const useConductorStore = defineStore('conductor', {
     },
 
     async aceptarViaje(viajeId) {
+      // Delegación a store de viajes y luego refresco de métricas.
       const storeViaje = useViajeStore()
       await storeViaje.aceptarViaje(viajeId)
       this.actualizarEstadisticas()

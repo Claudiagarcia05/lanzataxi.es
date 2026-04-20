@@ -6,7 +6,13 @@
     use App\Models\Ubicacion;
     use Illuminate\Http\Request;
 
+    /**
+     * Actualización de ubicación del conductor.
+     */
     class UbicacionController extends Controller {
+        /**
+         * Guarda una nueva ubicación (lat/lng) asociada al conductor autenticado.
+         */
         public function update(Request $solicitud) {
             $conductor = $solicitud->user()->conductor;
 
@@ -20,6 +26,7 @@
                 'lng' => 'required|numeric',
             ]);
 
+            // Se persiste como histórico (una fila por actualización).
             $ubicacion = Ubicacion::create([
                 'conductor_id' => $conductor->id,
                 'lat' => $validado['lat'],

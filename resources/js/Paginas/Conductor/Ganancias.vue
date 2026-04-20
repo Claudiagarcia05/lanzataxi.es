@@ -1,6 +1,15 @@
 <template>
   <DisposicionConductor>
     <div class="max-w-7xl mx-auto">
+      <!--
+        Panel de ganancias del conductor.
+        - Resume ingresos por semana/mes/total.
+        - Dibuja un gráfico simple (SVG) agregando importes por día.
+        - Permite exportar un informe en PDF con métricas clave.
+
+        Nota: este componente hace validaciones y cálculos para UX, pero el backend debe
+        ser la fuente de verdad de importes/estados de pago.
+      -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
         <h1 class="text-3xl font-bold mb-2">Mis Ganancias</h1>
         <p class="text-blue-100">Controla tus ingresos y estadísticas como taxista</p>
@@ -223,6 +232,7 @@ const conductorStore = useConductorStore()
 const nowMs = ref(Date.now())
 let tickIntervalId = null
 
+// Clave estable para nombres de archivo (YYYY-MM).
 const mesActualKey = () => {
   const d = new Date()
   const y = d.getFullYear()
@@ -231,6 +241,7 @@ const mesActualKey = () => {
   return `${y}-${m}`
 }
 
+// Convierte un File/Blob a DataURL (necesario para incrustar imágenes en jsPDF).
 const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   const reader = new FileReader()
   reader.onload = () => resolve(reader.result)
@@ -238,6 +249,7 @@ const fileToDataUrl = (file) => new Promise((resolve, reject) => {
   reader.readAsDataURL(file)
 })
 
+// Carga un PNG público y devuelve DataURL + dimensiones reales (para escalar el logo).
 const loadPublicImagePng = async (url) => {
   const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) return null
@@ -255,6 +267,10 @@ const loadPublicImagePng = async (url) => {
 }
 
 const exportInforme = async () => {
+  // Exporta un PDF con:
+  // - Datos personales/vehículo (desde el perfil del conductor)
+  // - Métricas clave calculadas en el mes actual
+  // Importante: el PDF se genera en cliente; si el backend cambia formatos, ajustar aquí.
   const now = new Date()
   const etiquetaMes = now.toLocaleDateString('es-ES', { month: 'long', year: 'numeric' })
   const fechaLabel = now.toLocaleDateString('es-ES', {
@@ -265,6 +281,8 @@ const exportInforme = async () => {
     minute: '2-digit'
   })
 
+  // Intentamos refrescar el perfil para que el informe salga actualizado.
+  // Si falla, seguimos con lo que haya en store (evita bloquear el PDF por un error puntual).
   await conductorStore.obtenerPerfilConductor().catch(() => {})
 
   const perfil = conductorStore.perfil
@@ -291,6 +309,7 @@ const exportInforme = async () => {
   const pageWidth = doc.internal.pageSize.getWidth()
   let y = 56
 
+  // Logo de cabecera: se escala manteniendo proporciones para que no deforme.
   const logo = await loadPublicImagePng('/images/logo.png').catch(() => null)
   if (logo?.dataUrl) {
     const maxW = 140
@@ -334,6 +353,7 @@ const exportInforme = async () => {
   const labelW = 110
   const valueW = pageWidth - marginX * 2 - labelW
 
+  // Bloque de datos personales en formato etiqueta: valor.
   for (const [label, value] of datosPersonales) {
     doc.setTextColor(90)
     doc.text(`${label}:`, marginX, y)
@@ -355,6 +375,7 @@ const exportInforme = async () => {
   doc.setFontSize(12)
   const metricLabelWidth = 260
   const metricValueX = pageWidth - marginX
+  // Filas: etiqueta alineada a la izquierda + valor alineado a la derecha.
   for (const [label, value] of rows) {
     doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
     doc.text(String(label), marginX, y, { maxWidth: metricLabelWidth })
@@ -434,30 +455,39 @@ const esUltimoDiaMes = computed(() => {
 })
 
 const misViajesCompletados = computed(() => {
-
+  // Viajes finalizados (completados) del conductor.
   return viajeStore.viajesConductor
     .filter(t => t.estado === 'completed')
 })
 
 const viajeTienePago = (t) => {
+  // Un viaje cuenta como ingreso si:
+  // - existe pago y está marcado como pagado, o
+  // - está completado y el método es efectivo/tarjeta.
+  // (La cartera/app puede tener otro flujo de confirmación.)
   if (t?.pago && t.pago.status === 'paid') return true
 
   return t?.estado === 'completed' && ['cash', 'card'].includes(t?.pago_method)
 }
 
 const viajesConIngreso = computed(() => {
-
+  // Subconjunto de viajes que aportan ingresos.
   return viajeStore.viajesConductor.filter(viajeTienePago)
 })
 
 const resumenTotal = computed(() => {
   const viajes = viajesConIngreso.value
+  // Se prioriza `pago.amount` si existe, y si no se usa `price`.
+  // Esto ayuda a reflejar el importe realmente cobrado cuando el backend lo provee.
   const total = viajes.reduce((sum, t) => sum + (Number(t.pago?.amount ?? t.price) || 0), 0)
 
   return { viajes: viajes.length, total }
 })
 
 const segundosConectadoMes = computed(() => {
+  // Tiempo conectado del mes.
+  // - `tiempoConectadoMesSegundos` viene del backend/store como base acumulada.
+  // - Si está en línea, sumamos el “extra” desde la última marca `estadoActualizadoEnMs`.
   const base = Number(conductorStore.tiempoConectadoMesSegundos || 0)
   if (!conductorStore.estaEnLinea) return base
   const last = Number(conductorStore.estadoActualizadoEnMs || 0)
@@ -468,6 +498,7 @@ const segundosConectadoMes = computed(() => {
 })
 
 const horasConectadoLabel = computed(() => {
+  // Presentación amigable (h:mm) para el panel.
   const total = Math.max(0, Math.floor(Number(segundosConectadoMes.value || 0)))
   const h = Math.floor(total / 3600)
   const m = Math.floor((total % 3600) / 60)
@@ -515,11 +546,15 @@ const metricasMes = computed(() => {
 })
 
 const metricasPeriodo = computed(() => {
+  // Métricas del periodo “visible” del panel.
+  // Nota: actualmente se calculan sobre todos los viajes con ingreso (no filtra por `periodoGrafico`).
   const viajes = viajesConIngreso.value
   const total = viajes.reduce((sum, t) => sum + (Number(t.pago?.amount ?? t.price) || 0), 0)
   const promedio = viajes.length > 0 ? total / viajes.length : 0
 
   const totalAsignados = viajeStore.viajesConductor.filter(t => ['accepted', 'in_progress', 'completed'].includes(t.estado)).length
+  // Tasa de aceptación aproximada: ingresos / asignados.
+  // Sirve como indicativo en UI; la métrica real debería definirse en backend si es crítica.
   const tasaAceptacion = totalAsignados > 0 ? Math.round((viajes.length / totalAsignados) * 100) : 0
 
   return {
@@ -548,6 +583,8 @@ const resumenPago = computed(() => {
 })
 
 const diasEnRango = computed(() => {
+  // Prepara “buckets” diarios para el gráfico.
+  // Se generan días consecutivos y luego se agregan importes por fecha.
   const now = new Date()
   now.setHours(0, 0, 0, 0)
 
@@ -576,6 +613,7 @@ const diasEnRango = computed(() => {
 })
 
 const puntosGrafico = computed(() => {
+  // Agrega importes a cada bucket diario y normaliza la altura (0..150) para el SVG.
   const buckets = diasEnRango.value.map(b => ({ ...b }))
   const index = new Map(buckets.map((b, i) => [b.key, i]))
 
@@ -608,6 +646,7 @@ const anchoBarra = computed(() => {
 const paddingBarra = 4
 
 const mostrarEtiqueta = (idx) => {
+  // Evita saturar el eje X cuando hay muchos días: se muestran etiquetas cada N barras.
   const n = puntosGrafico.value.length
   if (n <= 10) return true
   if (n <= 31) return idx % 3 === 0
@@ -616,14 +655,17 @@ const mostrarEtiqueta = (idx) => {
 }
 
 onMounted(() => {
+  // Cargamos viajes y estado del conductor (online/offline).
   viajeStore.obtenerViajes()
   conductorStore.obtenerEstadoConductor().catch(() => {})
 
   tickIntervalId = setInterval(() => {
+    // Tick local para refrescar contadores basados en tiempo sin hacer polling agresivo al backend.
     nowMs.value = Date.now()
 
     const actual = mesActualKey()
     if (conductorStore.mesEnLinea && conductorStore.mesEnLinea !== actual) {
+      // Si cambia el mes, recargamos el estado para reiniciar acumulados correctamente.
       conductorStore.obtenerEstadoConductor().catch(() => {})
     }
   }, 1000)

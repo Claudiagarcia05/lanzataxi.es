@@ -87,6 +87,17 @@ import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { executeRecaptchaV3 } from '../../recaptchaV3'
 
+/**
+ * Modal de autenticación (login/registro).
+ *
+ * Puntos clave:
+ * - Incluye validación básica en cliente (campos requeridos y coherencia).
+ * - Integra reCAPTCHA v3 si hay `VITE_RECAPTCHA_SITE_KEY` configurada.
+ * - Tras login, guarda token y redirige a `/auth/session-login` para convertir
+ *   token (Sanctum) a sesión web (patrón útil con Inertia).
+ * - En registro aplica reglas de dominio por rol (legacy de la app).
+ */
+
 defineProps({
   modelValue: Boolean
 })
@@ -108,6 +119,7 @@ const datosFormulario = ref({
 })
 
 const cerrarModal = () => {
+  // Cierra el modal (v-model) y resetea formulario/errores.
   emit('update:modelValue', false)
   reiniciarFormulario()
 }
@@ -123,8 +135,8 @@ const reiniciarFormulario = () => {
   error.value = ''
 }
 
-// Validar formulario antes de enviar
 const validarFormulario = () => {
+  // Validación de UX: evita requests innecesarias y muestra mensajes i18n.
   if (esInicioSesion.value) {
     if (!datosFormulario.value.email.trim() || !datosFormulario.value.password) {
       error.value = t('auth.errors.emailPasswordRequired')
@@ -163,9 +175,6 @@ const validarFormulario = () => {
       return false
     }
 
-    // Reglas de negocio (frontend/UX):
-    // - Los emails @admin.es están reservados (no hay registro público de admins)
-    // - Coherencia Taxista ⇔ @taxi.es
     const correo = (datosFormulario.value.email || '').trim().toLowerCase()
     const rol = datosFormulario.value.role || 'pasajero'
     const esCorreoAdmin = correo.endsWith('@admin.es')
@@ -196,6 +205,7 @@ const validarFormulario = () => {
 }
 
 const enviarFormulario = async () => {
+  // Envía login o registro. Si hay reCAPTCHA habilitado, adjunta `recaptcha_token`.
   if (!validarFormulario()) {
 
     return
@@ -213,7 +223,7 @@ const enviarFormulario = async () => {
   try {
     recaptchaToken = await executeRecaptchaV3(accionRecaptcha)
   } catch (e) {
-    // Si hay site key configurada y falla reCAPTCHA, no seguimos (evita falsos positivos en backend)
+    // Si hay site key configurada pero la ejecución falla, se considera error.
     if (import.meta.env.VITE_RECAPTCHA_SITE_KEY) {
       error.value = t('auth.errors.recaptchaFailed')
 
@@ -225,6 +235,7 @@ const enviarFormulario = async () => {
 
   try {
     if (esInicioSesion.value) {
+      // Login: backend devuelve token + user.
       const respuesta = await axios.post('/api/login', {
         email: datosFormulario.value.email,
         password: datosFormulario.value.password,
@@ -246,7 +257,7 @@ const enviarFormulario = async () => {
       }
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`
 
-      // Hacer login en web session
+      // Redirección: crea sesión web desde el token (para rutas Inertia/protegidas).
       window.location.href = `/auth/session-login?token=${encodeURIComponent(token)}`
 
       return
@@ -262,14 +273,12 @@ const enviarFormulario = async () => {
       recaptcha_token: recaptchaToken,
     })
 
-    // Si el backend responde correctamente, mostrar mensaje de éxito y cambiar a login
     if (!respuesta.data?.user) {
       error.value = t('auth.errors.registerFailed')
       
       return
     }
 
-    // Mostrar mensaje verde y cambiar a login
     error.value = ''
     esInicioSesion.value = true
     datosFormulario.value = {
@@ -279,7 +288,6 @@ const enviarFormulario = async () => {
       password_confirmation: '',
       role: 'pasajero'
     }
-    // Mensaje de éxito permanente
     error.value = t('auth.messages.registerSuccess')
   } catch (e) {
     const mensaje = e.response?.data?.message

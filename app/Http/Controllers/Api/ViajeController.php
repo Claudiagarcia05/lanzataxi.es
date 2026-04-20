@@ -10,7 +10,23 @@
     use Illuminate\Http\Request;
     use Illuminate\Support\Facades\DB;
 
+    /**
+     * Gestión de viajes.
+     *
+     * Incluye:
+     * - Solicitud de viaje (con cálculo de precio y validación de deuda/saldo).
+     * - Flujo del conductor: ver disponibles, aceptar, iniciar, completar.
+     * - Cancelación con cobro y/o generación de deuda.
+     *
+     * Importante: donde se mueven saldos se usan transacciones y `lockForUpdate()`.
+     */
     class ViajeController extends Controller {
+        /**
+         * Calcula el precio estimado.
+         *
+         * Contiene trayectos fijos y una tarifa aproximada por km.
+         * También aplica tarifa nocturna entre 22:00 y 06:00.
+         */
         private function calcularPrecio($origen, $destino, $distance, $hora = null) {
             $municipios = [
                 'Arrecife', 'Puerto del Carmen', 'Costa Teguise', 'Playa Blanca', 'Haria', 'Teguise', 'Aeropuerto', 'Puerto Calero'
@@ -60,6 +76,9 @@
 
             return round($bajada + ($distance * $precioKm), 2);
         }
+        /**
+         * Viajes del usuario autenticado como pasajero.
+         */
         public function userviajes(Request $solicitud) {
             $usuario = $solicitud->user();
             $viajes = $usuario->viajesAspasajero()
@@ -75,6 +94,9 @@
             return response()->json($viajes);
         }
 
+        /**
+         * Viajes del usuario autenticado como conductor.
+         */
         public function driverTrips(Request $solicitud) {
             $conductor = $solicitud->user()->conductor;
 
@@ -92,6 +114,13 @@
         }
 
 
+        /**
+         * Lista viajes pendientes disponibles para el conductor autenticado.
+         *
+         * Requisitos:
+         * - Tener perfil de conductor.
+         * - Estar activo (`is_active = true`).
+         */
         public function available(Request $solicitud) {
             $conductor = $solicitud->user()->conductor;
 
@@ -105,6 +134,7 @@
                 return response()->json([]);
             }
 
+            // Se usa la capacidad del taxi para filtrar viajes por número de pasajeros.
             $taxi = $conductor->ensureTaxiExists('available');
             $capacity = (int) ($taxi->capacity ?? 4);
             if ($capacity <= 0) {
@@ -127,8 +157,12 @@
             return response()->json($viajes);
         }
 
-        private function liquidarDeudasPendientesSiEsPosible(User $usuario): array
-        {
+        /**
+         * Igual que en Cartera: intenta liquidar deudas pendientes si hay saldo.
+         *
+         * Se usa antes de permitir solicitar un nuevo viaje.
+         */
+        private function liquidarDeudasPendientesSiEsPosible(User $usuario): array {
             $resultado = [
                 'had_debt' => false,
                 'settled' => false,
@@ -145,12 +179,14 @@
             $deudaTotal = (float) $deudas->sum('amount');
             $resultado['pending_debt'] = $deudaTotal;
             if ($deudaTotal <= 0) {
+
                 return $resultado;
             }
 
             $resultado['had_debt'] = true;
             $saldo = (float) ($usuario->wallet_balance ?? 0);
             if ($saldo < $deudaTotal) {
+
                 return $resultado;
             }
 
@@ -190,12 +226,21 @@
 
             $resultado['settled'] = true;
             $resultado['pending_debt'] = 0.0;
+
             return $resultado;
         }
 
+        /**
+         * Crea (solicita) un viaje como pasajero.
+         *
+         * Validaciones relevantes:
+         * - Coordenadas dentro de rangos de Lanzarote.
+         * - No permitir múltiples viajes activos a la vez.
+         * - Si hay deuda pendiente, exige recargar saldo.
+         * - Si el método es wallet/app, exige saldo suficiente.
+         */
         public function store(Request $solicitud) {
             $validado = $solicitud->validate([
-                // Lanzarote (aprox.): lat 28.85..29.35, lng -13.95..-13.20
                 'pickup_lat' => 'required|numeric|between:28.85,29.35',
                 'pickup_lng' => 'required|numeric|between:-13.95,-13.20',
                 'dropoff_lat' => 'required|numeric|between:28.85,29.35',
@@ -224,6 +269,7 @@
             $distancia = $validado['distance'] ?? 5.5;
             $hora = $validado['scheduled_for'] ?? now();
 
+            // Heurística simple: detecta municipio por substring.
             $getMunicipio = function($direccion) use ($municipios) {
                 foreach ($municipios as $m) {
                     if (stripos($direccion, $m) !== false) return $m;
@@ -238,12 +284,14 @@
 
             $usuario = $solicitud->user();
 
+            // Evita que el pasajero solicite más de un viaje simultáneo.
             $existeViajeActivo = Viaje::query()
                 ->where('pasajero_id', $usuario->id)
                 ->whereIn('status', ['pending', 'accepted', 'in_progress'])
                 ->exists();
 
             if ($existeViajeActivo) {
+                
                 return response()->json([
                     'success' => false,
                     'message' => 'No puedes pedir un taxi nuevo mientras tengas un viaje pendiente, aceptado o en curso.'
@@ -251,22 +299,25 @@
             }
 
             try {
+                // Se bloquea el usuario para comprobar/liquidar deudas sin carreras.
                 $chequeoDeuda = DB::transaction(function () use ($usuario) {
                     $usuarioBloqueado = User::query()->whereKey($usuario->id)->lockForUpdate()->first();
                     if (!$usuarioBloqueado) {
                         throw new \RuntimeException('Usuario no encontrado');
                     }
+
                     return $this->liquidarDeudasPendientesSiEsPosible($usuarioBloqueado);
                 }, 3);
             } catch (\RuntimeException $e) {
+
                 return response()->json(['success' => false, 'message' => $e->getMessage()], 400);
             }
 
-            // Refrescar saldo por si se liquidaron deudas
             $usuario = $usuario->fresh();
 
             if (!empty($chequeoDeuda['had_debt']) && empty($chequeoDeuda['settled'])) {
                 $pendiente = (float) ($chequeoDeuda['pending_debt'] ?? 0);
+
                 return response()->json([
                     'success' => false,
                     'message' => 'Tienes una deuda pendiente de ' . number_format($pendiente, 2, '.', '') . '€ en tu cartera virtual. Añade saldo para poder solicitar un nuevo taxi.',
@@ -274,6 +325,7 @@
                 ], 400);
             }
 
+            // Si el pago es por wallet, se exige saldo suficiente antes de crear el viaje.
             if ($this->mapPaymentMethod($validado['pago_method'] ?? 'efectivo') === 'app') {
                 $saldo = $usuario->wallet_balance ?? 0;
                 if ($saldo < $precio) {
@@ -311,11 +363,19 @@
             return response()->json($viaje->load(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']), 201);
         }
 
+        /**
+         * Muestra un viaje.
+         */
         public function show(Viaje $viaje) {
 
             return response()->json($viaje->load(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }
 
+        /**
+         * Cancela un viaje como pasajero.
+         *
+         * Si el viaje ya fue aceptado/asignado, puede implicar cobro y/o creación de deuda.
+         */
         public function cancel(Viaje $viaje) {
             if ($viaje->pasajero_id !== auth()->id()) {
                 
@@ -328,9 +388,11 @@
             }
 
             try {
+                // Transacción para que: estado del viaje, saldo, deuda y pago queden consistentes.
                 $viajeActualizado = DB::transaction(function () use ($viaje) {
                     $viajeBloqueado = Viaje::query()->whereKey($viaje->id)->lockForUpdate()->first();
                     if (!$viajeBloqueado) {
+
                         return null;
                     }
 
@@ -343,30 +405,26 @@
                         throw new \RuntimeException('Usuario no encontrado');
                     }
 
-                    // Regla de negocio:
-                    // - Si el pasajero cancela ANTES de que el taxista acepte (status=pending y sin conductor), NO se cobra.
-                    // - Solo se cobra si el viaje ya fue aceptado (o tiene conductor asignado).
+                    // Consideramos cobrable si estaba aceptado o ya tenía conductor asignado.
                     $esCancelacionCobrable = ($viajeBloqueado->status === 'accepted') || !empty($viajeBloqueado->conductor_id);
 
                     $precioViaje = (float) ($viajeBloqueado->price ?? 0);
-                    // Cambiar estado
                     $viajeBloqueado->status = 'cancelled';
                     $viajeBloqueado->save();
 
                     if (!$esCancelacionCobrable) {
-                        // Cancelación sin cobro: no se descuenta saldo, no se crea deuda ni registro de pago.
+
                         return $viajeBloqueado;
                     }
 
                     $saldoActual = (float) ($usuarioPasajero->wallet_balance ?? 0);
+                    // Se cobra lo que se pueda del saldo; lo restante queda como deuda.
                     $cobradoAhora = min($saldoActual, $precioViaje);
                     $deudaRestante = max(0, $precioViaje - $cobradoAhora);
 
-                    // Cobro inmediato desde cartera (si hay saldo)
                     $usuarioPasajero->wallet_balance = $saldoActual - $cobradoAhora;
                     $usuarioPasajero->save();
 
-                    // Pagar al conductor (si existe) con lo cobrado ahora
                     if ($cobradoAhora > 0 && $viajeBloqueado->conductor_id) {
                         $viajeBloqueado->loadMissing('conductor');
                         if ($viajeBloqueado->conductor) {
@@ -381,8 +439,8 @@
                         }
                     }
 
-                    // Si falta dinero, crear deuda pendiente (se liquidará al recargar o antes del siguiente viaje)
                     if ($deudaRestante > 0) {
+                        // Se registra deuda pendiente para bloquear nuevas solicitudes hasta liquidación.
                         Deuda::create([
                             'user_id' => $usuarioPasajero->id,
                             'trip_id' => $viajeBloqueado->id,
@@ -392,7 +450,6 @@
                         ]);
                     }
 
-                    // Registrar pago del viaje cancelado (paid si cobrado completo, pending si queda deuda)
                     $viajeBloqueado->loadMissing('pago');
                     if (!$viajeBloqueado->pago) {
                         $viajeBloqueado->pago()->create([
@@ -411,19 +468,25 @@
                     return $viajeBloqueado;
                 }, 3);
             } catch (\RuntimeException $e) {
+
                 return response()->json(['message' => $e->getMessage()], 400);
             } catch (\Throwable $e) {
                 report($e);
+                
                 return response()->json(['message' => 'Error al cancelar el viaje'], 500);
             }
 
             if ($viajeActualizado === null) {
+
                 return response()->json(['message' => 'viaje not found'], 404);
             }
 
             return response()->json($viajeActualizado->fresh(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }
 
+        /**
+         * Devuelve la última ubicación registrada del conductor asignado.
+         */
         public function track(Viaje $viaje) {
             if (!$viaje->conductor) {
 
@@ -446,6 +509,12 @@
             ]);
         }
 
+        /**
+         * Acepta un viaje como conductor.
+         *
+         * Usa transacción + lock para evitar que dos conductores acepten el mismo viaje.
+         * Si el método de pago es wallet/app, se realiza el cobro en el momento de aceptar.
+         */
         public function accept(Request $solicitud, Viaje $viaje) {
             $conductor = $solicitud->user()->conductor;
 
@@ -467,10 +536,12 @@
                         ->first();
 
                     if (!$locked) {
+
                         return null;
                     }
 
                     if ($locked->status !== 'pending' || $locked->conductor_id !== null) {
+
                         return false;
                     }
 
@@ -485,14 +556,12 @@
                         'status' => 'accepted',
                     ]);
 
-                    // Si el método es cartera virtual (app), el pago se realiza al aceptar.
                     if (($locked->pago_method ?? null) === 'app') {
-                        // Evitar doble cobro si por cualquier razón ya existiera un pago.
+                        // Pago inmediato por wallet: mueve saldo pasajero -> conductor y crea `Pago`.
                         $locked->loadMissing('pago');
                         if (!$locked->pago) {
                             $amount = (float) ($locked->price ?? 0);
 
-                            // Bloquear y ajustar saldos de pasajero y conductor (usuario) de forma atómica.
                             $pasajero = User::query()->whereKey($locked->pasajero_id)->lockForUpdate()->first();
                             $conductorUser = User::query()->whereKey($conductor->user_id)->lockForUpdate()->first();
 
@@ -502,7 +571,6 @@
 
                             $saldo = (float) ($pasajero->wallet_balance ?? 0);
                             if ($saldo < $amount) {
-                                // Lanzar para forzar rollback (el viaje no se asigna si no se puede cobrar).
                                 throw new \RuntimeException('Saldo insuficiente en la cartera virtual');
                             }
 
@@ -525,23 +593,30 @@
                     return $locked;
                 }, 3);
             } catch (\RuntimeException $e) {
+
                 return response()->json(['message' => $e->getMessage()], 400);
             } catch (\Throwable $e) {
                 report($e);
+
                 return response()->json(['message' => 'Error al aceptar el viaje'], 500);
             }
 
             if ($viajeActualizado === null) {
+
                 return response()->json(['message' => 'viaje not found'], 404);
             }
 
             if ($viajeActualizado === false) {
+                
                 return response()->json(['message' => 'viaje already accepted'], 409);
             }
 
             return response()->json($viajeActualizado->load(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }
 
+        /**
+         * Marca el viaje como `in_progress`.
+         */
         public function start(Request $solicitud, Viaje $viaje) {
             $conductor = $solicitud->user()->conductor;
 
@@ -560,6 +635,11 @@
             return response()->json($viaje->fresh(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }
 
+        /**
+         * Completa el viaje.
+         *
+         * Si no existe `Pago`, crea uno automáticamente (cash/card/app).
+         */
         public function complete(Request $solicitud, Viaje $viaje) {
             $conductor = $solicitud->user()->conductor;
 
@@ -573,15 +653,11 @@
                 return response()->json(['message' => 'viaje cannot be completed'], 400);
             }
 
-            // El taxista completa el viaje. La valoración pertenece al pasajero y se gestiona
-            // exclusivamente a través del endpoint `rate`.
             $viaje->update([
                 'status' => 'completed',
                 'end_time' => now(),
             ]);
 
-            // Si el pago es en efectivo o tarjeta, al completar lo marcamos como pagado.
-            // En cartera virtual, el pago ya se creó al aceptar (pero dejamos un fallback por consistencia).
             $viaje->loadMissing('pago');
             if (!$viaje->pago) {
                 $method = $viaje->pago_method ?? 'cash';
@@ -598,6 +674,9 @@
             return response()->json($viaje->fresh(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }
 
+        /**
+         * Reporte simple de conteos y recaudación (solo completados).
+         */
         public function reports() {
             $datos = [
                 'total' => Viaje::count(),
@@ -609,6 +688,11 @@
             return response()->json($datos);
         }
 
+        /**
+         * Valora el viaje (solo pasajero y solo si está completado).
+         *
+         * También recalcula la media del conductor basándose en viajes completados con rating.
+         */
         public function rate(Request $solicitud, Viaje $viaje) {
             if ($viaje->pasajero_id !== $solicitud->user()->id) {
 
@@ -630,7 +714,6 @@
                 'comment' => $validado['comment'] ?? null,
             ]);
 
-            // Recalcula la valoración media del conductor a partir de viajes completados valorados.
             if ($viaje->conductor_id) {
                 $media = Viaje::where('conductor_id', $viaje->conductor_id)
                     ->where('status', 'completed')
@@ -647,6 +730,9 @@
             return response()->json($viaje->fresh(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate,model', 'pago']));
         }
 
+        /**
+         * Mapea nombres de método de pago desde la app (ES) a valores internos.
+         */
         private function mapPaymentMethod($metodo) {
             $mapa = [
                 'efectivo' => 'cash',

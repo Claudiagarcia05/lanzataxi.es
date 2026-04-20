@@ -1,14 +1,23 @@
 <?php
 
+    /**
+     * Configuración de logs.
+     *
+     * Controla el canal por defecto y cómo se agregan (stack). Ajusta `LOG_LEVEL`
+     * en producción para evitar exceso de ruido o exposición de datos.
+     */
+
     use Monolog\Handler\NullHandler;
     use Monolog\Handler\StreamHandler;
     use Monolog\Handler\SyslogUdpHandler;
     use Monolog\Processor\PsrLogMessageProcessor;
 
     return [
+        // Canal principal. `stack` combina varios canales.
         'default' => env('LOG_CHANNEL', 'stack'),
 
         'deprecations' => [
+            // Deprecations se pueden enrutar a un canal distinto.
             'channel' => env('LOG_DEPRECATIONS_CHANNEL', 'null'),
             'trace' => env('LOG_DEPRECATIONS_TRACE', false),
         ],
@@ -17,6 +26,7 @@
 
             'stack' => [
                 'driver' => 'stack',
+                // Lista de canales separados por coma en LOG_STACK.
                 'channels' => explode(',', (string) env('LOG_STACK', 'single')),
                 'ignore_exceptions' => false,
             ],
@@ -32,12 +42,14 @@
                 'driver' => 'daily',
                 'path' => storage_path('logs/laravel.log'),
                 'level' => env('LOG_LEVEL', 'debug'),
+                // Días de retención.
                 'days' => env('LOG_DAILY_DAYS', 14),
                 'replace_placeholders' => true,
             ],
 
             'slack' => [
                 'driver' => 'slack',
+                // Útil para alertas críticas; requiere webhook en env.
                 'url' => env('LOG_SLACK_WEBHOOK_URL'),
                 'username' => env('LOG_SLACK_USERNAME', 'Laravel Log'),
                 'emoji' => env('LOG_SLACK_EMOJI', ':boom:'),

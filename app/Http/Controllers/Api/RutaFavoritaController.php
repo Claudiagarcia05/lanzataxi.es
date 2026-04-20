@@ -6,7 +6,13 @@
     use App\Models\RutaFavorita;
     use Illuminate\Http\Request;
 
+    /**
+     * Gestión de rutas favoritas del usuario autenticado.
+     */
     class RutaFavoritaController extends Controller {
+        /**
+         * Lista rutas favoritas del usuario autenticado.
+         */
         public function index(Request $solicitud) {
             try {
                 if (!$solicitud->user()) {
@@ -16,6 +22,7 @@
 
                 $usuario = $solicitud->user();
                 
+                // Se respeta el orden guardado (campo `order`).
                 $favoritos = $usuario->rutaFavoritas()
                     ->orderBy('order')
                     ->get();
@@ -31,6 +38,9 @@
             }
         }
 
+        /**
+         * Crea una ruta favorita.
+         */
         public function store(Request $solicitud) {
             $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
@@ -39,6 +49,7 @@
                 'lng' => 'required|numeric',
             ]);
 
+            // Nueva ruta al final de la lista.
             $ordenMaximo = $solicitud->user()->rutaFavoritas()->max('order') ?? -1;
 
             $favorite = $solicitud->user()->rutaFavoritas()->create([
@@ -49,6 +60,9 @@
             return response()->json($favorite, 201);
         }
 
+        /**
+         * Actualiza una ruta favorita (solo propietario).
+         */
         public function update(Request $solicitud, RutaFavorita $favorite) {
             if ($favorite->user_id !== $solicitud->user()->id) {
 
@@ -68,6 +82,9 @@
             return response()->json($favorite);
         }
 
+        /**
+         * Elimina una ruta favorita (solo propietario).
+         */
         public function destroy(RutaFavorita $favorite) {
             if ($favorite->user_id !== auth()->id()) {
 
@@ -79,6 +96,11 @@
             return response()->json(['message' => 'Ruta favorita eliminada']);
         }
 
+        /**
+         * Reordena rutas favoritas.
+         *
+         * Recibe un array `favorites` con `{id, order}` y aplica updates.
+         */
         public function reorder(Request $solicitud) {
             $validado = $solicitud->validate([
                 'favorites' => 'required|array',

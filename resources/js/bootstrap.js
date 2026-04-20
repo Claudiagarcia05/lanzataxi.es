@@ -1,46 +1,40 @@
-// Configuración global de Axios para el frontend
-// - Headers por defecto para peticiones AJAX
-// - CSRF token (si existe en el DOM)
-// - Bearer token (si existe en localStorage)
-// - Interceptor para manejar expiración / sesión no válida (401)
+// Bootstrap del cliente HTTP (Axios).
+// Centraliza cabeceras por defecto, CSRF/Sanctum, token Bearer y un interceptor de 401.
 import axios from 'axios';
 window.axios = axios;
 
-// En entornos SPA con Sanctum (statefulApi), necesitamos cookies de sesión + XSRF.
-// Esto evita respuestas 419 (CSRF token mismatch) en POST/PATCH/DELETE.
+// Necesario para que Sanctum/XSRF funcione con cookies.
 window.axios.defaults.withCredentials = true;
 window.axios.defaults.xsrfCookieName = 'XSRF-TOKEN';
 window.axios.defaults.xsrfHeaderName = 'X-XSRF-TOKEN';
 
-// Headers comunes para peticiones XHR/JSON
 window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 window.axios.defaults.headers.common['Accept'] = 'application/json';
 window.axios.defaults.headers.common['Content-Type'] = 'application/json';
 
-// CSRF: se toma del meta tag generado por Laravel (si está presente)
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
 if (csrfToken) {
+    // Para formularios/requests que dependan del token CSRF tradicional de Laravel.
     window.axios.defaults.headers.common['X-CSRF-TOKEN'] = csrfToken;
 }
 
-// Sanctum CSRF cookie: establece XSRF-TOKEN (y sesión) para peticiones stateful.
-// Si Sanctum no está habilitado en algún entorno, no interrumpe la app.
+// Inicializa la cookie XSRF para Sanctum (si la app lo usa). Si falla, no bloqueamos:
+// la app puede seguir funcionando con Bearer token o en modo invitado.
 window.axios.get('/sanctum/csrf-cookie').catch(() => {});
 
-// Token JWT guardado en localStorage (si el usuario ya inició sesión anteriormente)
 const token = localStorage.getItem('token');
 if (token) {
+    // Si el usuario ya había iniciado sesión, rehidratamos el Bearer token.
     window.axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
 }
 
-// Interceptor de respuestas:
-// - Si llega un 401, se limpia la sesión local y se redirige a /login (salvo en endpoints de auth)
 window.axios.interceptors.response.use(
     response => response,
     error => {
+        // Si el backend responde 401 (no autenticado), limpiamos el estado local.
+        // Importante: evitamos bucles/ruido si el 401 viene de endpoints de auth.
         if (error.response?.status === 401) {
             const requestUrl = error.config?.url || '';
-            // Evitar bucles: si el 401 viene de login/register/me/logout, no forzamos redirección
             const isAuthRequest =
                 requestUrl.includes('/api/login') ||
                 requestUrl.includes('/api/register') ||
@@ -56,12 +50,12 @@ window.axios.interceptors.response.use(
                 delete window.axios.defaults.headers.common['Authorization'];
                 document.cookie = 'token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax';
 
-                // Redirección a login si no estamos ya en login/registro
                 if (
                     hadToken &&
                     !window.location.pathname.includes('login') &&
                     !window.location.pathname.includes('register')
                 ) {
+                    // Redirección dura para forzar un estado consistente cuando expira sesión.
                     window.location.href = '/login';
                 }
             }

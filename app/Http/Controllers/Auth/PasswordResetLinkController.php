@@ -10,7 +10,13 @@
     use Inertia\Inertia;
     use Inertia\Response;
 
+    /**
+     * Solicitud de enlace de restablecimiento de contraseña.
+     */
     class PasswordResetLinkController extends Controller {
+        /**
+         * Muestra el formulario “Olvidé mi contraseña”.
+         */
         public function create(): Response {
 
             return Inertia::render('Auth/ForgotPassword', [
@@ -19,9 +25,9 @@
         }
 
         /**
-         * Handle an incoming password reset link request.
+         * Envía el enlace de reset al email si existe.
          *
-         * @throws \Illuminate\Validation\ValidationException
+         * Laravel devuelve un estado (enviado / error); se traduce a mensaje.
          */
         public function store(Request $solicitud): RedirectResponse {
             $solicitud->validate([

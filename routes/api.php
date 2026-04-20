@@ -1,10 +1,16 @@
 <?php
 
-    // Rutas API (JSON) para la aplicación:
-    // - Auth (registro/login y endpoints protegidos con Sanctum)
-    // - Perfil de usuario, cartera, notificaciones y favoritos
-    // - Viajes (crear, cancelar, tracking, flujos de conductor/admin)
-    // Nota: la mayoría de rutas están bajo `auth:sanctum`.
+    /*
+    |--------------------------------------------------------------------------
+    | API Routes
+    |--------------------------------------------------------------------------
+    | Todas las rutas bajo este archivo se consumen desde el frontend (Axios).
+    | Se separan por responsabilidades (auth, usuario, viajes, conductor, admin,
+    | pagos) y se protegen con middleware cuando es necesario.
+    |
+    | Nota: aunque haya validaciones en frontend, la seguridad real se aplica aquí
+    | (auth, roles, cuenta habilitada, conductor aprobado, etc.).
+    */
 
     use App\Http\Controllers\Api\ConductorController;
     use App\Http\Controllers\Api\UbicacionController;
@@ -21,23 +27,28 @@
     use Illuminate\Support\Facades\DB;
     use Illuminate\Http\Request;
     use App\Http\Controllers\Api\ConductorEstadoController;
+    use App\Http\Controllers\Api\GeocodingController;
 
-    // --- Público (sin sesión) ---
-    // Registro e inicio de sesión
+    // Rutas públicas de autenticación: devuelven token/estado para iniciar sesión.
     Route::post('/register', [AutenticacionController::class, 'register']);
     Route::post('/login', [AutenticacionController::class, 'login']);
 
-    // Datos de disponibilidad (lectura pública)
+    // Datos públicos "de consulta" (sin sesión): usados para map/listados.
     Route::get('/available-taxis', [TaxiController::class, 'available']);
     Route::get('/nearby-conductors', [ConductorController::class, 'nearbyconductors']);
 
-    // --- Protegido (requiere token Sanctum) ---
+    // Proxy de geocodificación (Nominatim): evita CORS en navegador y permite cache/throttle.
+    // Se deja público para que componentes de terceros (p.ej. Leaflet geocoder) puedan consumirlo.
+    Route::get('/geocoding/search', [GeocodingController::class, 'search'])->middleware('throttle:60,1');
+    Route::get('/geocoding/reverse', [GeocodingController::class, 'reverse'])->middleware('throttle:60,1');
+
+    // Rutas privadas: requieren token válido (Sanctum) y que la cuenta esté habilitada.
     Route::middleware(['auth:sanctum', 'account.enabled'])->group(function () {
-        // Sesión API
         Route::get('/me', [AutenticacionController::class, 'me']);
         Route::post('/logout', [AutenticacionController::class, 'logout']);
 
-        // Perfil / usuario
+        // Perfil/ajustes de usuario (nombre, email, preferencias, password y borrado).
+        // Se permiten POST/PUT para compatibilidad con diferentes clientes.
         Route::post('/user/profile', [UsuarioController::class, 'updateProfile']);
         Route::put('/user/profile', [UsuarioController::class, 'updateProfile']);
         Route::post('/user/avatar', [UsuarioController::class, 'uploadAvatar']);
@@ -45,7 +56,7 @@
         Route::put('/user/preferences', [UsuarioController::class, 'updatePreferences']);
         Route::delete('/user', [UsuarioController::class, 'deleteAccount']);
 
-        // Cartera virtual
+        // Cartera: saldo, deudas y movimientos; además operaciones de añadir/usar/retirar.
         Route::get('/wallet/balance', [CarteraController::class, 'getBalance']);
         Route::get('/wallet/debts', [CarteraController::class, 'getDebtSummary']);
         Route::get('/wallet/transactions', [CarteraController::class, 'getTransactions']);
@@ -53,81 +64,71 @@
         Route::post('/wallet/use', [CarteraController::class, 'useFunds']);
         Route::post('/wallet/withdraw', [CarteraController::class, 'withdrawFunds']);
 
-        // Rutas favoritas
+        // Rutas favoritas del usuario (CRUD + reordenación).
         Route::get('/favorites', [RutaFavoritaController::class, 'index']);
         Route::post('/favorites', [RutaFavoritaController::class, 'store']);
         Route::put('/favorites/{favorite}', [RutaFavoritaController::class, 'update']);
         Route::delete('/favorites/{favorite}', [RutaFavoritaController::class, 'destroy']);
         Route::post('/favorites/reorder', [RutaFavoritaController::class, 'reorder']);
 
-        // Notificaciones
+        // Notificaciones: listado, marcar como leídas y borrado.
         Route::get('/notifications', [NotificacionController::class, 'index']);
         Route::post('/notifications/{notification}/read', [NotificacionController::class, 'markAsRead']);
         Route::post('/notifications/read-all', [NotificacionController::class, 'markAllAsRead']);
         Route::delete('/notifications/{notification}', [NotificacionController::class, 'destroy']);
 
-        // Viajes del usuario (pasajero)
+        // Viajes del pasajero autenticado.
         Route::get('/user/viajes', [ViajeController::class, 'userviajes']);
 
-        // Viajes: creación, lectura y acciones del pasajero
+        // Flujo de viajes: crear, ver, track (seguimiento), cancelar y valorar.
         Route::post('/viajes', [ViajeController::class, 'store']);
         Route::get('/viajes/{viaje}', [ViajeController::class, 'show']);
         Route::get('/viajes/{viaje}/track', [ViajeController::class, 'track']);
         Route::patch('/viajes/{viaje}/cancel', [ViajeController::class, 'cancel']);
         Route::patch('/viajes/{viaje}/rate', [ViajeController::class, 'rate']);
 
-        // Datos del conductor autenticado
+        // Datos del conductor asociado al usuario autenticado.
         Route::get('/conductor/profile', [ConductorController::class, 'profile']);
         Route::get('/conductor/status', [ConductorController::class, 'status']);
 
-        // --- Conductor (solo rol conductor) ---
+        // Acciones exclusivas de conductor (y además conductor aprobado).
         Route::middleware(['role:conductor', 'conductor.approved'])->group(function () {
-            // Viajes asignados al conductor / disponibles
             Route::get('/conductor/viajes', [ViajeController::class, 'driverTrips']);
             Route::get('/conductor/viajes/available', [ViajeController::class, 'available']);
 
-            // Acciones del conductor sobre un viaje
             Route::patch('/viajes/{viaje}/accept', [ViajeController::class, 'accept']);
             Route::patch('/viajes/{viaje}/start', [ViajeController::class, 'start']);
             Route::patch('/viajes/{viaje}/complete', [ViajeController::class, 'complete']);
 
-            // Ubicación y estado del conductor
             Route::post('/conductor/ubicacion', [UbicacionController::class, 'update']);
             Route::patch('/conductor/status', [ConductorEstadoController::class, 'update']);
         });
 
-        // --- Admin (solo rol admin) ---
+        // Administración: endpoints de gestión, estadísticas y reportes.
         Route::middleware('role:admin')->group(function () {
-            // Gestión/consulta de usuarios y viajes
             Route::get('/admin/users', [AdministradorController::class, 'users']);
             Route::get('/admin/viajes', [AdministradorController::class, 'viajes']);
             Route::get('/admin/pending-conductors', [AdministradorController::class, 'pendingconductors']);
             Route::get('/admin/stats', [AdministradorController::class, 'stats']);
             Route::get('/admin/monthly-stats', [AdministradorController::class, 'monthlyStats']);
 
-            // Alta de administradores (solo desde panel admin)
             Route::post('/admin/admins', [AdministradorController::class, 'createAdmin']);
 
-            // Aprobación / rechazo de taxistas
             Route::post('/admin/conductors/{conductor}/approve', [AdministradorController::class, 'approveConductor']);
             Route::post('/admin/conductors/{conductor}/reject', [AdministradorController::class, 'rejectConductor']);
 
-            // Bajas (desactivar cuentas)
             Route::patch('/admin/users/{user}/disable', [AdministradorController::class, 'disableUser']);
 
-            // Informes
             Route::get('/admin/conductors/{conductor}/earnings-report', [AdministradorController::class, 'conductorEarningsReport']);
             Route::get('/admin/clients/{user}/trips-report', [AdministradorController::class, 'clientTripsReport']);
 
-            // CRUDs expuestos como API Resources
             Route::apiResource('conductors', ConductorController::class);
             Route::apiResource('taxis', TaxiController::class);
 
-            // Reportes
             Route::get('/reports/viajes', [ViajeController::class, 'reports']);
         });
 
-        // Pagos asociados a un viaje
+        // Pagos de viaje: creación/consulta y procesado con proveedores.
         Route::post('/viajes/{viaje}/pago', [PagoController::class, 'store']);
         Route::get('/viajes/{viaje}/pago', [PagoController::class, 'show']);
         Route::post('/viajes/{viaje}/pago/stripe', [PagoController::class, 'processstripe']);

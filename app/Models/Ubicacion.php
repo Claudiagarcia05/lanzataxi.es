@@ -1,15 +1,23 @@
 <?php
 
-namespace App\Models;
+    namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+    use Illuminate\Database\Eloquent\Model;
 
-class Ubicacion extends Model
-{
-    protected $fillable = ['conductor_id', 'lat', 'lng'];
+    /**
+     * Modelo Ubicacion.
+     *
+     * Guarda una muestra de ubicación (lat/lng) del conductor.
+     * Normalmente se inserta como histórico (una fila por actualización).
+     */
+    class Ubicacion extends Model {
+        protected $fillable = ['conductor_id', 'lat', 'lng'];
 
-    public function conductor()
-    {
-        return $this->belongsTo(Conductor::class);
+        /**
+         * Conductor al que pertenece esta ubicación.
+         */
+        public function conductor() {
+            
+            return $this->belongsTo(Conductor::class);
+        }
     }
-}

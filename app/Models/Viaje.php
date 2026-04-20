@@ -5,6 +5,15 @@
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
 
+    /**
+     * Modelo Viaje.
+     *
+     * Representa una solicitud/servicio de taxi:
+     * - Coordenadas de recogida y destino
+     * - Estado (`pending`, `accepted`, `in_progress`, `completed`, `cancelled`)
+     * - Precio, distancia y “CO2 ahorrado” estimado
+     * - Relaciones con pasajero, conductor, taxi y pago
+     */
     class Viaje extends Model {
         use HasFactory;
 
@@ -29,28 +38,47 @@
             'end_time' => 'datetime',
         ];
 
+        /**
+         * Usuario pasajero.
+         */
         public function pasajero() {
 
             return $this->belongsTo(User::class, 'pasajero_id');
         }
 
+        /**
+         * Conductor asignado.
+         */
         public function conductor() {
 
             return $this->belongsTo(Conductor::class);
         }
 
+        /**
+         * Taxi asignado.
+         */
         public function taxi() {
 
             return $this->belongsTo(Taxi::class);
         }
 
+        /**
+         * Pago asociado (si existe).
+         */
         public function pago() {
 
             return $this->hasOne(Pago::class);
         }
 
+        /**
+         * Estima el CO2 ahorrado.
+         *
+         * Implementación: diferencia entre una tasa “coche” y una tasa “taxi”.
+         * Los coeficientes son aproximados y se aplican por km.
+         */
         public function calculateCO2Saved() {
             if ($this->distance) {
+                // kg CO2/km aproximado (valores orientativos).
                 $co2_coche = $this->distance * 0.120;
                 $co2_taxi = $this->distance * 0.080;
 

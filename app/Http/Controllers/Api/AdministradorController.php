@@ -14,7 +14,17 @@
     use Illuminate\Support\Facades\Schema;
     use Illuminate\Database\QueryException;
 
+    /**
+     * Endpoints de administración.
+     *
+     * Nota: varias respuestas intentan usar columnas opcionales (p.ej. `is_disabled`)
+     * y hacen fallback si la BD aún no está migrada. Esto permite desplegar en
+     * entornos donde el esquema todavía no coincide al 100%.
+     */
     class AdministradorController extends Controller {
+        /**
+         * Lista usuarios (campos preferidos si existen en el esquema).
+         */
         public function users() {
             $preferidas = ['id', 'name', 'email', 'role', 'phone', 'is_disabled', 'disabled_at', 'created_at'];
 
@@ -31,6 +41,9 @@
             return response()->json($usuarios);
         }
 
+        /**
+         * Lista viajes con relaciones mínimas para panel/admin.
+         */
         public function viajes() {
             $viajes = Viaje::with(['pasajero:id,name', 'conductor.user:id,name', 'taxi:id,plate'])
                 ->latest()
@@ -39,6 +52,13 @@
             return response()->json($viajes);
         }
 
+        /**
+         * Métricas rápidas (hoy/semana/mes).
+         *
+         * `todayRevenue/weeklyRevenue/monthlyRevenue` suma:
+         * - Viajes completados.
+         * - Viajes cancelados con conductor asignado (cobros por cancelación).
+         */
         public function stats() {
             $hoyInicio = now()->startOfDay();
             $hoyFin = now()->endOfDay();
@@ -80,6 +100,11 @@
             ]);
         }
 
+        /**
+         * Métricas diarias de un mes concreto para gráficas.
+         *
+         * Acepta `year` y `month` opcionales; por defecto usa el mes actual.
+         */
         public function monthlyStats(Request $solicitud) {
             $validado = $solicitud->validate([
                 'year' => 'nullable|integer|min:2000|max:2100',
@@ -92,9 +117,6 @@
             $desde = Carbon::create($anio, $mes, 1, 0, 0, 0)->startOfMonth();
             $hasta = (clone $desde)->endOfMonth();
 
-            // NOTA:
-            // - Viajes completados: usar end_time; si no existe (datos antiguos), fallback a updated_at/created_at.
-            // - Viajes cancelados: usar updated_at como aproximación al instante de cancelación.
             $completedDateExpr = DB::raw('COALESCE(end_time, updated_at, created_at)');
 
             $viajesCompletados = Viaje::query()
@@ -159,7 +181,6 @@
                 $canceladosPorDia[$indice] = (int) ($fila->cnt ?? 0);
             }
 
-            // Recaudación de cancelaciones cobrables (por pasajero tras aceptar): sumar por día.
             $filasRecaudacionCancelados = Viaje::query()
                 ->where('status', 'cancelled')
                 ->whereNotNull('conductor_id')
@@ -197,6 +218,9 @@
             ]);
         }
 
+        /**
+         * Devuelve conductores pendientes de aprobación.
+         */
         public function pendingconductors() {
             $pendiente = Conductor::query()
                 ->with([
@@ -210,8 +234,10 @@
             return response()->json($pendiente);
         }
 
-        public function approveConductor(Conductor $conductor)
-        {
+        /**
+         * Aprueba a un conductor (habilita su operación en el sistema).
+         */
+        public function approveConductor(Conductor $conductor) {
             $conductor->approval_status = 'approved';
             $conductor->approved_at = now();
             $conductor->rejected_at = null;
@@ -220,8 +246,10 @@
             return response()->json($conductor->fresh(['user:id,name,email,phone,is_disabled', 'taxi']));
         }
 
-        public function rejectConductor(Conductor $conductor)
-        {
+        /**
+         * Rechaza a un conductor y fuerza su taxi a `offline`.
+         */
+        public function rejectConductor(Conductor $conductor) {
             $conductor->approval_status = 'rejected';
             $conductor->rejected_at = now();
             $conductor->approved_at = null;
@@ -236,22 +264,26 @@
             return response()->json($conductor->fresh(['user:id,name,email,phone,is_disabled', 'taxi']));
         }
 
-        public function disableUser(User $user)
-        {
+        /**
+         * Desactiva un usuario.
+         *
+         * Implementación defensiva: usa `DB::table()` para poder funcionar incluso
+         * si el modelo/atributos cambian entre despliegues y captura errores de
+         * esquema (columnas aún no migradas).
+         */
+        public function disableUser(User $user) {
             try {
-                // Actualiza primero is_disabled (campo crítico para la baja)
                 $filas = DB::table('users')
                     ->where('id', $user->id)
                     ->update(['is_disabled' => true]);
 
-                // disabled_at es opcional: si existe, lo registramos; si no, no bloquea la operación.
                 try {
                     DB::table('users')
                         ->where('id', $user->id)
                         ->whereNull('disabled_at')
                         ->update(['disabled_at' => now()]);
                 } catch (QueryException $e) {
-                    // Ignorar si la columna no existe aún.
+
                 }
             } catch (QueryException $e) {
                 $mensaje = (string) ($e->getMessage() ?? '');
@@ -260,6 +292,7 @@
                     || str_contains($mensaje, '42S22');
 
                 if ($esColumnaFaltante) {
+                    // Indica un desajuste de esquema: la app espera columnas que aún no existen.
                     return response()->json([
                         'message' => 'La base de datos no está actualizada (faltan columnas en users). Ejecuta las migraciones en el servidor: php artisan migrate --force',
                     ], 409);
@@ -268,19 +301,17 @@
                 throw $e;
             }
 
-            // Revocar tokens existentes para cortar acceso inmediato.
             try {
                 $user->tokens()->delete();
             } catch (\Throwable $e) {
-                // Si Sanctum no está disponible o la tabla no existe, no bloqueamos la baja.
+
             }
 
-            // Confirma que la baja ha persistido en BD (lectura directa para evitar estados cacheados).
             $valorIsDisabled = null;
             try {
                 $valorIsDisabled = DB::table('users')->where('id', $user->id)->value('is_disabled');
             } catch (QueryException $e) {
-                // Si falla la lectura por columna inexistente, lo tratamos como BD desactualizada.
+
                 return response()->json([
                     'message' => 'La base de datos no está actualizada (faltan columnas en users). Ejecuta las migraciones en el servidor: php artisan migrate --force',
                 ], 409);
@@ -289,6 +320,7 @@
             $isDisabledAhora = (bool) $valorIsDisabled;
 
             if (!$isDisabledAhora) {
+                // Si el update no persistió, devolvemos conflicto para que el panel/admin lo detecte.
                 \Log::warning('No se pudo persistir is_disabled al dar de baja', [
                     'user_id' => $user->id,
                     'updated_rows' => $filas ?? null,
@@ -301,6 +333,7 @@
             }
 
             if (($user->role ?? null) === 'conductor') {
+                // Si el usuario era conductor, lo forzamos a offline para evitar que siga disponible.
                 $user->loadMissing('conductor.taxi');
                 if ($user->conductor) {
                     $user->conductor->is_active = false;
@@ -314,8 +347,10 @@
             return response()->json($user->refresh()->loadMissing('conductor'));
         }
 
-        public function conductorEarningsReport(Conductor $conductor)
-        {
+        /**
+         * Informe de ganancias de un conductor (agregado por mes + listado de viajes).
+         */
+        public function conductorEarningsReport(Conductor $conductor) {
             $filas = Viaje::query()
                 ->where('conductor_id', $conductor->id)
                 ->whereIn('status', ['completed', 'cancelled'])
@@ -350,7 +385,6 @@
                     $agrupado[$clave]['cancelledTrips']++;
                     $totales['cancelledTrips']++;
 
-                    // Cancelación por pasajero tras aceptar: también computa como ganancia del conductor.
                     $agrupado[$clave]['revenue'] += (float) ($fila->price ?? 0);
                     $totales['revenue'] += (float) ($fila->price ?? 0);
                 }
@@ -391,11 +425,10 @@
             ]);
         }
 
-        public function clientTripsReport(User $user)
-        {
-            // UX: desde el panel se puede intentar generar informe aunque el usuario no tenga
-            // viajes (o incluso si su rol no es pasajero). En vez de 400, devolvemos un informe
-            // vacío para evitar errores en frontend.
+        /**
+         * Informe de viajes de un cliente (solo si su rol es `pasajero`).
+         */
+        public function clientTripsReport(User $user) {
             $esPasajero = (($user->role ?? null) === 'pasajero');
 
             $viajes = $esPasajero
@@ -419,8 +452,12 @@
             ]);
         }
 
-        public function createAdmin(Request $solicitud)
-        {
+        /**
+         * Crea un usuario administrador.
+         *
+         * Regla adicional: el email debe terminar en `@admin.es`.
+         */
+        public function createAdmin(Request $solicitud) {
             $validado = $solicitud->validate([
                 'name' => 'required|string|max:255',
                 'email' => 'required|email:rfc,dns|unique:users,email',
@@ -432,6 +469,7 @@
 
             $correo = strtolower(trim($validado['email'] ?? ''));
             if (!str_ends_with($correo, '@admin.es')) {
+
                 return response()->json([
                     'message' => 'Validación fallida.',
                     'errors' => [

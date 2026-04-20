@@ -2,7 +2,6 @@
   <div class="map-container">
     <div ref="mapElement" class="map"></div>
 
-    <!-- Estado de búsqueda -->
     <div v-if="estado === 'pendiente'" class="searching-overlay">
       <div class="bg-white rounded-lg p-4 text-center">
         <svg class="animate-spin h-8 w-8 mx-auto mb-2 text-lanzarote-blue" fill="none" viewBox="0 0 24 24" aria-hidden="true">
@@ -14,7 +13,6 @@
       </div>
     </div>
 
-    <!-- Información de seguimiento -->
     <div v-if="estado === 'accepted' && taxiLocation" class="taxi-info">
       <div class="bg-white rounded-lg p-3 shadow-lg">
         <div class="flex items-center gap-2">
@@ -29,6 +27,7 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, onMounted, watch, nextTick, computed, onUnmounted } from 'vue'
 import L from 'leaflet'
@@ -41,10 +40,24 @@ import svgGeoAltFill from 'bootstrap-icons/icons/geo-alt-fill.svg?raw'
 import svgFlagFill from 'bootstrap-icons/icons/flag-fill.svg?raw'
 import svgTaxiFront from 'bootstrap-icons/icons/taxi-front.svg?raw'
 
+/**
+ * Mapa de seguimiento de un viaje.
+ *
+ * Muestra:
+ * - Origen/destino del viaje
+ * - Ruta estimada (OSRM)
+ * - Ubicación del taxi (si se aporta taxiLat/taxiLng)
+ *
+ * Nota: el cálculo de `tiempoLlegada` es una estimación muy simple (distancia
+ * euclídea aproximada) y sirve únicamente para UI.
+ */
+
+// Normaliza la URL base del servicio OSRM para que siempre termine en '/'.
 const normalizeOsrmServiceUrl = (url) => {
   if (typeof url !== 'string') return null
   const trimmed = url.trim()
   if (!trimmed) return null
+
   return trimmed.endsWith('/') ? trimmed : `${trimmed}/`
 }
 
@@ -70,17 +83,17 @@ let pickupMarker = null
 let dropoffMarker = null
 let taxiMarker = null
 
-// Tiempo estimado de llegada (simulado)
 const tiempoLlegada = computed(() => {
+  // Estimación rápida en km usando factor ~111km por grado.
   if (!props.taxiLat || !props.taxiLng || !props.pickupLat) return 'calculando...'
   
-  // Calcular distancia aproximada (esto debería venir de la ruta real)
   const distancia = Math.sqrt(
     Math.pow(props.taxiLat - props.pickupLat, 2) + 
     Math.pow(props.taxiLng - props.pickupLng, 2)
-  ) * 111 // Aproximación a km
+  ) * 111
   
-  const minutos = Math.round(distancia * 3) // Aprox 3 min por km
+  const minutos = Math.round(distancia * 3)
+
   return `${minutos} min`
 })
 
@@ -95,7 +108,6 @@ const iconos = {
   taxiFront: innerSvg(svgTaxiFront),
 }
 
-// Iconos personalizados (SVG) para Leaflet
 const createSvgIcon = (svgInnerHtml, className = '') => {
   const html = `
     <svg viewBox="0 0 16 16" width="32" height="32" fill="currentColor" class="marker-svg ${className}">
@@ -117,7 +129,6 @@ const icons = {
   taxi: createSvgIcon(iconos.taxiFront, 'taxi-marker')
 }
 
-// Inicializar mapa
 const initMap = async () => {
   if (!mapElement.value || map) return
 
@@ -132,30 +143,26 @@ const initMap = async () => {
     attribution: '© OpenStreetMap'
   }).addTo(map)
 
-  // Marcador origen
   pickupMarker = L.marker([props.pickupLat, props.pickupLng], {
     icon: icons.pickup
   }).addTo(map).bindPopup('Origen')
 
-  // Marcador destino (solo si hay coordenadas válidas)
   const hasDropoff = Number.isFinite(props.dropoffLat) && Number.isFinite(props.dropoffLng)
   if (hasDropoff) {
     dropoffMarker = L.marker([props.dropoffLat, props.dropoffLng], {
       icon: icons.dropoff
     }).addTo(map).bindPopup('Destino')
 
-    // Calcular ruta
     calculateRoute()
   }
 
-  // Si hay ubicación del taxi, mostrarlo
   if (props.taxiLat && props.taxiLng) {
     addTaxiMarker()
   }
 }
 
-// Calcular ruta entre origen y destino
 const calculateRoute = () => {
+  // Dibuja una ruta entre pickup y dropoff.
   if (!map) return
   const hasPickup = Number.isFinite(props.pickupLat) && Number.isFinite(props.pickupLng)
   const hasDropoff = Number.isFinite(props.dropoffLat) && Number.isFinite(props.dropoffLng)
@@ -189,6 +196,7 @@ const calculateRoute = () => {
     const bounds = route.bounds
     if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
       map.fitBounds(bounds, { padding: [50, 50] })
+
       return
     }
 
@@ -206,8 +214,8 @@ const calculateRoute = () => {
   })
 }
 
-// Añadir marcador del taxi
 const addTaxiMarker = () => {
+  // Añade o actualiza el marcador del taxi.
   if (!map) return
   if (!Number.isFinite(props.taxiLat) || !Number.isFinite(props.taxiLng)) return
 
@@ -218,25 +226,27 @@ const addTaxiMarker = () => {
       icon: icons.taxi,
       zIndexOffset: 1000
     }).addTo(map)
-    
-    // Emitir que el taxi ha sido aceptado/ubicado
+
+    // Permite al padre reaccionar cuando se detecta ubicación de taxi.
     emit('taxi-aceptado', { lat: props.taxiLat, lng: props.taxiLng })
   }
 }
 
-// Watchers
 watch(() => [props.taxiLat, props.taxiLng], ([newLat, newLng]) => {
+  // Cuando el backend/sondeo actualiza coordenadas del taxi, movemos el marcador.
   if (Number.isFinite(newLat) && Number.isFinite(newLng)) {
     addTaxiMarker()
   }
 })
 
 watch(() => [props.pickupLat, props.pickupLng, props.dropoffLat, props.dropoffLng], () => {
+  // Si cambian puntos de origen/destino, actualiza markers y ruta.
   const hasPickup = Number.isFinite(props.pickupLat) && Number.isFinite(props.pickupLng)
   const hasDropoff = Number.isFinite(props.dropoffLat) && Number.isFinite(props.dropoffLng)
 
   if (!map) {
     if (hasPickup) initMap()
+    
     return
   }
 
@@ -256,7 +266,6 @@ watch(() => [props.pickupLat, props.pickupLng, props.dropoffLat, props.dropoffLn
   }
 })
 
-// Lifecycle
 onMounted(() => {
   initMap()
 })

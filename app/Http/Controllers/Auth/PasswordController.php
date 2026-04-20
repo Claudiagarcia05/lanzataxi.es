@@ -8,13 +8,20 @@
     use Illuminate\Support\Facades\Hash;
     use Illuminate\Validation\Rules\Password;
 
+    /**
+     * Cambio de contraseña para usuario autenticado.
+     */
     class PasswordController extends Controller {
+        /**
+         * Actualiza la contraseña verificando la contraseña actual.
+         */
         public function update(Request $solicitud): RedirectResponse {
             $validated = $solicitud->validate([
                 'current_password' => ['required', 'current_password'],
                 'password' => ['required', Password::defaults(), 'confirmed'],
             ]);
 
+            // Hash seguro (bcrypt/argon según config).
             $solicitud->user()->update([
                 'password' => Hash::make($validated['password']),
             ]);

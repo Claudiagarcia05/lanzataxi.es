@@ -12,13 +12,6 @@
             health: '/up',
         )
         ->withMiddleware(function (Middleware $middleware): void {
-            // La app usa autenticación por Bearer token en /api (Sanctum tokens).
-            // `statefulApi()` aplica middleware tipo "web" (sesión + CSRF) a /api, lo que provoca 419.
-            // Por eso lo desactivamos y mantenemos /api como stateless.
-            // $middleware->statefulApi();
-
-            // Cambiar el idioma solo setea una cookie; no merece romper por CSRF en producción.
-            // Además, al ser una preferencia no sensible, lo eximimos de validación CSRF.
             $middleware->validateCsrfTokens(except: [
                 'locale',
             ]);
@@ -28,8 +21,6 @@
             ]);
 
             $middleware->web(append: [
-                // Locale basado en cookie (o Accept-Language como fallback)
-                // Debe ejecutarse DESPUÉS de EncryptCookies para leer el valor desencriptado.
                 \App\Http\Middleware\EstablecerLocale::class,
                 \App\Http\Middleware\HandleInertiaRequests::class,
                 \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,

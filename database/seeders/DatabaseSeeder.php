@@ -7,16 +7,28 @@
     use Illuminate\Database\Seeder;
     use Illuminate\Support\Facades\Hash;
 
+    /**
+     * Seeder principal de la base de datos.
+     *
+     * Se ejecuta con `php artisan db:seed` (y normalmente también tras
+     * `php artisan migrate --seed`). Aquí se definen los datos iniciales
+     * necesarios para desarrollo/pruebas.
+     */
     class DatabaseSeeder extends Seeder {
         use WithoutModelEvents;
 
+        /**
+         * Ejecuta los seeders.
+         */
         public function run(): void {
-            // Estado inicial para pruebas: solo existe el admin base.
-            // Importante: cambia esta contraseña tras el primer acceso.
+            // Crea o actualiza un usuario administrador por defecto.
+            // Nota de seguridad: en producción NO se recomienda usar credenciales
+            // conocidas; este seeder está orientado a entornos de desarrollo.
             User::updateOrCreate([
                 'email' => 'admin@admin.es',
             ], [
                 'name' => 'Admin',
+                // Contraseña de desarrollo. Cambiarla si se habilita en entornos compartidos.
                 'password' => Hash::make('password'),
                 'role' => 'admin',
                 'phone' => '+34 600 333 333',

@@ -1,6 +1,17 @@
 import { defineStore } from 'pinia'
 import axios from 'axios'
 
+/**
+ * Store de administración.
+ *
+ * Centraliza la carga/gestión de datos para el panel admin:
+ * - usuarios, conductores, taxis
+ * - estadísticas globales y mensuales
+ * - aprobación/rechazo de conductores
+ *
+ * Importante: este store asume endpoints bajo `/api/admin/*` y algunos
+ * endpoints compartidos (`/api/taxis`, `/api/conductors`).
+ */
 export const useAdminStore = defineStore('admin', {
   state: () => ({
     usuarios: [],
@@ -41,6 +52,12 @@ export const useAdminStore = defineStore('admin', {
   },
 
   actions: {
+    /**
+     * Sanitiza la entidad taxi antes de mostrarla en formularios de edición.
+     *
+     * Objetivo: cuando el backend crea un taxi placeholder (p.ej. `PENDIENTE-*`),
+     * se prefiere mostrar campos vacíos para forzar al admin a completarlos.
+     */
     _sanearTaxiParaEdicion(taxi) {
       if (!taxi) return null
 
@@ -54,7 +71,6 @@ export const useAdminStore = defineStore('admin', {
       if (esPlatePlaceholder) taxiSan.plate = ''
       if (esModelPlaceholder) taxiSan.model = ''
 
-      // Si es un taxi placeholder, no forzamos capacidad por defecto en UI.
       if ((esPlatePlaceholder || esModelPlaceholder) && Number(taxiSan.capacity || 0) === 4) {
         taxiSan.capacity = null
       }
@@ -63,6 +79,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async obtenerTodosLosDatos() {
+      // Carga en paralelo todos los bloques necesarios para el dashboard admin.
       this.cargando = true
       try {
         await Promise.all([
@@ -84,6 +101,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async obtenerUsuarios() {
+      // Lista de usuarios (para tabla admin).
       const response = await axios.get('/api/admin/users')
       this.usuarios = response.data.map(usuario => ({
         id: usuario.id,
@@ -99,6 +117,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async obtenerConductores() {
+      // Lista conductores incluyendo usuario, taxi y estado de aprobación.
       const response = await axios.get('/api/conductors')
       this.conductores = response.data.map(conductor => ({
         id: conductor.id,
@@ -119,6 +138,7 @@ export const useAdminStore = defineStore('admin', {
               const modelo = String(taxiSan?.model || '').trim()
               const matricula = String(taxiSan?.plate || '').trim()
               const etiqueta = [modelo, matricula].filter(Boolean).join(' · ')
+
               return etiqueta || ''
             })()
           : '',
@@ -130,6 +150,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async obtenerTaxis() {
+      // Lista taxis existentes.
       const response = await axios.get('/api/taxis')
       this.taxis = response.data.map(taxi => ({
         id: taxi.id,
@@ -142,6 +163,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async obtenerConductoresPendientes({ abrirModalSiHayNuevos } = { abrirModalSiHayNuevos: true }) {
+      // Obtiene solicitudes pendientes de alta/aprobación de conductor.
       const response = await axios.get('/api/admin/pending-conductors')
 
       const pendientes = response.data.map(conductor => ({
@@ -168,6 +190,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async obtenerEstadisticas() {
+      // Estadísticas generales del día.
       const response = await axios.get('/api/admin/stats')
       this.estadisticas = {
         totalUsuarios: response.data.totalUsers,
@@ -180,6 +203,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async obtenerEstadisticasMensuales({ anio, mes } = {}) {
+      // Estadísticas agregadas por mes (incluye serie diaria para gráficas).
       const params = {
         year: anio ?? this.estadisticasMensuales.anio,
         month: mes ?? this.estadisticasMensuales.mes,
@@ -207,6 +231,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async aprobarConductor(conductorId) {
+      // Aprueba y recarga listados relevantes.
       await axios.post(`/api/admin/conductors/${conductorId}/approve`)
       this.conductoresPendientes = this.conductoresPendientes.filter(d => d.id !== conductorId)
       this.pendientesNuevos = this.pendientesNuevos.filter(d => d.id !== conductorId)
@@ -214,6 +239,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async rechazarConductor(conductorId) {
+      // Rechaza y recarga pendientes.
       await axios.post(`/api/admin/conductors/${conductorId}/reject`)
       this.conductoresPendientes = this.conductoresPendientes.filter(d => d.id !== conductorId)
       this.pendientesNuevos = this.pendientesNuevos.filter(d => d.id !== conductorId)
@@ -221,25 +247,27 @@ export const useAdminStore = defineStore('admin', {
     },
 
 		async darDeBajaUsuario(userId) {
+      // Deshabilita usuario (baja lógica) y refresca tablas.
 			const response = await axios.patch(`/api/admin/users/${userId}/disable`)
 			const isDisabled = Boolean(response?.data?.is_disabled)
 			if (!isDisabled) {
 				throw new Error('El servidor no confirmó la baja (is_disabled=false).')
 			}
 
-			// Re-sincroniza desde servidor para evitar inconsistencias/pestañeos.
 			await Promise.all([this.obtenerUsuarios(), this.obtenerConductores()])
     },
 
 		cerrarModalPendientes() {
+			// Cierra modal y limpia los “nuevos” para no reabrir en bucle.
       this.modalPendientesAbierto = false
       this.pendientesNuevos = []
     },
 
     async crearAdmin(payload) {
+      // Crea un nuevo admin (requiere permisos) y recarga usuarios.
       const response = await axios.post('/api/admin/admins', payload)
-      // Refrescar usuarios para que el panel refleje el alta.
       await this.obtenerUsuarios()
+      
       return response.data
     },
 
@@ -251,6 +279,7 @@ export const useAdminStore = defineStore('admin', {
     },
 
     async actualizarEstadoTaxi(taxiId, estado) {
+      // Normaliza el estado de UI a estado esperado por el backend.
       const estadoMapeado = estado === 'activo' ? 'available' : estado
       await axios.put(`/api/taxis/${taxiId}`, { status: estadoMapeado })
       const taxi = this.taxis.find(t => t.id === taxiId)

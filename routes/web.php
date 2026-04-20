@@ -1,10 +1,13 @@
 <?php
 
-    // Rutas web (Inertia):
-    // - Página de inicio
-    // - Rutas de prototipo
-    // - Acceso por roles (pasajero / conductor / admin)
-    // - Rutas de perfil (Breeze/Jetstream style)
+    /*
+    |--------------------------------------------------------------------------
+    | Web Routes (Inertia)
+    |--------------------------------------------------------------------------
+    | Estas rutas sirven páginas Inertia/Vue (SPA) y algunas utilidades web.
+    | Importante: aquí se decide qué vistas se renderizan según rol, y se
+    | aplican middlewares para proteger paneles y evitar acceso por URL.
+    */
 
     use App\Http\Controllers\ProfileController;
     use App\Http\Controllers\AuthSessionController;
@@ -13,6 +16,8 @@
     use Illuminate\Support\Facades\Route;
     use Inertia\Inertia;
 
+    // Helper para la landing: obtiene opiniones verificadas a partir de viajes completados.
+    // Se anonimiza el nombre (nombre + inicial) para privacidad.
     $obtenerOpinionesLanding = function () {
         try {
             return Viaje::query()
@@ -41,13 +46,16 @@
                 })
                 ->values();
         } catch (\Throwable $e) {
+            // No rompemos la home por un fallo puntual de BD/relaciones.
             report($e);
 
             return collect();
         }
     };
 
-    // Landing / Inicio
+    // Endpoint para cambiar el idioma guardándolo en cookies.
+    // Se escribe doble cookie (host y dominio base) para cubrir entornos con subdominios.
+    // También se conserva una cookie legacy por compatibilidad.
     Route::post('/locale', function (\Illuminate\Http\Request $request) {
         $locale = (string) $request->input('locale', '');
         if (!in_array($locale, ['es', 'en'], true)) {
@@ -59,20 +67,15 @@
         $host = (string) $request->getHost();
         $dominioBase = str_starts_with($host, 'www.') ? substr($host, 4) : $host;
 
-        // Si SESSION_DOMAIN está vacío en producción, fijamos el dominio base para que
-        // la cookie aplique tanto a lanzataxi.es como a www.lanzataxi.es.
         $dominio = config('session.domain') ?: $dominioBase;
         $segura = config('session.secure');
         $sameSite = strtolower((string) config('session.same_site', 'lax'));
 
-        // Los navegadores modernos rechazan cookies `SameSite=None` si no son `Secure`.
+        // Si SameSite=None, el estándar exige Secure=true.
         if ($sameSite === 'none') {
             $segura = true;
         }
 
-        // Importante: pueden coexistir cookies con el mismo nombre pero distinto Domain (host-only vs domain cookie)
-        // y el navegador puede enviar ambas. Para evitar que al recargar se lea la "vieja" (p.ej. ES),
-        // escribimos SIEMPRE las dos variantes con el mismo valor.
         $cookieLocaleHost = cookie(
             name: 'locale',
             value: $locale,
@@ -97,7 +100,6 @@
             sameSite: $sameSite
         );
 
-        // Compatibilidad con despliegues previos
         $cookieLegacyHost = cookie(
             name: 'lanzataxi_locale',
             value: $locale,
@@ -130,6 +132,7 @@
             ->withCookie($cookieLegacyDomain);
     })->name('locale.set');
 
+    // Landing pública.
     Route::get('/', function () use ($obtenerOpinionesLanding) {
 
         $opiniones = $obtenerOpinionesLanding();
@@ -143,21 +146,20 @@
         ]);
     });
 
-    // Vista de prototipado (para pruebas internas)
+    // Ruta interna/experimental para prototipos.
     Route::get('/prototype', function () {
 
         return Inertia::render('Prototype');
     })->name('prototype');
 
-    // Establece sesión web a partir de un token (flujo híbrido API -> sesión)
+    // Puente token -> sesión web (útil para que un token API "inicie" sesión web).
     Route::get('/auth/session-login', [AuthSessionController::class, 'establishSession'])
         ->name('auth.session-login');
 
-    // Rutas protegidas por autenticación (sesión Laravel)
+    // Áreas privadas: requiere sesión y cuenta habilitada.
     Route::middleware(['auth', 'account.enabled'])->group(function () {
-        // Dashboard genérico: redirige según el rol del usuario
         Route::get('/dashboard', function () {
-
+            // Redirección al dashboard correcto según rol.
             return match (auth()->user()->role) {
                 'conductor' => redirect()->route('conductor.dashboard'),
                 'admin' => redirect()->route('admin.dashboard'),
@@ -165,22 +167,20 @@
             };
         })->name('dashboard');
 
-        // Rutas del PASAJERO
+        // Panel y secciones de pasajero.
         Route::middleware('role:pasajero')->group(function () {
-            // Panel principal del pasajero
             Route::get('/pasajero/home', function () {
 
                 return Inertia::render('Pasajero/Panel');
             })->name('pasajero.dashboard');
 
-            // Historial y reservas del pasajero
             Route::get('/pasajero/reservas', function () {
 
                 return Inertia::render('Pasajero/Reservas');
             })->name('pasajero.reservas');
 
-            // Seguimiento del viaje (solo si el viaje pertenece al pasajero autenticado)
             Route::get('/pasajero/seguimiento/{viaje}', function (Viaje $viaje) {
+                // Seguridad: un pasajero solo puede ver el seguimiento de SUS viajes.
                 abort_unless((int) $viaje->pasajero_id === (int) auth()->id(), 403);
 
                 return Inertia::render('Pasajero/Seguimiento', [
@@ -188,79 +188,69 @@
                 ]);
             })->name('pasajero.seguimiento');
 
-            // Perfil del pasajero
             Route::get('/pasajero/perfil', function () {
 
                 return Inertia::render('Pasajero/Perfil');
             })->name('pasajero.perfil');
 
-            // Cartera del pasajero
             Route::get('/dashboard/cartera', function () {
 
                 return Inertia::render('Pasajero/Cartera');
             })->name('pasajero.wallet');
 
-            // Alias/entrada adicional para viajes del pasajero (renderiza panel)
             Route::get('/dashboard/viajes', function () {
 
                 return Inertia::render('Pasajero/Panel');
             })->name('pasajero.viajes');
         });
 
-        // Rutas del CONDUCTOR
+        // Panel y secciones de conductor (además, conductor debe estar aprobado).
         Route::middleware(['role:conductor', 'conductor.approved'])->group(function () {
-            // Panel principal del conductor
             Route::get('/conductor/dashboard', function () {
 
                 return Inertia::render('Conductor/Panel');
             })->name('conductor.dashboard');
 
-            // Alias/entrada adicional a viajes del conductor (renderiza panel)
             Route::get('/conductor/viajes', function () {
 
                 return Inertia::render('Conductor/Panel');
             })->name('conductor.viajes');
 
-            // Pantalla de ganancias del conductor
             Route::get('/conductor/ganancias', function () {
 
                 return Inertia::render('Conductor/Ganancias');
             })->name('conductor.earnings');
 
-            // Perfil del conductor
             Route::get('/conductor/perfil', function () {
 
                 return Inertia::render('Conductor/Perfil');
             })->name('conductor.perfil');
         });
 
-        // Rutas del ADMIN
+        // Panel y secciones de administrador.
         Route::middleware('role:admin')->group(function () {
-            // Home del panel de administración (URL canónica)
             Route::get('/admin/dashboard', function () {
 
                 return Inertia::render('Administrador/Panel');
             })->name('admin.dashboard');
 
-            // Compatibilidad: URL anterior con typo
             Route::get('/administradir/home', function () {
-
+                // Alias/histórico: mantiene compatibilidad con una URL anterior.
                 return redirect()->route('admin.dashboard');
             });
 
-            // Secciones del admin (actualmente renderizan la misma vista)
             Route::get('/admin/viajes', function () {
 
                 return Inertia::render('Administrador/Panel');
             })->name('admin.viajes');
 
             Route::get('/admin/users', function () {
-
+                // Redirección para mantener URLs antiguas.
                 return redirect('/admin/usuarios');
             })->name('admin.users');
 
             Route::get('/admin/usuarios', function () {
-
+                // Redirección: en UI se muestra el listado bajo taxistas.
                 return redirect('/admin/taxistas');
             })->name('admin.usuarios');
 
@@ -285,28 +275,25 @@
             })->name('admin.taxis');
 
             Route::get('/admin/reports', function () {
-                
+
                 return Inertia::render('Administrador/Panel');
             })->name('admin.reports');
 
-            // Perfil del administrador
             Route::get('/perfil', function () {
 
                 return Inertia::render('Administrador/Perfil');
             })->name('admin.perfil');
         });
 
-        // Perfil (scaffolding Laravel)
         Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
         Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
         Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 
-    // Rutas de autenticación de Laravel (Breeze)
     require __DIR__.'/auth.php';
 
-    // Catch-all: cualquier ruta no definida renderiza Inicio
-    // Útil para SPA con Inertia cuando el frontend maneja enlaces.
+    // Catch-all para la SPA: cualquier ruta no declarada renderiza la landing.
+    // Útil para URLs compartidas/refresh del navegador, evitando 404 del servidor.
     Route::get('/{any}', function () use ($obtenerOpinionesLanding) {
 
         $opiniones = $obtenerOpinionesLanding();

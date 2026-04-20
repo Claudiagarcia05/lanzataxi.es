@@ -10,15 +10,26 @@
     use Illuminate\Support\Facades\Auth;
     use Illuminate\Support\Facades\DB;
 
+    /**
+     * Cartera virtual del usuario (saldo y gestión de deudas).
+     *
+     * Importante: varias operaciones usan `DB::transaction()` y `lockForUpdate()`
+     * para evitar condiciones de carrera al modificar saldos.
+     */
     class CarteraController extends Controller {
-        private function liquidarDeudasPendientesSiEsPosible(User $usuario): array
-        {
+        /**
+         * Liquida deudas pendientes si el saldo del usuario lo permite.
+         *
+         * Devuelve un resumen para que el caller decida si continuar.
+         */
+        private function liquidarDeudasPendientesSiEsPosible(User $usuario): array {
             $resultado = [
                 'had_debt' => false,
                 'settled' => false,
                 'pending_debt' => 0.0,
             ];
 
+            // Se bloquean filas para que dos recargas simultáneas no liquiden lo mismo dos veces.
             $deudas = Deuda::query()
                 ->where('user_id', $usuario->id)
                 ->where('status', 'pending')
@@ -29,15 +40,18 @@
             $deudaTotal = (float) $deudas->sum('amount');
             $resultado['pending_debt'] = $deudaTotal;
             if ($deudaTotal <= 0) {
+
                 return $resultado;
             }
 
             $resultado['had_debt'] = true;
             $saldo = (float) ($usuario->wallet_balance ?? 0);
             if ($saldo < $deudaTotal) {
+
                 return $resultado;
             }
 
+            // Se descuenta el total de la deuda del saldo del pasajero.
             $usuario->wallet_balance = $saldo - $deudaTotal;
             $usuario->save();
 
@@ -49,6 +63,7 @@
                     continue;
                 }
 
+                // Si la deuda se relaciona con un viaje, se abona el importe al conductor.
                 $viaje = Viaje::query()->with(['conductor', 'pago'])->find($deuda->trip_id);
                 if (!$viaje || !$viaje->conductor) {
                     continue;
@@ -73,9 +88,13 @@
 
             $resultado['settled'] = true;
             $resultado['pending_debt'] = 0.0;
+            
             return $resultado;
         }
 
+        /**
+         * Devuelve el saldo actual del usuario autenticado.
+         */
         public function getBalance() {
             $usuario = Auth::user();
             
@@ -87,12 +106,21 @@
             ]);
         }
 
+        /**
+         * Historial de transacciones.
+         *
+         * Actualmente es un stub (devuelve []): se debe conectar a un modelo/tabla
+         * real cuando exista.
+         */
         public function getTransactions() {
             $usuario = Auth::user();
             
             return response()->json([]);
         }
 
+        /**
+         * Resumen de deuda pendiente del usuario.
+         */
         public function getDebtSummary() {
             $usuario = Auth::user();
             $deudaPendiente = Deuda::where('user_id', $usuario->id)
@@ -105,6 +133,11 @@
             ]);
         }
 
+        /**
+         * Añade saldo a la cartera.
+         *
+         * Nota: tras recargar, intenta liquidar deudas pendientes automáticamente.
+         */
         public function addFunds(Request $solicitud) {
             $solicitud->validate([
                 'amount' => 'required|numeric|min:5|max:1000'
@@ -115,6 +148,7 @@
 
             $saldoNuevo = null;
             DB::transaction(function () use ($usuario, $monto, &$saldoNuevo) {
+                // Se bloquea al usuario para sumar saldo de forma atómica.
                 $usuarioBloqueado = User::query()->whereKey($usuario->id)->lockForUpdate()->first();
                 if (!$usuarioBloqueado) {
                     throw new \RuntimeException('Usuario no encontrado');
@@ -124,6 +158,7 @@
                 $usuarioBloqueado->wallet_balance = $saldoActual + $monto;
                 $usuarioBloqueado->save();
 
+                // Si había deudas, se intentan liquidar con el saldo recién recargado.
                 $this->liquidarDeudasPendientesSiEsPosible($usuarioBloqueado);
                 $saldoNuevo = (float) ($usuarioBloqueado->fresh()->wallet_balance ?? 0);
             }, 3);
@@ -132,6 +167,7 @@
                 'success' => true,
                 'message' => 'Saldo añadido correctamente',
                 'new_balance' => $saldoNuevo,
+                // `id` aleatorio: placeholder hasta implementar un sistema real de transacciones.
                 'transaction' => [
                     'id' => rand(1000, 9999),
                     'type' => 'credit',
@@ -142,6 +178,12 @@
             ]);
         }
 
+        /**
+         * Descuenta saldo para pagar un viaje.
+         *
+         * Nota: este endpoint no marca el viaje como pagado; solo ajusta saldo.
+         * La conciliación con `Pago`/estado de viaje debería gestionarse en un flujo único.
+         */
         public function useFunds(Request $solicitud) {
             $solicitud->validate([
                 'amount' => 'required|numeric|min:0.01',
@@ -180,6 +222,12 @@
             ]);
         }
 
+        /**
+         * Solicita retirada de saldo.
+         *
+         * Actualmente descuenta saldo directamente y devuelve una “transacción” stub.
+         * En producción, normalmente se encola una orden de pago y se audita.
+         */
         public function withdrawFunds(Request $solicitud) {
             $solicitud->validate([
                 'amount' => 'required|numeric|min:5'

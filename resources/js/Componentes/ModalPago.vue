@@ -4,7 +4,6 @@
       <h3 class="text-2xl font-bold text-neutral-dark mb-2">Pagar viaje</h3>
       <p class="text-sm text-neutral-slate mb-6">Selecciona tu método de pago preferido</p>
 
-      <!-- Detalles del viaje -->
       <div class="bg-neutral-soft p-4 rounded-lg mb-6">
         <div class="flex justify-between mb-2">
           <span class="text-sm text-neutral-slate">Origen:</span>
@@ -24,19 +23,8 @@
         </div>
       </div>
 
-      <!-- Métodos de pago -->
       <div class="space-y-3 mb-6">
-        <button 
-          v-for="method in metodosPago" 
-          :key="method.value"
-          @click="metodoSeleccionado = method.value"
-          :class="[
-            'w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all',
-            metodoSeleccionado === method.value 
-              ? 'border-lanzarote-blue bg-lanzarote-blue/5' 
-              : 'border-neutral-volcanic hover:border-lanzarote-blue/30'
-          ]"
-        >
+        <button v-for="method in metodosPago" :key="method.value" @click="metodoSeleccionado = method.value" :class="['w-full flex items-center gap-3 p-4 rounded-lg border-2 transition-all', metodoSeleccionado === method.value ? 'border-lanzarote-blue bg-lanzarote-blue/5' : 'border-neutral-volcanic hover:border-lanzarote-blue/30' ]">
           <svg class="w-6 h-6 text-neutral-dark" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="method.iconSvg"></svg>
           <div class="flex-1 text-left">
             <p class="font-medium text-neutral-dark">{{ method.label }}</p>
@@ -70,49 +58,25 @@
         </div>
       </Teleport>
 
-      <!-- Detalles adicionales según método -->
       <div v-if="metodoSeleccionado === 'card' || metodoSeleccionado === 'stripe'" class="mb-6 space-y-3">
         <div>
           <label class="block text-sm font-medium text-neutral-slate mb-2">Número de tarjeta</label>
-          <input 
-            v-model="detallesTarjeta.number"
-            type="text"
-            placeholder="1234 5678 9012 3456"
-            maxlength="19"
-            class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"
-          />
+          <input v-model="detallesTarjeta.number" type="text" placeholder="1234 5678 9012 3456" maxlength="19" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"/>
         </div>
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label class="block text-sm font-medium text-neutral-slate mb-2">Vencimiento</label>
-            <input 
-              v-model="detallesTarjeta.expiry"
-              type="text"
-              placeholder="MM/AA"
-              maxlength="5"
-              class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"
-            />
+            <input v-model="detallesTarjeta.expiry" type="text" placeholder="MM/AA" maxlength="5" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"/>
           </div>
           <div>
             <label class="block text-sm font-medium text-neutral-slate mb-2">CVV</label>
-            <input 
-              v-model="detallesTarjeta.cvv"
-              type="text"
-              placeholder="123"
-              maxlength="3"
-              class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"
-            />
+            <input v-model="detallesTarjeta.cvv" type="text" placeholder="123" maxlength="3" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"/>
           </div>
         </div>
       </div>
 
-      <!-- Botones de acción -->
       <div class="flex gap-3">
-        <button 
-          @click="procesarPago"
-          :disabled="procesando"
-          class="flex-1 bg-lanzarote-blue text-white font-semibold py-3 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        >
+        <button @click="procesarPago" :disabled="procesando" class="flex-1 bg-lanzarote-blue text-white font-semibold py-3 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
           <span v-if="!procesando">Confirmar pago</span>
           <span v-else class="flex items-center justify-center gap-2">
             <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
@@ -122,17 +86,14 @@
             Procesando...
           </span>
         </button>
-        <button 
-          @click="$emit('close')"
-          :disabled="procesando"
-          class="px-6 border border-neutral-volcanic py-3 rounded-lg hover:bg-neutral-soft transition-colors disabled:opacity-50"
-        >
+        <button @click="$emit('close')" :disabled="procesando" class="px-6 border border-neutral-volcanic py-3 rounded-lg hover:bg-neutral-soft transition-colors disabled:opacity-50">
           Cancelar
         </button>
       </div>
     </div>
   </div>
 </template>
+
 
 <script setup>
 import { ref, computed } from 'vue'
@@ -142,6 +103,14 @@ import svgCashCoin from 'bootstrap-icons/icons/cash-coin.svg?raw'
 import svgCreditCard from 'bootstrap-icons/icons/credit-card.svg?raw'
 import svgShieldLock from 'bootstrap-icons/icons/shield-lock.svg?raw'
 import svgPaypal from 'bootstrap-icons/icons/paypal.svg?raw'
+
+/**
+ * Modal de pago.
+ *
+ * Permite seleccionar un método y lanzar el endpoint correspondiente.
+ * Nota importante: los campos de tarjeta aquí NO integran una pasarela real;
+ * son inputs de UI. Para Stripe/PayPal se simulan identificadores.
+ */
 
 const props = defineProps({
   show: Boolean,
@@ -173,6 +142,7 @@ const metodosPago = [
 ]
 
 const procesarPago = async () => {
+  // Llama al endpoint correcto según método. El backend decide la lógica final.
   procesando.value = true
   mensajeError.value = ''
   
@@ -180,16 +150,19 @@ const procesarPago = async () => {
     let respuesta
     
     if (metodoSeleccionado.value === 'stripe') {
+      // Integración simulada: genera un `payment_method` ficticio.
       respuesta = await axios.post(`/api/viajes/${props.viaje.id}/pago/stripe`, {
         pago_method_id: 'pm_' + Math.random().toString(36).substr(2, 9),
         amount: props.viaje.price
       })
     } else if (metodoSeleccionado.value === 'paypal') {
+      // Integración simulada: genera un `order_id` ficticio.
       respuesta = await axios.post(`/api/viajes/${props.viaje.id}/pago/paypal`, {
         order_id: 'PAYPAL-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
         amount: props.viaje.price
       })
     } else {
+      // Pago genérico (efectivo/tarjeta) contra endpoint base.
       respuesta = await axios.post(`/api/viajes/${props.viaje.id}/pago`, {
         method: metodoSeleccionado.value,
         amount: props.viaje.price,
@@ -209,4 +182,3 @@ const procesarPago = async () => {
   }
 }
 </script>
-

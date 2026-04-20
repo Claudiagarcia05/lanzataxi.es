@@ -2,27 +2,16 @@
   <div class="map-container">
     <div ref="mapElement" class="map"></div>
     
-    <!-- Controles de mapa -->
     <div class="map-controls">
-      <button 
-        @click="centerOnUser" 
-        class="control-btn"
-        title="Centrar en mi ubicación"
-      >
+      <button @click="centerOnUser" class="control-btn" title="Centrar en mi ubicación">
         <svg class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconos.geoAlt"></svg>
       </button>
-      <button 
-        @click="toggleSimulation" 
-        class="control-btn"
-        :class="{ 'active': isSimulating }"
-        :title="isSimulating ? 'Detener simulación' : 'Simular viaje'"
-      >
+      <button @click="toggleSimulation" class="control-btn" :class="{ 'active': isSimulating }" :title="isSimulating ? 'Detener simulación' : 'Simular viaje'">
         <svg v-if="isSimulating" class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconos.pauseFill"></svg>
         <svg v-else class="w-5 h-5" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconos.playFill"></svg>
       </button>
     </div>
 
-    <!-- Información de ruta -->
     <div v-if="routeInfo" class="route-info">
       <div class="info-item">
         <span class="info-label">Distancia:</span>
@@ -60,6 +49,7 @@
   </div>
 </template>
 
+
 <script setup>
 import { ref, onMounted, watch, nextTick, onUnmounted } from 'vue'
 import L from 'leaflet'
@@ -78,17 +68,30 @@ import svgGeoAltFill from 'bootstrap-icons/icons/geo-alt-fill.svg?raw'
 import svgFlagFill from 'bootstrap-icons/icons/flag-fill.svg?raw'
 import svgTaxiFront from 'bootstrap-icons/icons/taxi-front.svg?raw'
 
+/**
+ * Componente de mapa (Leaflet) para selección/visualización de ruta.
+ *
+ * Funcionalidades:
+ * - Obtiene ubicación del usuario (si hay permisos) y la marca en el mapa.
+ * - Muestra marcador de origen (pickup) y destino (dropoff) si están definidos.
+ * - Calcula una ruta usando OSRM vía `leaflet-routing-machine`.
+ * - Emite la distancia calculada para que el formulario pueda estimar precio.
+ * - Incluye un modo de simulación que anima un marcador de taxi sobre la ruta.
+ */
+
+// Normaliza la URL base del servicio OSRM para que siempre termine en '/'.
 const normalizeOsrmServiceUrl = (url) => {
   if (typeof url !== 'string') return null
   const trimmed = url.trim()
   if (!trimmed) return null
+
   return trimmed.endsWith('/') ? trimmed : `${trimmed}/`
 }
 
 const OSRM_SERVICE_URL = normalizeOsrmServiceUrl(import.meta.env.VITE_OSRM_SERVICE_URL)
   || 'https://router.project-osrm.org/route/v1/'
 
-// Props
+// Coordenadas iniciales de ejemplo (Lanzarote). Dropoff es opcional.
 const props = defineProps({
   pickupLat: { type: Number, default: 28.963 },
   pickupLng: { type: Number, default: -13.550 },
@@ -96,13 +99,13 @@ const props = defineProps({
   dropoffLng: { type: Number, default: null }
 })
 
-// Emits
+// Eventos hacia el padre:
+// - `distance-calculated`: distancia (km) cuando OSRM resuelve ruta
+// - `location-found`: ubicación del usuario tras geolocalización
 const emit = defineEmits(['distance-calculated', 'location-found'])
 
-// Referencias
 const mapElement = ref(null)
 
-// Estado del mapa
 let map = null
 let userMarker = null
 let pickupMarker = null
@@ -112,12 +115,12 @@ let taxiMarker = null
 let simulationInterval = null
 let currentRoutePoints = []
 
-// Estado reactivo
 const isSimulating = ref(false)
 const routeInfo = ref(null)
 const userLocation = ref(null)
 const geolocationError = ref('')
 
+// Utilidad: bootstrap-icons entrega SVG completo; aquí extraemos el contenido interno.
 const innerSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
   .replace(/<\/svg>\s*$/i, '')
@@ -133,7 +136,6 @@ const iconos = {
   taxiFront: innerSvg(svgTaxiFront),
 }
 
-// Configuración de iconos personalizados para Leaflet (SVG)
 const createSvgIcon = (svgInnerHtml) => {
   const html = `
     <svg viewBox="0 0 16 16" width="24" height="24" fill="currentColor" style="filter: drop-shadow(2px 2px 2px rgba(0,0,0,0.3));">
@@ -156,32 +158,29 @@ const icons = {
   taxi: createSvgIcon(iconos.taxiFront)
 }
 
-// Inicializar mapa
 const initMap = async () => {
   if (!mapElement.value || map) return
 
   await nextTick()
 
-  // Configurar mapa con OpenStreetMap
   map = L.map(mapElement.value).setView([28.963, -13.550], 13)
 
-  // Añadir capas de OpenStreetMap
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
   }).addTo(map)
 
-  // Añadir control de búsqueda
   L.Control.geocoder({
     defaultMarkGeocode: false,
     placeholder: 'Buscar dirección...',
     errorMessage: 'No se encontró la dirección',
     geocoder: L.Control.Geocoder.nominatim({
-      // Restringir resultados a Lanzarote (bounding box)
-      // Nominatim: viewbox=left,top,right,bottom
-      serviceUrl: 'https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&limit=5&countrycodes=es&bounded=1&viewbox=-13.95,29.35,-13.20,28.85&q='
+      // Proxy backend para evitar CORS y centralizar límites/uso de Nominatim.
+      // El geocoder añade el término de búsqueda al final de `q=`.
+      serviceUrl: '/api/geocoding/search?format=json&addressdetails=1&limit=5&countrycodes=es&bounded=1&viewbox=-13.95,29.35,-13.20,28.85&q='
     })
   }).on('markgeocode', function(e) {
+    // Búsqueda de direcciones: centra el mapa y deja un marcador informativo.
     const { center, name } = e.geocode
     map.setView(center, 15)
     L.marker(center, { icon: icons.pickup }).addTo(map)
@@ -189,14 +188,14 @@ const initMap = async () => {
       .openPopup()
   }).addTo(map)
 
-  // Obtener ubicación del usuario al iniciar
   getUserLocation()
 }
 
-// Obtener ubicación del usuario
 const getUserLocation = () => {
+  // Obtiene la ubicación del usuario. Si falla, se muestra un modal con explicación.
   if (!navigator.geolocation) {
     console.error('Geolocalización no soportada')
+
     return
   }
 
@@ -205,7 +204,6 @@ const getUserLocation = () => {
       const { latitude, longitude } = position.coords
       userLocation.value = { lat: latitude, lng: longitude }
       
-      // Actualizar marcador de usuario
       if (userMarker) {
         userMarker.setLatLng([latitude, longitude])
       } else {
@@ -217,10 +215,8 @@ const getUserLocation = () => {
           .openPopup()
       }
 
-      // Centrar mapa en usuario
       map.setView([latitude, longitude], 15)
 
-      // Emitir ubicación encontrada
       emit('location-found', { lat: latitude, lng: longitude })
     },
     (error) => {
@@ -235,14 +231,12 @@ const getUserLocation = () => {
       }
       mensaje += '\nActiva los permisos de ubicación o accede por HTTPS/localhost.';
       geolocationError.value = mensaje;
-      // Si no se puede obtener la ubicación, usar ubicación por defecto
       userMarker = L.marker([28.963, -13.550], { icon: icons.user }).addTo(map)
         .bindPopup('Ubicación por defecto')
     }
   )
 }
 
-// Centrar mapa en usuario
 const centerOnUser = () => {
   if (userLocation.value) {
     map.setView([userLocation.value.lat, userLocation.value.lng], 15)
@@ -251,17 +245,15 @@ const centerOnUser = () => {
   }
 }
 
-// Calcular ruta
 const calculateRoute = () => {
+  // Dibuja/actualiza marcadores y calcula la ruta cuando hay pickup+dropoff.
   if (!map) return
 
-  // Eliminar ruta anterior
   if (routingControl) {
     map.removeControl(routingControl)
     routingControl = null
   }
 
-  // Validar puntos
   const hasPickup = Number.isFinite(props.pickupLat) && Number.isFinite(props.pickupLng)
   if (!hasPickup) return
 
@@ -269,7 +261,6 @@ const calculateRoute = () => {
 
   const hasDropoff = Number.isFinite(props.dropoffLat) && Number.isFinite(props.dropoffLng)
 
-  // Actualizar marcadores
   if (pickupMarker) {
     pickupMarker.setLatLng(pickup)
   } else {
@@ -277,7 +268,6 @@ const calculateRoute = () => {
       .bindPopup('Origen')
   }
 
-  // Si todavía no hay destino, NO inventar uno. Limpiar estado y salir.
   if (!hasDropoff) {
     if (dropoffMarker) {
       map.removeLayer(dropoffMarker)
@@ -287,6 +277,7 @@ const calculateRoute = () => {
     routeInfo.value = null
     currentRoutePoints = []
     emit('distance-calculated', 0)
+
     return
   }
 
@@ -299,7 +290,6 @@ const calculateRoute = () => {
       .bindPopup('Destino')
   }
 
-  // Crear nueva ruta con OSRM
   routingControl = L.Routing.control({
     waypoints: [
       L.latLng(pickup[0], pickup[1]),
@@ -307,31 +297,29 @@ const calculateRoute = () => {
     ],
     router: L.Routing.osrmv1({
       serviceUrl: OSRM_SERVICE_URL,
-      profile: 'car' // Para rutas en coche/taxi
+      profile: 'car'
     }),
     lineOptions: {
       styles: [{ color: '#6366f1', weight: 5 }],
       addWaypoints: false
     },
     showAlternatives: false,
-    show: false, // No mostrar instrucciones paso a paso
-    createMarker: () => null // No crear marcadores adicionales
+    show: false,
+    createMarker: () => null
   }).addTo(map)
 
-  // Escuchar evento de ruta encontrada
   routingControl.on('routesfound', function(e) {
+    // Evento cuando OSRM devuelve una ruta.
     const route = e?.routes?.[0]
     if (!route) return
 
     const summary = route.summary
     const coordinates = Array.isArray(route.coordinates) ? route.coordinates : []
     
-    // Guardar puntos de la ruta para simulación
     currentRoutePoints = coordinates
       .filter(coord => coord && Number.isFinite(coord.lat) && Number.isFinite(coord.lng))
       .map(coord => ({ lat: coord.lat, lng: coord.lng }))
 
-    // Calcular distancia y duración
     const totalDistance = Number(summary?.totalDistance)
     const totalTime = Number(summary?.totalTime)
 
@@ -342,15 +330,13 @@ const calculateRoute = () => {
       ? { distance, duration: `${duration} min` }
       : null
 
-    // Emitir distancia calculada
     if (distance) emit('distance-calculated', distance)
 
-    // Ajustar vista del mapa para mostrar toda la ruta
     const bounds = route.bounds
 
-    // Ajustar vista del mapa para mostrar toda la ruta (solo si hay bounds válidos)
     if (bounds && typeof bounds.isValid === 'function' && bounds.isValid()) {
       map.fitBounds(bounds, { padding: [50, 50] })
+      
       return
     }
 
@@ -369,14 +355,13 @@ const calculateRoute = () => {
   })
 }
 
-// Simulación de movimiento del taxi
 const simulateTaxiMovement = () => {
+  // Modo demo: recorre los puntos de la polilínea y mueve el icono de taxi.
   if (!currentRoutePoints.length || isSimulating.value) return
 
   isSimulating.value = true
   let currentPoint = 0
 
-  // Crear marcador del taxi si no existe
   if (!taxiMarker) {
     taxiMarker = L.marker(currentRoutePoints[0], { 
       icon: icons.taxi,
@@ -384,7 +369,6 @@ const simulateTaxiMovement = () => {
     }).addTo(map)
   }
 
-  // Animar movimiento
   simulationInterval = setInterval(() => {
     if (currentPoint < currentRoutePoints.length - 1) {
       currentPoint++
@@ -393,20 +377,18 @@ const simulateTaxiMovement = () => {
       
       taxiMarker.setIcon(icons.taxi)
       
-      // Centrar mapa en el taxi cada 10 puntos
       if (currentPoint % 10 === 0) {
         map.setView([point.lat, point.lng], map.getZoom())
       }
     } else {
-      // Llegó al destino
       stopSimulation()
       taxiMarker.bindPopup('Taxi ha llegado al destino').openPopup()
     }
-  }, 100) // Actualizar cada 100ms para movimiento suave
+  }, 100)
 }
 
-// Detener simulación
 const stopSimulation = () => {
+  // Limpia el intervalo para evitar leaks cuando se desmonta el componente.
   if (simulationInterval) {
     clearInterval(simulationInterval)
     simulationInterval = null
@@ -414,7 +396,6 @@ const stopSimulation = () => {
   isSimulating.value = false
 }
 
-// Alternar simulación
 const toggleSimulation = () => {
   if (isSimulating.value) {
     stopSimulation()
@@ -423,10 +404,10 @@ const toggleSimulation = () => {
   }
 }
 
-// Watchers
 watch(
   () => [props.pickupLat, props.pickupLng, props.dropoffLat, props.dropoffLng],
   () => {
+    // Recalcula ruta cuando cambian coordenadas.
     if (Number.isFinite(props.pickupLat) && Number.isFinite(props.pickupLng)) {
       calculateRoute()
     }
@@ -434,12 +415,10 @@ watch(
   { deep: true }
 )
 
-// Lifecycle hooks
 onMounted(() => {
   initMap()
 })
 
-// Cleanup
 onUnmounted(() => {
   stopSimulation()
   if (map) {
@@ -447,6 +426,3 @@ onUnmounted(() => {
   }
 })
 </script>
-
-
-

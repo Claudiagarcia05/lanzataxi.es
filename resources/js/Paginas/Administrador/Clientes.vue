@@ -59,7 +59,6 @@
       </div>
     </div>
 
-    <!-- Modal Cliente -->
     <div v-if="modalClienteAbierto" class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
       <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
@@ -106,12 +105,17 @@
   </DisposicionAdministrador>
 </template>
 
+
 <script setup>
 import { computed, onMounted, ref } from 'vue'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 import axios from 'axios'
 import { jsPDF } from 'jspdf'
+
+// Página de Administración: listado de clientes.
+// - Permite ver detalle, dar de baja y descargar informe de viajes (PDF).
+// - Los datos base se cargan desde el store para reutilizar caché/estado global.
 
 const adminStore = useAdminStore()
 
@@ -122,6 +126,7 @@ const modalClienteAbierto = ref(false)
 const clienteSeleccionado = ref(null)
 
 onMounted(async () => {
+  // Cargamos usuarios/viajes necesarios para tener el listado actualizado.
   await adminStore.obtenerTodosLosDatos()
 })
 
@@ -144,6 +149,7 @@ const darDeBaja = async (idUsuario) => {
   mensajeInfo.value = ''
 
   try {
+    // Baja administrada: actualiza en backend y reflejamos el estado en UI.
     await adminStore.darDeBajaUsuario(idUsuario)
     if (clienteSeleccionado.value?.id === idUsuario) {
       clienteSeleccionado.value.is_disabled = true
@@ -157,6 +163,7 @@ const darDeBaja = async (idUsuario) => {
 }
 
 const archivoADataUrl = (file) => new Promise((resolve, reject) => {
+  // Utilidad: convertir a DataURL para poder incrustar imágenes en jsPDF.
   const reader = new FileReader()
   reader.onload = () => resolve(reader.result)
   reader.onerror = () => reject(new Error('No se pudo leer el archivo'))
@@ -164,6 +171,7 @@ const archivoADataUrl = (file) => new Promise((resolve, reject) => {
 })
 
 const cargarImagenPublicaPng = async (url) => {
+  // Carga una imagen del directorio público (por ejemplo, el logo) sin cache.
   const respuesta = await fetch(url, { cache: 'no-store' })
   if (!respuesta.ok) return null
   const blob = await respuesta.blob()
@@ -186,6 +194,7 @@ const descargarInformeCliente = async (idUsuario) => {
   mensajeInfo.value = ''
 
   try {
+    // Endpoint admin que devuelve { client, trips } para el informe.
     const response = await axios.get(`/api/admin/clients/${idUsuario}/trips-report`)
     const data = response?.data
     if (!data || typeof data !== 'object') {
@@ -217,6 +226,8 @@ const descargarInformeCliente = async (idUsuario) => {
     const logo = await cargarImagenPublicaPng('/images/logo.png').catch(() => null)
 
     const renderizarEncabezado = ({ incluirDatosCliente } = { incluirDatosCliente: true }) => {
+      // Encabezado reutilizable: en la primera página incluye datos del cliente,
+      // en las siguientes se omite para aprovechar espacio para la tabla.
       let y = marginTop
 
       if (logo?.dataUrl) {
@@ -290,6 +301,7 @@ const descargarInformeCliente = async (idUsuario) => {
     }
 
     const renderizarEncabezadoTabla = (y) => {
+      // Cabecera de tabla con columnas fijas y una columna de ruta dinámica.
       const tableX = marginX
       const rowH = 18
 
@@ -314,6 +326,7 @@ const descargarInformeCliente = async (idUsuario) => {
 
       doc.setTextColor(0)
       doc.setFont(FAMILIA_FUENTE_PDF, 'normal')
+
       return {
         y: y + rowH,
         widths: { colFechaW, colEstadoW, colPrecioW, colRutaW },
@@ -350,6 +363,8 @@ const descargarInformeCliente = async (idUsuario) => {
       const lineasRuta = doc.splitTextToSize(ruta || '—', tabla.widths.colRutaW - 12)
       const altoContenido = Math.max(tabla.rowH, lineasRuta.length * alturaLinea + 6)
 
+      // Salto de página por: (1) limitar número de filas para legibilidad o
+      // (2) evitar que la fila se corte por el margen inferior.
       const necesitaNuevaPaginaPorCantidad = filasEnPagina >= 7
       const necesitaNuevaPaginaPorEspacio = y + altoContenido > limiteInferiorSeguro
       if (necesitaNuevaPaginaPorCantidad || necesitaNuevaPaginaPorEspacio) {
@@ -379,6 +394,7 @@ const descargarInformeCliente = async (idUsuario) => {
 
     doc.save(`informe-cliente-${idUsuario}.pdf`)
   } catch (error) {
+    // Mostramos mensaje de backend si existe; si no, uno genérico.
     mensajeError.value = error.response?.data?.message || 'No se pudo generar el informe del cliente'
     setTimeout(() => { mensajeError.value = '' }, 4000)
   }

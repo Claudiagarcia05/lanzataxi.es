@@ -16,4 +16,13 @@
 <script setup>
 import LogoAplicacion from '../Componentes/LogoAplicacion.vue';
 import { Link } from '@inertiajs/vue3';
+
+/**
+ * Disposición (layout) para páginas de invitado.
+ *
+ * Se usa en pantallas públicas como login/registro/recuperación:
+ * - Centra el contenido en una tarjeta
+ * - Muestra logo y enlace a inicio
+ * - Expone un slot para el formulario
+ */
 </script>

@@ -5,6 +5,12 @@
     use Illuminate\Database\Eloquent\Factories\HasFactory;
     use Illuminate\Database\Eloquent\Model;
 
+    /**
+     * Modelo RutaFavorita.
+     *
+     * Guarda ubicaciones frecuentes del usuario (casa, trabajo, etc.) con un
+     * orden configurable para el frontend.
+     */
     class RutaFavorita extends Model {
         use HasFactory;
 
@@ -25,6 +31,9 @@
             'order' => 'integer'
         ];
 
+        /**
+         * Usuario al que pertenece la ruta favorita.
+         */
         public function user() {
 
             return $this->belongsTo(User::class);

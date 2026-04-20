@@ -57,6 +57,10 @@ import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 import Chart from 'chart.js/auto'
 
+// Página de Administración: panel de estadísticas mensuales.
+// - Permite seleccionar año/mes y visualiza evolución diaria (Chart.js).
+// - Los agregados vienen del store (`adminStore.obtenerEstadisticasMensuales`).
+
 const authStore = useAuthStore()
 const adminStore = useAdminStore()
 
@@ -64,6 +68,7 @@ const lienzoGrafico = ref(null)
 let instanciaGrafico = null
 
 onMounted(async () => {
+  // Cargamos el mes/año inicial que el backend define como “actual”.
   await adminStore.obtenerEstadisticasMensuales({
     anio: adminStore.estadisticasMensuales.anio,
     mes: adminStore.estadisticasMensuales.mes,
@@ -71,11 +76,13 @@ onMounted(async () => {
   anioSeleccionado.value = adminStore.estadisticasMensuales.anio
   mesSeleccionado.value = adminStore.estadisticasMensuales.mes
 
+  // Esperamos al DOM para asegurarnos de que el <canvas> existe antes de dibujar.
   await nextTick()
   renderizarOActualizarGrafico()
 })
 
 onBeforeUnmount(() => {
+  // Importante: destruir la instancia para evitar fugas de memoria al navegar.
   if (instanciaGrafico) {
     instanciaGrafico.destroy()
     instanciaGrafico = null
@@ -90,22 +97,26 @@ const anios = computed(() => {
   const maxY = adminStore.estadisticasMensuales.anioMaximo
   const out = []
   for (let y = minY; y <= maxY; y++) out.push(y)
+
   return out
 })
 
 const cargarMensual = async () => {
+  // Re-carga al cambiar selectores y refresca el gráfico en caliente.
   await adminStore.obtenerEstadisticasMensuales({ anio: anioSeleccionado.value, mes: mesSeleccionado.value })
   await nextTick()
   renderizarOActualizarGrafico()
 }
 
 const renderizarOActualizarGrafico = () => {
+  // Datos diarios calculados en backend/store para el mes seleccionado.
   const diario = adminStore.estadisticasMensuales.diario
   const etiquetas = diario?.etiquetas || []
   const viajesCompletados = diario?.viajesCompletados || []
   const viajesCancelados = diario?.viajesCancelados || []
   const ingresos = diario?.ingresos || []
 
+  // Total de viajes = completados + cancelados (métrica operativa diaria).
   const viajes = etiquetas.map((_, idx) => Number(viajesCompletados[idx] || 0) + Number(viajesCancelados[idx] || 0))
 
   const lienzo = lienzoGrafico.value
@@ -117,6 +128,7 @@ const renderizarOActualizarGrafico = () => {
       {
         label: 'Ganancias (€)',
         data: ingresos,
+        // Colores coherentes con branding; Chart.js requiere colores explícitos.
         borderColor: '#244194',
         backgroundColor: 'transparent',
         borderWidth: 2,
@@ -140,6 +152,7 @@ const renderizarOActualizarGrafico = () => {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    // Tooltip “por índice” para ver ambas series al pasar por un día.
     interaction: { mode: 'index', intersect: false },
     plugins: {
       legend: { position: 'bottom' },
@@ -164,12 +177,14 @@ const renderizarOActualizarGrafico = () => {
   }
 
   if (!instanciaGrafico) {
+    // Primera renderización.
     instanciaGrafico = new Chart(lienzo, {
       type: 'line',
       data,
       options,
     })
   } else {
+    // Actualización incremental al cambiar mes/año.
     instanciaGrafico.data = data
     instanciaGrafico.options = options
     instanciaGrafico.update()

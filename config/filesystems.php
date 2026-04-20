@@ -1,11 +1,20 @@
 <?php
 
+    /**
+     * Configuración de almacenamiento (discos).
+     *
+     * Define dónde se guardan ficheros privados/públicos y cómo se exponen.
+     * `public` suele estar enlazado a `storage/app/public` mediante `storage:link`.
+     */
+
     return [
+        // Disco por defecto.
         'default' => env('FILESYSTEM_DISK', 'local'),
 
         'disks' => [
             'local' => [
                 'driver' => 'local',
+                // Almacenamiento privado (no expuesto directamente por web).
                 'root' => storage_path('app/private'),
                 'serve' => true,
                 'throw' => false,
@@ -14,6 +23,7 @@
 
             'public' => [
                 'driver' => 'local',
+                // Almacenamiento público (accesible vía /storage).
                 'root' => storage_path('app/public'),
                 'url' => rtrim(env('APP_URL', 'http://localhost'), '/').'/storage',
                 'visibility' => 'public',
@@ -36,6 +46,7 @@
         ],
 
         'links' => [
+            // Enlace simbólico público: /public/storage -> /storage/app/public
             public_path('storage') => storage_path('app/public'),
         ],
     ];

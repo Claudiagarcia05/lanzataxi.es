@@ -2,6 +2,16 @@
   <DisposicionConductor>
     <div class="max-w-3xl mx-auto">
       <div class="bg-white rounded-xl shadow-sm p-8">
+        <!--
+          Perfil del conductor.
+          - Avatar: previsualización + subida (multipart) a la API.
+          - Información personal: email/teléfono (nombre bloqueado).
+          - Contraseña: reglas de fuerza básicas para UX.
+          - Estado laboral: activar/desconectar (online/offline).
+
+          Nota: las validaciones aquí son para experiencia de usuario; el backend debe
+          validar de forma definitiva y aplicar autorización.
+        -->
         <h1 class="text-2xl font-bold text-neutral-dark mb-6">Mi Perfil</h1>
         <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
           <p class="text-sm font-medium text-red-500">{{ mensajeError }}</p>
@@ -87,7 +97,7 @@
           <div class="space-y-4">
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Nueva contraseña</label>
-              <input v-model="contrasena.nueva" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.nueva && !esContrasenaFuerte }" @input="comprobarFuerzaContrasena">
+              <input v-model="contrasena.nueva" type="password" name="new_password" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.nueva && !esContrasenaFuerte }" @input="comprobarFuerzaContrasena">
               <div v-if="contrasena.nueva" class="mt-2">
                 <div class="flex space-x-1 h-1 mb-2">
                   <div class="flex-1 h-full rounded" :class="colorFuerza(1)"></div>
@@ -117,7 +127,7 @@
             </div>
             <div>
               <label class="block text-sm font-medium text-neutral-dark mb-2">Confirmar nueva contraseña</label>
-              <input v-model="contrasena.confirmacion" type="password" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion }">
+              <input v-model="contrasena.confirmacion" type="password" name="new_password_confirmation" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion }">
               <p v-if="contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion" class="text-xs text-red-500 mt-1">
                 Las contraseñas no coinciden
               </p>
@@ -160,6 +170,8 @@ const mensajeEstadoLaboral = ref('')
 const mensajeError = ref('')
 const mensajeInfo = ref('')
 const vistaPreviaAvatar = ref(null)
+// `avatarUsuario` es la URL que usa la UI. El formato exacto del campo `perfil.avatar`
+// depende de lo que devuelva el backend (ruta relativa vs URL ya completa).
 const avatarUsuario = ref(perfil.value?.avatar ? `/storage/${perfil.value.avatar}` : null)
 const editandoPersonal = ref(false)
 const errorCorreo = ref('')
@@ -179,7 +191,7 @@ const preferencias = reactive({
 })
 
 const esContrasenaFuerte = computed(() => {
-
+  // Reglas mínimas de fuerza (no pretende ser una política exhaustiva).
   return contrasena.nueva?.length >= 8 &&
          /[A-Z]/.test(contrasena.nueva) &&
          /[a-z]/.test(contrasena.nueva) &&
@@ -187,7 +199,7 @@ const esContrasenaFuerte = computed(() => {
          /[!@#$%^&*]/.test(contrasena.nueva)
 })
 const puedeCambiarContrasena = computed(() => {
-
+  // Se habilita el botón sólo si es fuerte y coincide con confirmación.
   return esContrasenaFuerte.value &&
          contrasena.nueva === contrasena.confirmacion
 })
@@ -226,6 +238,8 @@ const colorTextoFuerza = computed(() => {
   return 'text-success-jable'
 })
 const manejarSubidaAvatar = async (event) => {
+  // Valida tamaño/tipo en frontend para UX.
+  // El backend también debe validar MIME/tamaño para seguridad.
   const archivo = event.target.files[0]
   if (archivo) {
     if (archivo.size > 2 * 1024 * 1024) {
@@ -242,6 +256,7 @@ const manejarSubidaAvatar = async (event) => {
     }
     const lector = new FileReader()
     lector.onload = async (e) => {
+      // Mostramos vista previa inmediatamente y luego intentamos guardar.
       vistaPreviaAvatar.value = e.target.result
       await guardarAvatar(archivo)
     }
@@ -249,6 +264,8 @@ const manejarSubidaAvatar = async (event) => {
   }
 }
 const guardarAvatar = async (archivo) => {
+  // Subida real del archivo.
+  // La API responde con la ruta del avatar (por ejemplo: nombre/relativa).
   if (!archivo) return
   try {
     const datosFormulario = new FormData()
@@ -261,6 +278,7 @@ const guardarAvatar = async (archivo) => {
     const avatarUrl = `/storage/${response.data.avatar}`
     avatarUsuario.value = avatarUrl
     if (perfil.value) {
+      // Se actualiza el store local para que el cambio se refleje en toda la app.
       perfil.value.avatar = avatarUrl
     }
     setTimeout(() => {
@@ -273,10 +291,12 @@ const guardarAvatar = async (archivo) => {
   }
 }
 const manejarErrorImagen = (event) => {
+  // Si el recurso del avatar no carga, volvemos al fallback (inicial del nombre).
   avatarUsuario.value = null
   vistaPreviaAvatar.value = null
 }
 const iniciarEdicionPersonal = () => {
+  // Inicializa el formulario con los valores actuales del perfil.
   form.email = perfil.value?.email || ''
   form.phone = perfil.value?.phone || ''
   editandoPersonal.value = true
@@ -287,16 +307,20 @@ const cancelarEdicionPersonal = () => {
   errorTelefono.value = ''
 }
 const validarCorreo = (email) => {
+  // Validación simple (suficiente para UX, no pretende cubrir todos los RFCs).
   const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
   return re.test(email)
 }
 const validarTelefono = (phone) => {
+  // Teléfono español básico: 9 dígitos.
   const re = /^[0-9]{9}$/
 
   return re.test(phone)
 }
 const guardarInfoPersonal = async () => {
+  // Guarda email/teléfono mediante la API.
+  // El backend debe verificar que el email sea único, etc.
   errorCorreo.value = ''
   errorTelefono.value = ''
   if (!validarCorreo(form.email)) {
@@ -327,6 +351,8 @@ const guardarInfoPersonal = async () => {
   }
 }
 const cambiarContrasena = async () => {
+  // Cambio de contraseña.
+  // La API espera `new_password` y `new_password_confirmation`.
   if (!puedeCambiarContrasena.value) return
   try {
     await axios.put('/api/user/password', {
@@ -343,6 +369,8 @@ const cambiarContrasena = async () => {
   }
 }
 const toggleActividadLaboral = async () => {
+  // Cambia el estado del conductor (online/offline).
+  // Esto impacta en la asignación de solicitudes y el seguimiento en tiempo real.
   mensajeEstadoLaboral.value = ''
   try {
     await conductorStore.cambiarEstadoEnLinea()
@@ -354,12 +382,14 @@ const toggleActividadLaboral = async () => {
   }
 }
 if (!perfil.value) {
+  // Carga inicial del perfil al entrar si aún no está en memoria.
   conductorStore.obtenerPerfilConductor()
 }
 
 watch(
   () => perfil.value?.avatar,
   (avatar) => {
+    // Mantiene la URL del avatar en sync si el perfil cambia desde fuera de este componente.
     avatarUsuario.value = avatar ? `/storage/${avatar}` : null
   },
   { immediate: true }
