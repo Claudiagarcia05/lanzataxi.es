@@ -23,7 +23,6 @@
             $middleware->web(append: [
                 \App\Http\Middleware\EstablecerLocale::class,
                 \App\Http\Middleware\HandleInertiaRequests::class,
-                \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
             ]);
 
             $middleware->alias([
