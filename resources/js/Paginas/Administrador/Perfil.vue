@@ -228,11 +228,14 @@ const preferencias = reactive({
 
 const esContrasenaFuerte = computed(() => {
   // Política de fortaleza en frontend (mínimos razonables).
-  return contrasena.nueva?.length >= 8 &&
-         /[A-Z]/.test(contrasena.nueva) &&
-         /[a-z]/.test(contrasena.nueva) &&
-         /[0-9]/.test(contrasena.nueva) &&
-         /[!@#$%^&*]/.test(contrasena.nueva)
+  // Consistente con el medidor: longitud >= 8 y 3/4 tipos.
+  const password = contrasena.nueva || ''
+  if (password.length < 8) return false
+
+  const tipos = [/[A-Z]/, /[a-z]/, /[0-9]/, /[!@#$%^&*]/]
+    .reduce((acc, re) => acc + (re.test(password) ? 1 : 0), 0)
+
+  return tipos >= 3
 })
 
 const puedeCambiarContrasena = computed(() => {
@@ -242,13 +245,24 @@ const puedeCambiarContrasena = computed(() => {
 })
 
 const comprobarFuerzaContrasena = () => {
-  let fuerza = 0
-  if (contrasena.nueva?.length >= 8) fuerza++
-  if (/[A-Z]/.test(contrasena.nueva)) fuerza++
-  if (/[a-z]/.test(contrasena.nueva)) fuerza++
-  if (/[0-9]/.test(contrasena.nueva)) fuerza++
-  if (/[!@#$%^&*]/.test(contrasena.nueva)) fuerza++
-  fuerzaContrasena.value = fuerza
+  // Score (0..4) para las 4 barras.
+  const password = contrasena.nueva || ''
+  if (!password) {
+    fuerzaContrasena.value = 0
+
+    return
+  }
+
+  const cumpleLongitud = password.length >= 8
+  const tipos = [/[A-Z]/, /[a-z]/, /[0-9]/, /[!@#$%^&*]/]
+    .reduce((acc, re) => acc + (re.test(password) ? 1 : 0), 0)
+
+  let score = 0
+  if (cumpleLongitud) score += 1
+  score += Math.min(3, tipos)
+  if (!cumpleLongitud) score = Math.min(score, 3)
+
+  fuerzaContrasena.value = Math.min(4, score)
 }
 
 const colorFuerza = (nivel) => {
