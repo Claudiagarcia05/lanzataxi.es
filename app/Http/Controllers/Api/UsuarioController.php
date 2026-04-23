@@ -5,7 +5,6 @@
     use App\Http\Controllers\Controller;
     use App\Rules\EmailDomainHasMx;
     use Illuminate\Http\Request;
-    use Illuminate\Support\Facades\Hash;
     use Illuminate\Support\Facades\Storage;
     use Illuminate\Validation\Rules\Password;
 
@@ -156,8 +155,10 @@
 
             $usuario = $solicitud->user();
 
+            // El modelo User ya define el cast `password => hashed`, así que
+            // asignamos el valor en claro y dejamos que Laravel lo hashee.
             $usuario->update([
-                'password' => Hash::make($validado['new_password'])
+                'password' => $validado['new_password'],
             ]);
 
             return response()->json([
