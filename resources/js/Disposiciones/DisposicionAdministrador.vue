@@ -1,5 +1,8 @@
 <template>
   <div class="min-h-screen bg-neutral-soft">
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:text-neutral-dark focus:px-4 focus:py-2 focus:rounded-lg">
+      {{ t('nav.skipToContent') }}
+    </a>
     <div v-if="menuMovilAbierto" class="fixed inset-0 z-30 bg-neutral-dark/30 md:hidden" @click="menuMovilAbierto = false" aria-hidden="true"/>
 
     <aside :class="[ 'fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-neutral-volcanic shadow-lg', 'w-64 max-w-[85vw] md:max-w-none', barraLateralAbierta ? 'md:w-64' : 'md:w-20', menuMovilAbierto ? 'translate-x-0' : '-translate-x-full', 'md:translate-x-0',]">
@@ -27,7 +30,7 @@
           </div>
         </div>
 
-        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')">
+        <button @click="alternarBarraLateral" class="absolute right-4 top-1/2 -translate-y-1/2 p-1.5 rounded-lg hover:bg-neutral-soft transition-colors" :aria-label="barraLateralAbierta ? t('dashboard.toggleMenu.collapse') : t('dashboard.toggleMenu.expand')" type="button">
           <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path v-if="barraLateralAbierta" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
@@ -35,10 +38,10 @@
         </button>
       </div>
 
-      <nav class="p-4">
+      <nav class="p-4" aria-label="Navegacion lateral">
         <ul class="space-y-1">
           <li v-for="item in elementosMenu" :key="item.label">
-            <button @click="navegarA(item.path)" :class="[ 'flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark hover:bg-neutral-soft' ]">
+            <button @click="navegarA(item.path)" :class="[ 'flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark hover:bg-neutral-soft' ]" type="button">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
               </svg>
@@ -49,13 +52,13 @@
       </nav>
 
       <div v-if="authStore.isconductor && barraLateralAbierta" class="px-4 mt-4">
-        <button :class="[ 'w-full py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2', ]">
+        <div :class="[ 'w-full py-2 px-4 rounded-lg font-medium transition-colors flex items-center justify-center space-x-2', ]" aria-label="Estado del conductor" role="status">
           <span>🟢</span>
-        </button>
+        </div>
       </div>
 
       <div class="absolute bottom-0 w-full p-4 border-t border-neutral-volcanic">
-        <button @click="cerrarSesion" class="flex items-center space-x-3 p-3 rounded-lg text-neutral-dark hover:bg-red-50 hover:text-red-600 w-full transition-colors">
+        <button @click="cerrarSesion" class="flex items-center space-x-3 p-3 rounded-lg text-neutral-dark hover:bg-red-50 hover:text-red-600 w-full transition-colors" type="button">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
           </svg>
@@ -80,7 +83,7 @@
 
           <div v-if="!authStore.isAdmin" class="flex items-center space-x-4">
             <div class="relative">
-              <button @click="mostrarNotificaciones = !mostrarNotificaciones" class="p-2 rounded-lg hover:bg-neutral-soft relative">
+              <button @click="mostrarNotificaciones = !mostrarNotificaciones" class="p-2 rounded-lg hover:bg-neutral-soft relative" type="button" :aria-expanded="mostrarNotificaciones" aria-controls="panel-notificaciones">
                 <svg class="w-5 h-5 text-neutral-slate" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
@@ -89,17 +92,18 @@
                 </span>
               </button>
 
-              <div v-if="mostrarNotificaciones" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-volcanic">
+              <div v-if="mostrarNotificaciones" id="panel-notificaciones" class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-neutral-volcanic" role="region" :aria-label="t('dashboard.notifications.title')">
                 <div class="p-3 border-b border-neutral-volcanic">
                   <h3 class="font-semibold text-neutral-dark">{{ t('dashboard.notifications.title') }}</h3>
                 </div>
                 <div class="max-h-96 overflow-y-auto">
-                  <div v-for="notif in notificaciones" :key="notif.id"
+                  <button v-for="notif in notificaciones" :key="notif.id"
                        @click="marcarComoLeida(notif.id)"
-                       :class="['p-3 border-b border-neutral-volcanic last:border-0 cursor-pointer hover:bg-neutral-soft', !notif.read && 'bg-lanzarote-blue/5']">
+                       :class="['p-3 border-b border-neutral-volcanic last:border-0 cursor-pointer hover:bg-neutral-soft text-left w-full', !notif.read && 'bg-lanzarote-blue/5']"
+                       type="button">
                     <p class="text-sm text-neutral-dark">{{ notif.text }}</p>
                     <p class="text-xs text-neutral-slate mt-1">{{ notif.time }}</p>
-                  </div>
+                  </button>
                 </div>
               </div>
             </div>
@@ -117,7 +121,7 @@
         </div>
       </header>
 
-      <main class="p-4 md:p-6">
+      <main id="main-content" class="p-4 md:p-6" tabindex="-1">
         <slot />
       </main>
     </div>
@@ -128,7 +132,7 @@
       <h3 class="font-semibold text-neutral-dark">
         {{ t('dashboard.pendingDrivers.title') }} ({{ adminStore.conductoresPendientes.length }})
       </h3>
-      <button @click="panelPendientesAbierto = false" class="p-2 rounded-lg hover:bg-neutral-soft" :aria-label="t('dashboard.pendingDrivers.close')">
+      <button @click="panelPendientesAbierto = false" class="p-2 rounded-lg hover:bg-neutral-soft" :aria-label="t('dashboard.pendingDrivers.close')" type="button">
         <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
       </button>
     </div>
@@ -144,10 +148,10 @@
           </div>
 
           <div class="flex flex-col gap-2 shrink-0">
-            <button @click="adminStore.aprobarConductor(solicitud.id)" class="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors">
+            <button @click="adminStore.aprobarConductor(solicitud.id)" class="bg-green-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-green-600 transition-colors" type="button">
               {{ t('dashboard.pendingDrivers.approve') }}
             </button>
-            <button @click="adminStore.rechazarConductor(solicitud.id)" class="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors">
+            <button @click="adminStore.rechazarConductor(solicitud.id)" class="bg-red-500 text-white px-3 py-2 rounded-lg text-sm hover:bg-red-600 transition-colors" type="button">
               {{ t('dashboard.pendingDrivers.reject') }}
             </button>
           </div>
