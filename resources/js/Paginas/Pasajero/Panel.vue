@@ -169,16 +169,15 @@
 
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 const mensajeError = ref('')
 const mensajeInfo = ref('')
 import DisposicionPasajero from '../../Disposiciones/DisposicionPasajero.vue'
-import MapaTaxi from '../../Componentes/MapaTaxi.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useViajeStore } from '../../Almacenes/almacenViaje.js'
 import { useCarteraStore } from '../../Almacenes/almacenCartera.js'
-import axios from 'axios'
+import { apiFetch } from '../../Servicios/apiFetch'
 
 import svgTaxiFront from 'bootstrap-icons/icons/taxi-front.svg?raw'
 
@@ -186,6 +185,7 @@ const authStore = useAuthStore()
 const viajeStore = useViajeStore()
 const carteraStore = useCarteraStore()
 const { t } = useI18n()
+const MapaTaxi = defineAsyncComponent(() => import('../../Componentes/MapaTaxi.vue'))
 
 const normalizarSvg = (raw) => raw
   .replace(/^<svg[^>]*>/i, '')
@@ -252,12 +252,12 @@ const geocodificarDireccion = async (address) => {
   if (!q) return null
 
   // Usamos el proxy backend para evitar CORS en producción.
-  const response = await axios.get('/api/geocoding/search', {
+  const response = await apiFetch('/api/geocoding/search', {
     params: {
       q,
       limit: 5,
       // El backend fuerza los parámetros (format/json, bounded/viewbox Lanzarote, etc.).
-    }
+    },
   })
 
   const candidatos = Array.isArray(response.data) ? response.data : []
@@ -308,7 +308,7 @@ const obtenerUbicacionUsuario = async () => {
 
     try {
       // Reverse geocoding vía proxy backend para evitar CORS.
-      const response = await axios.get('/api/geocoding/reverse', {
+      const response = await apiFetch('/api/geocoding/reverse', {
         params: {
           lat,
           lon: lng,

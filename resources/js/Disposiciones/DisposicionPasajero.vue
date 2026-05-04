@@ -90,7 +90,7 @@ import { router as inertiaRouter, usePage } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import { useAuthStore } from '../Almacenes/almacenAutenticacion.js'
 import { useViajeStore } from '../Almacenes/almacenViaje.js'
-import axios from 'axios'
+import { apiFetch } from '../Servicios/apiFetch'
 
 /**
  * Disposición (layout) del panel de pasajero.
@@ -127,10 +127,10 @@ const cargarNotificaciones = async () => {
   
   cargandoNotificaciones.value = true
   try {
-    const response = await axios.get('/api/notifications')
-    notificaciones.value = response.data || []
+    const response = await apiFetch('/api/notifications')
+    notificaciones.value = Array.isArray(response) ? response : []
   } catch (error) {
-    console.error('❌ Error al cargar notificaciones:', error.response?.status, error.message)
+    console.error('❌ Error al cargar notificaciones:', error.status, error.message)
     errorNotificaciones.value = true
     notificaciones.value = []
   } finally {
@@ -229,7 +229,7 @@ const navegarA = (path) => {
 const marcarComoLeida = async (id) => {
   // Persiste lectura en backend y actualiza estado local.
   try {
-    await axios.post(`/api/notifications/${id}/read`)
+    await apiFetch(`/api/notifications/${id}/read`, { method: 'POST' })
     const notif = notificaciones.value.find(n => n.id === id)
     if (notif) notif.read_at = new Date().toISOString()
   } catch (error) {

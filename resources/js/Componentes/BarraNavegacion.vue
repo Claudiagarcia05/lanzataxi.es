@@ -6,7 +6,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-20">
         <button type="button" @click="goToHome" class="flex items-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue">
-          <img src="/images/logo.png" alt="LanzaTaxi" class="h-20 w-auto" cargando="lazy" decoding="async">
+          <img src="/images/logo.png" alt="LanzaTaxi" class="h-20 w-auto" loading="lazy" decoding="async">
         </button>
 
         <div class="hidden md:flex items-center space-x-8">
@@ -80,11 +80,11 @@
 
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, defineAsyncComponent } from 'vue'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { usePage } from '@inertiajs/vue3'
-import ModalAutenticacion from './Autenticacion/ModalAutenticacion.vue'
+const ModalAutenticacion = defineAsyncComponent(() => import('./Autenticacion/ModalAutenticacion.vue'))
 
 /**
  * Barra de navegación pública.

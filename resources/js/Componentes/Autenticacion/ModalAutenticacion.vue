@@ -12,7 +12,7 @@
           </button>
 
           <div class="text-center mb-8">
-            <img src="/images/logo.png" alt="LanzaTaxi" class="h-20 mx-auto mb-2" cargando="lazy" decoding="async">
+            <img src="/images/logo.png" alt="LanzaTaxi" class="h-20 mx-auto mb-2" loading="lazy" decoding="async">
             <h2 id="auth-modal-title" class="text-2xl font-bold text-lanzarote-blue">LanzaTaxi</h2>
             <p id="auth-modal-desc" class="text-neutral-slate text-sm mt-1">
               {{ esInicioSesion ? t('auth.welcomeBack') : t('auth.createAccount') }}

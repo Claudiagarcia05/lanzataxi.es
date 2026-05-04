@@ -101,7 +101,7 @@
               <template v-for="i in 5">★</template>
             </div>
             <span class="text-neutral-dark font-medium ml-1">{{ t('home.reviews.count', { count: testimonios.length }) }}</span>
-            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="h-5 ml-1">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="h-5 ml-1" loading="lazy" decoding="async">
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -256,10 +256,10 @@
 
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, defineAsyncComponent } from 'vue'
 import { useI18n } from 'vue-i18n'
 import BarraNavegacion from '../Componentes/BarraNavegacion.vue'
-import ModalAutenticacion from '../Componentes/Autenticacion/ModalAutenticacion.vue'
+const ModalAutenticacion = defineAsyncComponent(() => import('../Componentes/Autenticacion/ModalAutenticacion.vue'))
 
 const { t } = useI18n()
 
