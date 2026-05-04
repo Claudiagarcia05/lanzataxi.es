@@ -92,5 +92,9 @@ jobs:
             php artisan route:cache
             php artisan view:cache
             npm ci
+            BUILD_USER="$(id -un):$(id -gn)"
+            sudo mkdir -p public/build
+            sudo chown -R "$BUILD_USER" public/build
             npm run build
+            sudo chown -R www-data:www-data public/build
             sudo systemctl reload nginx
