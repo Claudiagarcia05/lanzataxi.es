@@ -297,7 +297,7 @@ const municipios = computed(() => ([
   {
     nombre: 'Arrecife',
     desc: t('home.municipalities.items.arrecife'),
-    telefonos: ['928 800 806', '928 803 104', '928 812 710'],
+    telefonos: ['928 800 806'],
   },
   {
     nombre: 'San Bartolomé',
@@ -322,12 +322,12 @@ const municipios = computed(() => ([
   {
     nombre: 'Tinajo',
     desc: t('home.municipalities.items.tinajo'),
-    telefonos: ['928 840 049'],
+    telefonos: ['928 840 030'],
   },
   {
     nombre: 'Haría',
     desc: t('home.municipalities.items.haria'),
-    telefonos: ['928 524 223', '620 315 350'],
+    telefonos: ['928 835 368'],
   }
 ]))
 
