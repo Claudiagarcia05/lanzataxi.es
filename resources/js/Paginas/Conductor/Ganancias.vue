@@ -11,55 +11,55 @@
         ser la fuente de verdad de importes/estados de pago.
       -->
       <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-        <h1 class="text-3xl font-bold mb-2">Mis Ganancias</h1>
-        <p class="text-blue-100">Controla tus ingresos y estadísticas como taxista</p>
+        <h1 class="text-3xl font-bold mb-2">{{ t('earnings.title') }}</h1>
+        <p class="text-blue-100">{{ t('earnings.subtitle') }}</p>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <div class="bg-white rounded-xl shadow-sm p-6">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-neutral-slate text-sm">Esta semana</span>
+            <span class="text-neutral-slate text-sm">{{ t('earnings.thisWeek') }}</span>
             <svg class="w-6 h-6 text-neutral-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath('calendar')" />
             </svg>
           </div>
           <p class="text-3xl font-bold text-neutral-dark">{{ formatMoney(resumenSemana.total) }}</p>
-          <p class="text-xs text-neutral-slate mt-2">{{ resumenSemana.viajes }} viajes</p>
+          <p class="text-xs text-neutral-slate mt-2">{{ resumenSemana.viajes }} {{ t('earnings.trips') }}</p>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-neutral-slate text-sm">Este mes</span>
+            <span class="text-neutral-slate text-sm">{{ t('earnings.thisMonth') }}</span>
             <svg class="w-6 h-6 text-neutral-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath('trendUp')" />
             </svg>
           </div>
           <p class="text-3xl font-bold text-neutral-dark">{{ formatMoney(resumenMes.total) }}</p>
-          <p class="text-xs text-neutral-slate mt-2">{{ resumenMes.viajes }} viajes</p>
+          <p class="text-xs text-neutral-slate mt-2">{{ resumenMes.viajes }} {{ t('earnings.trips') }}</p>
         </div>
 
         <div class="bg-white rounded-xl shadow-sm p-6">
           <div class="flex items-center justify-between mb-2">
-            <span class="text-neutral-slate text-sm">Total histórico</span>
+            <span class="text-neutral-slate text-sm">{{ t('earnings.allTime') }}</span>
             <svg class="w-6 h-6 text-neutral-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath('trophy')" />
             </svg>
           </div>
           <p class="text-3xl font-bold text-lanzarote-blue">{{ formatMoney(resumenTotal.total) }}</p>
-          <p class="text-xs text-neutral-slate mt-2">{{ resumenTotal.viajes }} viajes completados</p>
+          <p class="text-xs text-neutral-slate mt-2">{{ resumenTotal.viajes }} {{ t('earnings.tripsCompleted') }}</p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6">
           <div class="flex justify-between items-center mb-6">
-            <h2 class="text-lg font-semibold text-neutral-dark">Evolución de ingresos</h2>
+            <h2 class="text-lg font-semibold text-neutral-dark">{{ t('earnings.incomeEvolution') }}</h2>
             
             <select v-model="periodoGrafico" class="px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue bg-white text-sm">
-              <option value="7d">Últimos 7 días</option>
-              <option value="30d">Últimos 30 días</option>
-              <option value="90d">Últimos 3 meses</option>
-              <option value="year">Este año</option>
+              <option value="7d">{{ t('earnings.last7days') }}</option>
+              <option value="30d">{{ t('earnings.last30days') }}</option>
+              <option value="90d">{{ t('earnings.last3months') }}</option>
+              <option value="year">{{ t('earnings.thisYear') }}</option>
             </select>
           </div>
 
@@ -78,7 +78,7 @@
               </g>
 
               <text v-if="puntosGrafico.length === 0" x="350" y="110" text-anchor="middle" class="fill-current text-neutral-slate" font-size="12">
-                Sin datos
+                {{ t('earnings.noData') }}
               </text>
             </svg>
           </div>
@@ -86,51 +86,51 @@
           <div class="grid grid-cols-3 gap-4 mt-6">
             <div class="text-center">
               <p class="text-2xl font-bold text-neutral-dark">{{ metricasPeriodo.viajes }}</p>
-              <p class="text-xs text-neutral-slate">Viajes</p>
+              <p class="text-xs text-neutral-slate">{{ t('earnings.trips') }}</p>
             </div>
             <div class="text-center border-x border-neutral-volcanic">
               <p class="text-2xl font-bold text-neutral-dark">{{ formatMoney(metricasPeriodo.promedio) }}</p>
-              <p class="text-xs text-neutral-slate">Promedio por viaje</p>
+              <p class="text-xs text-neutral-slate">{{ t('earnings.avgPerTrip') }}</p>
             </div>
             <div class="text-center">
               <p class="text-2xl font-bold text-neutral-dark">{{ metricasPeriodo.tasaAceptacion }}%</p>
-              <p class="text-xs text-neutral-slate">Tasa de aceptación</p>
+              <p class="text-xs text-neutral-slate">{{ t('earnings.acceptanceRate') }}</p>
             </div>
           </div>
         </div>
 
         <div class="lg:col-span-1">
           <div class="bg-white rounded-xl shadow-sm p-6 sticky top-6">
-            <h3 class="font-semibold text-neutral-dark mb-4">Métricas clave</h3>
+            <h3 class="font-semibold text-neutral-dark mb-4">{{ t('earnings.keyMetrics') }}</h3>
             
             <div class="space-y-4">
               <div class="flex justify-between items-center py-2 border-b border-neutral-volcanic">
-                <span class="text-neutral-slate">Horas conectado</span>
+                <span class="text-neutral-slate">{{ t('earnings.hoursConnected') }}</span>
                 <span class="font-semibold text-neutral-dark">{{ horasConectadoLabel }}</span>
               </div>
               
               <div class="flex justify-between items-center py-2 border-b border-neutral-volcanic">
-                <span class="text-neutral-slate">Kilómetros</span>
+                <span class="text-neutral-slate">{{ t('earnings.kilometers') }}</span>
                 <span class="font-semibold text-neutral-dark">{{ metricasMes.km.toFixed(1) }} km</span>
               </div>
               
               <div class="flex justify-between items-center py-2 border-b border-neutral-volcanic">
-                <span class="text-neutral-slate">Ingresos mensuales</span>
+                <span class="text-neutral-slate">{{ t('earnings.monthlyIncome') }}</span>
                 <span class="font-semibold text-green-600">{{ formatMoney(resumenMes.total) }}</span>
               </div>
               
               <div class="flex justify-between items-center py-2">
-                <span class="text-neutral-slate">Viajes completados</span>
+                <span class="text-neutral-slate">{{ t('earnings.completedTrips') }}</span>
                 <span class="font-semibold text-lanzarote-blue">{{ viajesCompletadosMes.length }}</span>
               </div>
             </div>
 
             <div v-if="esUltimoDiaMes" class="mt-4 bg-neutral-soft border border-neutral-volcanic rounded-lg p-3 text-sm text-neutral-dark">
-              Hoy es el último día del mes. Si quieres guardar tus Métricas clave en PDF, haz clic en “Exportar información”.
+              {{ t('earnings.lastMonthDay') }}
             </div>
 
             <button class="w-full mt-6 bg-lanzarote-blue text-white font-medium py-3 px-4 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors" @click="exportInforme">
-              Exportar información
+              {{ t('earnings.exportBtn') }}
             </button>
           </div>
         </div>
@@ -138,21 +138,21 @@
 
       <div class="bg-white rounded-xl shadow-sm p-6">
         <div class="flex justify-between items-center mb-6">
-          <h2 class="text-lg font-semibold text-neutral-dark">Ganancias recientes</h2>
-          <span class="text-sm text-neutral-slate">Últimos {{ viajesRecientes.length }} viajes completados</span>
+          <h2 class="text-lg font-semibold text-neutral-dark">{{ t('earnings.recentEarnings') }}</h2>
+          <span class="text-sm text-neutral-slate">{{ t('earnings.lastTrips', { n: viajesRecientes.length }) }}</span>
         </div>
 
         <div class="overflow-x-auto">
           <table class="w-full">
             <thead class="bg-neutral-soft rounded-lg">
               <tr>
-                <th class="text-left p-4 text-sm font-medium text-neutral-slate">Fecha</th>
-                <th class="text-left p-4 text-sm font-medium text-neutral-slate">Origen</th>
-                <th class="text-left p-4 text-sm font-medium text-neutral-slate">Destino</th>
-                <th class="text-left p-4 text-sm font-medium text-neutral-slate">Distancia</th>
-                <th class="text-left p-4 text-sm font-medium text-neutral-slate">Ganancia</th>
-                <th class="text-left p-4 text-sm font-medium text-neutral-slate">Método pago</th>
-                <th class="text-left p-4 text-sm font-medium text-neutral-slate">Estado</th>
+                <th class="text-left p-4 text-sm font-medium text-neutral-slate">{{ t('earnings.date') }}</th>
+                <th class="text-left p-4 text-sm font-medium text-neutral-slate">{{ t('earnings.origin') }}</th>
+                <th class="text-left p-4 text-sm font-medium text-neutral-slate">{{ t('earnings.destination') }}</th>
+                <th class="text-left p-4 text-sm font-medium text-neutral-slate">{{ t('earnings.distance') }}</th>
+                <th class="text-left p-4 text-sm font-medium text-neutral-slate">{{ t('earnings.profit') }}</th>
+                <th class="text-left p-4 text-sm font-medium text-neutral-slate">{{ t('earnings.paymentMethod') }}</th>
+                <th class="text-left p-4 text-sm font-medium text-neutral-slate">{{ t('earnings.status') }}</th>
               </tr>
             </thead>
             <tbody>
@@ -164,12 +164,12 @@
                 <td class="p-4 text-sm font-semibold text-lanzarote-blue">{{ formatMoney(viaje.price || 0) }}</td>
                 <td class="p-4 text-sm text-neutral-slate">{{ metodoPagoLabel(viaje.pago_method) }}</td>
                 <td class="p-4">
-                  <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Completado</span>
+                  <span class="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">{{ t('earnings.completed') }}</span>
                 </td>
               </tr>
 
               <tr v-if="viajesRecientes.length === 0">
-                <td colspan="7" class="p-6 text-center text-sm text-neutral-slate">Aún no tienes viajes completados.</td>
+                <td colspan="7" class="p-6 text-center text-sm text-neutral-slate">{{ t('earnings.noTrips') }}</td>
               </tr>
             </tbody>
           </table>
@@ -182,7 +182,7 @@
             <svg class="w-6 h-6 text-neutral-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath('money')" />
             </svg>
-            <h3 class="font-semibold text-neutral-dark">Efectivo</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('earnings.cash') }}</h3>
           </div>
             <p class="text-2xl font-bold text-neutral-dark">{{ formatMoney(resumenPago.cash.total) }}</p>
             <p class="text-sm text-neutral-slate mt-1">{{ resumenPago.cash.viajes }} viajes</p>
@@ -193,7 +193,7 @@
             <svg class="w-6 h-6 text-neutral-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath('creditCard')" />
             </svg>
-            <h3 class="font-semibold text-neutral-dark">Tarjeta</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('earnings.card') }}</h3>
           </div>
             <p class="text-2xl font-bold text-neutral-dark">{{ formatMoney(resumenPago.card.total) }}</p>
             <p class="text-sm text-neutral-slate mt-1">{{ resumenPago.card.viajes }} viajes</p>
@@ -204,7 +204,7 @@
             <svg class="w-6 h-6 text-neutral-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="iconPath('deviceMobile')" />
             </svg>
-            <h3 class="font-semibold text-neutral-dark">Cartera digital</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('earnings.wallet') }}</h3>
           </div>
             <p class="text-2xl font-bold text-neutral-dark">{{ formatMoney(resumenPago.app.total) }}</p>
             <p class="text-sm text-neutral-slate mt-1">{{ resumenPago.app.viajes }} viajes</p>
@@ -221,6 +221,9 @@ import DisposicionConductor from '../../Disposiciones/DisposicionConductor.vue'
 import { useViajeStore } from '../../Almacenes/almacenViaje.js'
 import { useConductorStore } from '../../Almacenes/almacenConductor.js'
 import { jsPDF } from 'jspdf'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const filtroPeriodo = ref('all')
 
@@ -424,9 +427,9 @@ const formatMoney = (value) => {
 
 const metodoPagoLabel = (metodo) => {
   const map = {
-    cash: 'Efectivo',
-    card: 'Tarjeta',
-    app: 'Cartera',
+    cash: t('earnings.cash'),
+    card: t('earnings.card'),
+    app: t('earnings.wallet'),
   }
 
   return map[metodo] || '—'

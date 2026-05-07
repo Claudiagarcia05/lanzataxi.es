@@ -12,7 +12,7 @@
           Nota: las validaciones aquí son para experiencia de usuario; el backend debe
           validar de forma definitiva y aplicar autorización.
         -->
-        <h1 class="text-2xl font-bold text-neutral-dark mb-6">Mi Perfil</h1>
+        <h1 class="text-2xl font-bold text-neutral-dark mb-6">{{ t('profile.title') }}</h1>
         <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
           <p class="text-sm font-medium text-red-500">{{ mensajeError }}</p>
         </div>
@@ -40,63 +40,63 @@
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="font-semibold text-neutral-dark">Información personal</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('profile.personalInfo') }}</h3>
             <button v-if="!editandoPersonal" @click="iniciarEdicionPersonal" class="text-sm text-lanzarote-blue flex items-center space-x-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-              <span>Editar información</span>
+              <span>{{ t('profile.editInfo') }}</span>
             </button>
           </div>
           <div v-if="!editandoPersonal" class="space-y-3">
             <div class="flex">
-              <span class="w-32 text-sm text-neutral-slate">Nombre:</span>
+              <span class="w-32 text-sm text-neutral-slate">{{ t('profile.name') }}</span>
               <span class="text-neutral-dark font-medium">{{ perfil?.name }}</span>
             </div>
             <div class="flex">
-              <span class="w-32 text-sm text-neutral-slate">Email:</span>
+              <span class="w-32 text-sm text-neutral-slate">{{ t('profile.email') }}</span>
               <span class="text-neutral-dark">{{ perfil?.email }}</span>
             </div>
             <div class="flex">
-              <span class="w-32 text-sm text-neutral-slate">Teléfono:</span>
-              <span class="text-neutral-dark">{{ perfil?.phone || 'No especificado' }}</span>
+              <span class="w-32 text-sm text-neutral-slate">{{ t('profile.phone') }}</span>
+              <span class="text-neutral-dark">{{ perfil?.phone || t('profile.notSpecified') }}</span>
             </div>
             <button @click="toggleActividadLaboral" :class=" ['px-4 py-2 rounded-lg font-bold transition-colors mt-2', estaEnLinea ? 'bg-green-500 text-white' : 'bg-red-500 text-white hover:bg-red-600']">
-              {{ estaEnLinea ? 'Activado' : 'Desconectado' }}
+              {{ estaEnLinea ? t('profile.driver.activated') : t('profile.driver.offline') }}
             </button>
           </div>
           <div v-if="editandoPersonal" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Nombre</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.name') }}</label>
               <input :value="perfil?.name || ''" type="text" disabled class="w-full px-4 py-2 bg-neutral-soft border border-neutral-volcanic rounded-lg cursor-not-allowed">
-              <p class="text-xs text-neutral-slate mt-1">El nombre no se puede modificar</p>
+              <p class="text-xs text-neutral-slate mt-1">{{ t('profile.nameCannotChange') }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Email</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.email') }}</label>
               <input v-model="form.email" type="email" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': errorCorreo }">
               <p v-if="errorCorreo" class="text-xs text-red-500 mt-1">{{ errorCorreo }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Teléfono</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.phone') }}</label>
               <input v-model="form.phone" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="9" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: 628123456" :class="{ 'border-red-500': errorTelefono }" @input="form.phone = form.phone.replace(/\D/g, '').slice(0, 9)">
               <p v-if="errorTelefono" class="text-xs text-red-500 mt-1">{{ errorTelefono }}</p>
             </div>
             <div class="flex space-x-3 pt-2">
               <button @click="guardarInfoPersonal" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black">
-                Guardar cambios
+                {{ t('profile.saveChanges') }}
               </button>
               <button @click="cancelarEdicionPersonal" class="px-4 py-2 border border-neutral-volcanic rounded-lg hover:bg-neutral-soft">
-                Cancelar
+                {{ t('profile.cancel') }}
               </button>
             </div>
           </div>
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
-          <h3 class="font-semibold text-neutral-dark mb-4">Cambiar contraseña</h3>
+          <h3 class="font-semibold text-neutral-dark mb-4">{{ t('profile.changePassword') }}</h3>
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Nueva contraseña</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.newPassword') }}</label>
               <input v-model="contrasena.nueva" type="password" name="new_password" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.nueva && !esContrasenaFuerte }" @input="comprobarFuerzaContrasena">
               <div v-if="contrasena.nueva" class="mt-2">
                 <div class="flex space-x-1 h-1 mb-2">
@@ -109,45 +109,45 @@
               </div>
               <div class="mt-2 space-y-1">
                 <p class="text-xs" :class="contrasena.nueva?.length >= 8 ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Mínimo 8 caracteres
+                  ✓ {{ t('profile.passwordMin8') }}
                 </p>
                 <p class="text-xs" :class="/[A-Z]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos una mayúscula
+                  ✓ {{ t('profile.passwordUpper') }}
                 </p>
                 <p class="text-xs" :class="/[a-z]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos una minúscula
+                  ✓ {{ t('profile.passwordLower') }}
                 </p>
                 <p class="text-xs" :class="/[0-9]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos un número
+                  ✓ {{ t('profile.passwordNumber') }}
                 </p>
                 <p class="text-xs" :class="/[!@#$%^&*]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos un carácter especial (!@#$%^&*)
+                  ✓ {{ t('profile.passwordSpecial') }}
                 </p>
               </div>
             </div>
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Confirmar nueva contraseña</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.confirmNewPassword') }}</label>
               <input v-model="contrasena.confirmacion" type="password" name="new_password_confirmation" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion }">
               <p v-if="contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion" class="text-xs text-red-500 mt-1">
-                Las contraseñas no coinciden
+                {{ t('profile.passwordsNoMatch') }}
               </p>
             </div>
             <button @click="cambiarContrasena" :disabled="!puedeCambiarContrasena" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
-              Actualizar contraseña
+              {{ t('profile.updatePassword') }}
             </button>
           </div>
         </div>
 
         <div class="pb-6 mb-6">
-          <h3 class="font-semibold text-neutral-dark mb-4">Preferencias y notificaciones</h3>
+          <h3 class="font-semibold text-neutral-dark mb-4">{{ t('profile.preferences') }}</h3>
           <div class="space-y-3">
             <label class="flex items-center space-x-3">
               <input type="checkbox" v-model="preferencias.notificacionesCorreo" class="w-4 h-4 text-lanzarote-blue">
-              <span class="text-neutral-dark">Recibir notificaciones por email</span>
+              <span class="text-neutral-dark">{{ t('profile.emailNotif') }}</span>
             </label>
             <label class="flex items-center space-x-3">
               <input type="checkbox" v-model="preferencias.notificacionesSms" class="w-4 h-4 text-lanzarote-blue">
-              <span class="text-neutral-dark">Recibir notificaciones por SMS</span>
+              <span class="text-neutral-dark">{{ t('profile.smsNotif') }}</span>
             </label>
           </div>
         </div>
@@ -159,12 +159,14 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DisposicionConductor from '../../Disposiciones/DisposicionConductor.vue'
 import { useConductorStore } from '../../Almacenes/almacenConductor'
 import { storeToRefs } from 'pinia'
 import axios from 'axios'
 
 const conductorStore = useConductorStore()
+const { t, locale } = useI18n()
 const { estaEnLinea, perfil } = storeToRefs(conductorStore)
 const mensajeEstadoLaboral = ref('')
 const mensajeError = ref('')
@@ -238,11 +240,12 @@ const colorFuerza = (nivel) => {
   return 'bg-neutral-volcanic'
 }
 const mensajeFuerza = computed(() => {
+  locale.value
   if (!contrasena.nueva) return ''
-  if (fuerzaContrasena.value <= 2) return 'Contraseña débil'
-  if (fuerzaContrasena.value <= 3) return 'Contraseña media'
+  if (fuerzaContrasena.value <= 2) return t('profile.passwordWeak')
+  if (fuerzaContrasena.value <= 3) return t('profile.passwordMedium')
 
-  return 'Contraseña fuerte'
+  return t('profile.passwordStrong')
 })
 const colorTextoFuerza = computed(() => {
   if (!contrasena.nueva) return ''

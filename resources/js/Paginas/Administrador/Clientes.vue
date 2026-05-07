@@ -1,8 +1,8 @@
 <template>
   <DisposicionAdministrador>
     <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-      <h1 class="text-3xl font-bold mb-2">Clientes</h1>
-      <p class="text-blue-100">Gestiona clientes, informe de viajes y baja por admin</p>
+      <h1 class="text-3xl font-bold mb-2">{{ t('admin.clients.title') }}</h1>
+      <p class="text-blue-100">{{ t('admin.clients.subtitle') }}</p>
     </div>
 
     <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -14,20 +14,20 @@
 
     <div class="bg-white rounded-xl shadow-sm">
       <div class="p-6 border-b border-neutral-volcanic">
-        <h3 class="font-semibold text-neutral-dark">Listado</h3>
+        <h3 class="font-semibold text-neutral-dark">{{ t('admin.shared.list') }}</h3>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-neutral-soft">
             <tr>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Nombre</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Email</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Teléfono</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Fecha de alta</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Fecha de baja</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Estado</th>
-              <th class="text-right p-4 text-xs font-medium text-neutral-slate">Acciones</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.name') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.email') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.phone') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.registrationDate') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.deactivationDate') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.status') }}</th>
+              <th class="text-right p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -41,18 +41,18 @@
               <td class="p-4 text-sm text-neutral-slate">{{ u.fechaBaja || '—' }}</td>
               <td class="p-4">
                 <span :class="['px-2 py-1 rounded-full text-xs', u.is_disabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800']">
-                  {{ u.is_disabled ? 'De baja' : 'Activo' }}
+                  {{ u.is_disabled ? t('admin.shared.inactive') : t('admin.shared.active') }}
                 </span>
               </td>
               <td class="p-4 text-right">
                 <button @click="abrirModalCliente(u)" class="text-sm text-lanzarote-blue hover:underline">
-                  Ver
+                  {{ t('admin.shared.view') }}
                 </button>
               </td>
             </tr>
 
             <tr v-if="clientes.length === 0">
-              <td class="p-6 text-sm text-neutral-slate" colspan="7">No hay clientes.</td>
+              <td class="p-6 text-sm text-neutral-slate" colspan="7">{{ t('admin.clients.empty') }}</td>
             </tr>
           </tbody>
         </table>
@@ -63,7 +63,7 @@
       <div class="w-full max-w-2xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
-            <h3 class="font-semibold text-neutral-dark">Cliente</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('admin.clients.modalTitle') }}</h3>
           </div>
           <button @click="cerrarModal" class="p-2 rounded-lg hover:bg-neutral-soft">
             <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
@@ -72,13 +72,13 @@
 
         <div class="p-5">
           <div class="space-y-2 text-sm">
-            <p><span class="text-neutral-slate">Nombre:</span> <span class="text-neutral-dark">{{ clienteSeleccionado?.name }}</span></p>
-            <p><span class="text-neutral-slate">Email:</span> <span class="text-neutral-dark">{{ clienteSeleccionado?.email }}</span></p>
-            <p><span class="text-neutral-slate">Teléfono:</span> <span class="text-neutral-dark">{{ clienteSeleccionado?.phone }}</span></p>
+            <p><span class="text-neutral-slate">{{ t('admin.shared.name') }}</span> <span class="text-neutral-dark">{{ clienteSeleccionado?.name }}</span></p>
+            <p><span class="text-neutral-slate">{{ t('admin.shared.email') }}</span> <span class="text-neutral-dark">{{ clienteSeleccionado?.email }}</span></p>
+            <p><span class="text-neutral-slate">{{ t('admin.shared.phone') }}</span> <span class="text-neutral-dark">{{ clienteSeleccionado?.phone }}</span></p>
             <p>
-              <span class="text-neutral-slate">Estado cuenta:</span>
+              <span class="text-neutral-slate">{{ t('admin.clients.statusAccount') }}</span>
               <span :class="['ml-2 px-2 py-1 rounded-full text-xs', clienteSeleccionado?.is_disabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800']">
-                {{ clienteSeleccionado?.is_disabled ? 'De baja' : 'Activo' }}
+                {{ clienteSeleccionado?.is_disabled ? t('admin.shared.inactive') : t('admin.shared.active') }}
               </span>
             </p>
           </div>
@@ -89,14 +89,14 @@
               :disabled="!clienteSeleccionado"
               class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black"
             >
-              Informe de viajes
+              {{ t('admin.clients.tripsReport') }}
             </button>
             <button
               @click="darDeBaja(clienteSeleccionado?.id)"
               :disabled="!clienteSeleccionado || clienteSeleccionado.is_disabled"
               class="bg-red-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
             >
-              Dar de baja
+              {{ t('admin.shared.deactivate') }}
             </button>
           </div>
         </div>
@@ -108,6 +108,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 import axios from 'axios'
@@ -118,6 +119,7 @@ import { jsPDF } from 'jspdf'
 // - Los datos base se cargan desde el store para reutilizar caché/estado global.
 
 const adminStore = useAdminStore()
+const { t } = useI18n()
 
 const mensajeError = ref('')
 const mensajeInfo = ref('')

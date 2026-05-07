@@ -1,8 +1,8 @@
 <template>
   <DisposicionAdministrador>
     <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-      <h1 class="text-3xl font-bold mb-2">Administradores</h1>
-      <p class="text-blue-100">Alta de nuevos administradores</p>
+      <h1 class="text-3xl font-bold mb-2">{{ t('admin.admins.title') }}</h1>
+      <p class="text-blue-100">{{ t('admin.admins.subtitle') }}</p>
     </div>
 
     <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -14,22 +14,22 @@
 
     <div class="bg-white rounded-xl shadow-sm">
       <div class="p-6 border-b border-neutral-volcanic">
-        <h3 class="font-semibold text-neutral-dark">Crear administrador</h3>
+        <h3 class="font-semibold text-neutral-dark">{{ t('admin.admins.create') }}</h3>
       </div>
 
       <form @submit.prevent="crear" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label class="block text-sm font-medium text-neutral-dark mb-1">Nombre</label>
+          <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('admin.shared.name') }}</label>
           <input v-model="form.name" type="text" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="Nombre y apellidos">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-neutral-dark mb-1">Email</label>
+          <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('admin.shared.email') }}</label>
           <input v-model="form.email" type="email" required class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="nuevo@admin.es">
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-neutral-dark mb-1">Teléfono (opcional)</label>
+          <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('admin.admins.phoneOptional') }}</label>
           <input v-model="form.phone" type="text" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="+34 ...">
         </div>
 
@@ -41,13 +41,13 @@
         </div>
 
         <div>
-          <label class="block text-sm font-medium text-neutral-dark mb-1">Confirmar contraseña</label>
+          <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('profile.confirmNewPassword') }}</label>
           <input v-model="form.password_confirmation" type="password" required minlength="6" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue focus:border-transparent" placeholder="••••••••">
         </div>
 
         <div class="md:col-span-2 flex items-center justify-end gap-2 pt-2">
           <button type="submit" :disabled="cargando" class="bg-lanzarote-blue text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black disabled:opacity-50">
-            {{ cargando ? 'Creando...' : 'Crear admin' }}
+            {{ cargando ? t('admin.admins.creating') : t('admin.admins.createBtn') }}
           </button>
         </div>
       </form>
@@ -55,7 +55,7 @@
 
     <div class="bg-white rounded-xl shadow-sm mt-6">
       <div class="p-6 border-b border-neutral-volcanic">
-        <h3 class="font-semibold text-neutral-dark">Administradores</h3>
+        <h3 class="font-semibold text-neutral-dark">{{ t('admin.admins.list') }}</h3>
       </div>
 
       <div class="p-6">
@@ -66,12 +66,12 @@
               <p class="text-xs text-neutral-slate truncate">{{ a.email }}</p>
             </div>
             <span :class="['shrink-0 px-2 py-1 rounded-full text-xs', a.is_disabled ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800']">
-              {{ a.is_disabled ? 'De baja' : 'Activo' }}
+              {{ a.is_disabled ? t('admin.admins.inactive') : t('admin.admins.active') }}
             </span>
           </div>
 
           <div v-if="administradores.length === 0" class="px-4 py-4 text-sm text-neutral-slate">
-            No hay administradores.
+            {{ t('admin.admins.empty') }}
           </div>
         </div>
       </div>
@@ -82,6 +82,7 @@
 
 <script setup>
 import { computed, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 
@@ -89,6 +90,7 @@ import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 // Nota: las validaciones aquí son para UX; el backend debe reforzarlas siempre.
 
 const adminStore = useAdminStore()
+const { t } = useI18n()
 
 const cargando = ref(false)
 const mensajeError = ref('')

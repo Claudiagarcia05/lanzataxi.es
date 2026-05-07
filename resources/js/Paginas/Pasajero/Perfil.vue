@@ -14,7 +14,7 @@
           - La validación de tarjeta aquí es solo de formato (no es una pasarela real).
           - El backend debe validar autorización y datos definitivamente.
         -->
-        <h1 class="text-2xl font-bold text-neutral-dark mb-6">Mi Perfil</h1>
+        <h1 class="text-2xl font-bold text-neutral-dark mb-6">{{ t('profile.title') }}</h1>
         <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
           <p class="text-sm font-medium text-red-500">{{ mensajeError }}</p>
         </div>
@@ -42,63 +42,63 @@
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
           <div class="flex justify-between items-center mb-4">
-            <h3 class="font-semibold text-neutral-dark">Información personal</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('profile.personalInfo') }}</h3>
             <button v-if="!editandoPersonal" @click="iniciarEdicionPersonal" class="text-sm text-lanzarote-blue flex items-center space-x-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
               </svg>
-              <span>Editar información</span>
+              <span>{{ t('profile.editInfo') }}</span>
             </button>
           </div>
           
           <div v-if="!editandoPersonal" class="space-y-3">
             <div class="flex">
-              <span class="w-32 text-sm text-neutral-slate">Nombre:</span>
+              <span class="w-32 text-sm text-neutral-slate">{{ t('profile.name') }}</span>
               <span class="text-neutral-dark font-medium">{{ authStore.usuario?.name }}</span>
             </div>
             <div class="flex">
-              <span class="w-32 text-sm text-neutral-slate">Email:</span>
+              <span class="w-32 text-sm text-neutral-slate">{{ t('profile.email') }}</span>
               <span class="text-neutral-dark">{{ authStore.usuario?.email }}</span>
             </div>
             <div class="flex">
-              <span class="w-32 text-sm text-neutral-slate">Teléfono:</span>
-              <span class="text-neutral-dark">{{ authStore.usuario?.phone || 'No especificado' }}</span>
+              <span class="w-32 text-sm text-neutral-slate">{{ t('profile.phone') }}</span>
+              <span class="text-neutral-dark">{{ authStore.usuario?.phone || t('profile.notSpecified') }}</span>
             </div>
           </div>
 
           <div v-if="editandoPersonal" class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Nombre</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.name') }}</label>
               <input :value="authStore.usuario?.name || ''" type="text" disabled class="w-full px-4 py-2 bg-neutral-soft border border-neutral-volcanic rounded-lg cursor-not-allowed">
-              <p class="text-xs text-neutral-slate mt-1">El nombre no se puede modificar</p>
+              <p class="text-xs text-neutral-slate mt-1">{{ t('profile.nameCannotChange') }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Email</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.email') }}</label>
               <input v-model="formulario.email" type="email" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': errorCorreo }">
               <p v-if="errorCorreo" class="text-xs text-red-500 mt-1">{{ errorCorreo }}</p>
             </div>
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Teléfono</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.phone') }}</label>
               <input v-model="formulario.phone" type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="9" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: 628123456" :class="{ 'border-red-500': errorTelefono }" @input="formulario.phone = formulario.phone.replace(/\D/g, '').slice(0, 9)">
               <p v-if="errorTelefono" class="text-xs text-red-500 mt-1">{{ errorTelefono }}</p>
             </div>
             <div class="flex space-x-3 pt-2">
               <button @click="guardarInfoPersonal" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black">
-                Guardar cambios
+                {{ t('profile.saveChanges') }}
               </button>
               <button @click="cancelarEdicionPersonal" class="px-4 py-2 border border-neutral-volcanic rounded-lg hover:bg-neutral-soft">
-                Cancelar
+                {{ t('profile.cancel') }}
               </button>
             </div>
           </div>
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
-          <h3 class="font-semibold text-neutral-dark mb-4">Cambiar contraseña</h3>
+          <h3 class="font-semibold text-neutral-dark mb-4">{{ t('profile.changePassword') }}</h3>
           
           <div class="space-y-4">
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Nueva contraseña</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.newPassword') }}</label>
               <input v-model="contrasena.nueva" type="password" name="new_password" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.nueva && !esContrasenaFuerte }" @input="comprobarFuerzaContrasena">
               
               <div v-if="contrasena.nueva" class="mt-2">
@@ -113,48 +113,48 @@
 
               <div class="mt-2 space-y-1">
                 <p class="text-xs" :class="contrasena.nueva?.length >= 8 ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Mínimo 8 caracteres
+                  ✓ {{ t('profile.passwordMin8') }}
                 </p>
                 <p class="text-xs" :class="/[A-Z]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos una mayúscula
+                  ✓ {{ t('profile.passwordUpper') }}
                 </p>
                 <p class="text-xs" :class="/[a-z]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos una minúscula
+                  ✓ {{ t('profile.passwordLower') }}
                 </p>
                 <p class="text-xs" :class="/[0-9]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos un número
+                  ✓ {{ t('profile.passwordNumber') }}
                 </p>
                 <p class="text-xs" :class="/[!@#$%^&*]/.test(contrasena.nueva) ? 'text-success-jable' : 'text-neutral-slate'">
-                  ✓ Al menos un carácter especial (!@#$%^&*)
+                  ✓ {{ t('profile.passwordSpecial') }}
                 </p>
               </div>
             </div>
 
             <div>
-              <label class="block text-sm font-medium text-neutral-dark mb-2">Confirmar nueva contraseña</label>
+              <label class="block text-sm font-medium text-neutral-dark mb-2">{{ t('profile.confirmNewPassword') }}</label>
               <input v-model="contrasena.confirmacion" type="password" name="new_password_confirmation" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" :class="{ 'border-red-500': contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion }">
               <p v-if="contrasena.confirmacion && contrasena.nueva !== contrasena.confirmacion" class="text-xs text-red-500 mt-1">
-                Las contraseñas no coinciden
+                {{ t('profile.passwordsNoMatch') }}
               </p>
             </div>
 
             <button @click="cambiarContrasena" :disabled="!puedeCambiarContrasena" class="px-4 py-2 bg-lanzarote-blue text-white rounded-lg hover:bg-lanzarote-yellow hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
-              Actualizar contraseña
+              {{ t('profile.updatePassword') }}
             </button>
           </div>
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
           <div class="flex items-center justify-between mb-6">
-            <h3 class="font-semibold text-neutral-dark">Cartera Virtual</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('profile.wallet.title') }}</h3>
             <div class="text-right">
-              <p class="text-sm text-neutral-slate">Saldo disponible</p>
+              <p class="text-sm text-neutral-slate">{{ t('profile.wallet.balanceLabel') }}</p>
               <p class="text-3xl font-bold text-lanzarote-blue">{{ formatearMoneda(saldoCartera) }}</p>
             </div>
           </div>
 
           <div class="bg-lanzarote-blue/5 p-4 rounded-lg mb-4">
-            <h4 class="font-medium text-neutral-dark mb-3">Añadir saldo</h4>
+            <h4 class="font-medium text-neutral-dark mb-3">{{ t('profile.wallet.addFunds') }}</h4>
             <div class="space-y-4">
               <div class="flex gap-2">
                 <button v-for="monto in [10, 20, 50, 100]" :key="monto" @click="recargaCartera = monto; montoPersonalizado = ''" :class="['flex-1 py-2 rounded-lg border transition-colors', recargaCartera === monto && !montoPersonalizado ? 'bg-lanzarote-blue text-white border-lanzarote-blue' : 'border-neutral-volcanic hover:bg-lanzarote-blue/10']">
@@ -163,61 +163,61 @@
               </div>
               
               <div class="flex space-x-3">
-                <input v-model="montoPersonalizado" type="number" min="5" step="1" placeholder="Otra cantidad" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" @input="recargaCartera = null">
+                <input v-model="montoPersonalizado" type="number" min="5" step="1" :placeholder="t('profile.wallet.customAmount')" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" @input="recargaCartera = null">
               </div>
 
               <div v-if="mostrarFormularioPago" class="border-t border-neutral-volcanic pt-4 mt-4">
-                <h5 class="font-medium text-neutral-dark mb-3">Datos de pago</h5>
+                <h5 class="font-medium text-neutral-dark mb-3">{{ t('profile.wallet.paymentData') }}</h5>
                 <div class="space-y-3">
                   <div>
-                    <label class="block text-sm text-neutral-slate mb-1">Número de tarjeta</label>
+                    <label class="block text-sm text-neutral-slate mb-1">{{ t('profile.wallet.cardNumber') }}</label>
                     <input v-model="tarjeta.numero" type="text" maxlength="19" placeholder="1234 5678 9012 3456" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.numero && !esNumeroTarjetaValido }" @input="formatearNumeroTarjeta">
                   </div>
                   <div class="grid grid-cols-2 gap-3">
                     <div>
-                      <label class="block text-sm text-neutral-slate mb-1">Fecha</label>
+                      <label class="block text-sm text-neutral-slate mb-1">{{ t('profile.wallet.expiry') }}</label>
                       <input v-model="tarjeta.caducidad" type="text" maxlength="5" placeholder="MM/AA" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.caducidad && !esCaducidadValida }" @input="formatearCaducidad">
                     </div>
                     <div>
-                      <label class="block text-sm text-neutral-slate mb-1">CVV</label>
+                      <label class="block text-sm text-neutral-slate mb-1">{{ t('profile.wallet.cvv') }}</label>
                       <input v-model="tarjeta.cvv" type="text" maxlength="3" placeholder="123" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.cvv && !esCvvValido }" @input="validarCvv">
                     </div>
                   </div>
                   <div>
-                    <label class="block text-sm text-neutral-slate mb-1">Nombre en la tarjeta</label>
-                    <input v-model="tarjeta.nombre" type="text" placeholder="Como aparece en la tarjeta" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.nombre && !esNombreTarjetaValido }" @input="validarNombreTarjeta">
+                    <label class="block text-sm text-neutral-slate mb-1">{{ t('profile.wallet.cardHolder') }}</label>
+                    <input v-model="tarjeta.nombre" type="text" :placeholder="t('profile.wallet.cardHolderPlaceholder')" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg" :class="{ 'border-red-500': tarjeta.nombre && !esNombreTarjetaValido }" @input="validarNombreTarjeta">
                   </div>
                 </div>
               </div>
 
               <button @click="procesarAgregarACartera" :disabled="!puedeAgregarACartera" class="w-full bg-lanzarote-blue text-white py-3 rounded-lg hover:bg-lanzarote-yellow hover:text-black transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed">
-                {{ mostrarFormularioPago ? 'Confirmar pago' : 'Añadir saldo' }}
+                {{ mostrarFormularioPago ? t('profile.wallet.confirmPayment') : t('profile.wallet.addFunds') }}
               </button>
             </div>
           </div>
 
           <div class="border-t border-neutral-volcanic pt-4">
-            <h4 class="font-medium text-neutral-dark mb-3">Retirar dinero</h4>
+            <h4 class="font-medium text-neutral-dark mb-3">{{ t('profile.wallet.withdrawTitle') }}</h4>
             <div class="flex space-x-3">
               <input v-model="montoRetiro" type="number" min="5" :max="saldoCartera" step="1" placeholder="Cantidad a retirar" class="flex-1 px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue">
               <button @click="procesarRetiro" :disabled="!puedeRetirar" class="px-6 py-2 bg-neutral-dark text-white rounded-lg hover:bg-neutral-slate disabled:opacity-50 disabled:cursor-not-allowed">
-                Retirar
+                {{ t('profile.wallet.withdrawBtn') }}
               </button>
             </div>
-            <p class="text-xs text-neutral-slate mt-2">Mínimo 5€ - Máximo {{ formatearMoneda(saldoCartera) }}</p>
+            <p class="text-xs text-neutral-slate mt-2">{{ t('profile.wallet.minMax', { max: formatearMoneda(saldoCartera) }) }}</p>
           </div>
         </div>
 
         <div class="border-b border-neutral-volcanic pb-6 mb-6">
-          <h3 class="font-semibold text-neutral-dark mb-4">Preferencias y notificaciones</h3>
+          <h3 class="font-semibold text-neutral-dark mb-4">{{ t('profile.preferences') }}</h3>
           <div class="space-y-3">
             <label class="flex items-center space-x-3">
               <input type="checkbox" v-model="preferencias.email_notifications" class="w-4 h-4 text-lanzarote-blue">
-              <span class="text-neutral-dark">Recibir notificaciones por email</span>
+              <span class="text-neutral-dark">{{ t('profile.emailNotif') }}</span>
             </label>
             <label class="flex items-center space-x-3">
               <input type="checkbox" v-model="preferencias.sms_notifications" class="w-4 h-4 text-lanzarote-blue">
-              <span class="text-neutral-dark">Recibir notificaciones por SMS</span>
+              <span class="text-neutral-dark">{{ t('profile.smsNotif') }}</span>
             </label>
           </div>
         </div>
@@ -227,7 +227,7 @@
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-            <span>Eliminar mi cuenta</span>
+            <span>{{ t('profile.deleteAccount') }}</span>
           </button>
         </div>
       </div>
@@ -235,14 +235,14 @@
 
     <div v-if="mostrarConfirmacionEliminacion" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Eliminar cuenta?</h3>
-        <p class="text-neutral-slate mb-6">Esta acción es permanente y no se puede deshacer. Se eliminarán todos tus datos y viajes.</p>
+        <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('profile.deleteConfirmTitle') }}</h3>
+        <p class="text-neutral-slate mb-6">{{ t('profile.deleteConfirmText') }}</p>
         <div class="flex space-x-3">
           <button @click="eliminarCuenta" class="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700">
-            Sí, eliminar
+            {{ t('profile.deleteYes') }}
           </button>
           <button @click="mostrarConfirmacionEliminacion = false" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
-            Cancelar
+            {{ t('profile.cancel') }}
           </button>
         </div>
       </div>
@@ -250,14 +250,14 @@
   </DisposicionPasajero>
     <div v-if="mostrarConfirmacionRetiro" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h3 class="text-xl font-bold text-neutral-dark mb-4">¿Confirmar retirada?</h3>
-        <p class="text-neutral-slate mb-6">¿Confirmas la retirada de {{ formatearMoneda(montoRetiro) }} de tu cartera virtual?</p>
+        <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('profile.wallet.confirmWithdrawTitle') }}</h3>
+        <p class="text-neutral-slate mb-6">{{ t('profile.wallet.confirmWithdrawText', { amount: formatearMoneda(montoRetiro) }) }}</p>
         <div class="flex space-x-3">
           <button @click="confirmarRetiro" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">
-            Sí, retirar
+            {{ t('profile.wallet.confirmYes') }}
           </button>
           <button @click="cancelarRetiro" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
-            Cancelar
+            {{ t('profile.cancel') }}
           </button>
         </div>
       </div>
@@ -267,6 +267,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DisposicionPasajero from '../../Disposiciones/DisposicionPasajero.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useCarteraStore } from '../../Almacenes/almacenCartera.js'
@@ -277,6 +278,7 @@ const mensajeError = ref('')
 const mensajeInfo = ref('')
 const authStore = useAuthStore()
 const carteraStore = useCarteraStore()
+const { t, locale } = useI18n()
 
 const vistaPreviaAvatar = ref(null)
 const avatarUsuario = ref(null)
@@ -622,11 +624,12 @@ const colorFuerza = (nivel) => {
 }
 
 const mensajeFuerza = computed(() => {
+  locale.value
   if (!contrasena.nueva) return ''
-  if (fuerzaContrasena.value <= 2) return 'Contraseña débil'
-  if (fuerzaContrasena.value <= 3) return 'Contraseña media'
+  if (fuerzaContrasena.value <= 2) return t('profile.passwordWeak')
+  if (fuerzaContrasena.value <= 3) return t('profile.passwordMedium')
 
-  return 'Contraseña fuerte'
+  return t('profile.passwordStrong')
 })
 
 const colorTextoFuerza = computed(() => {

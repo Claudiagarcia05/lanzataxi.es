@@ -23,7 +23,7 @@
             <div class="flex items-center space-x-2 mb-6">
               <svg class="w-6 h-6 text-neutral-dark" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true" v-html="iconoTaxiSvg"></svg>
               <h2 class="text-xl font-bold text-neutral-dark">LanzaTaxi</h2>
-              <span class="text-neutral-slate">¿A dónde vamos?</span>
+              <span class="text-neutral-slate">{{ t('passenger.newBooking.whereTo') }}</span>
             </div>
 
             <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -40,19 +40,19 @@
                 <div class="space-y-4">
                   <div>
                     <label class="block text-sm font-medium text-neutral-dark mb-1">
-                      Origen - Dirección de recogida <span class="text-red-500">*</span>
+                      {{ t('passenger.newBooking.pickupLabel') }} <span class="text-red-500">*</span>
                     </label>
                     <div class="flex items-center gap-2">
                       <input v-model="formularioReserva.pickupAddress" type="text" required class="flex-1 px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: Calle Real 45, Arrecife"/>
-                      <button type="button" class="ml-1 px-3 py-2 rounded-lg bg-lanzarote-blue text-white hover:bg-lanzarote-yellow hover:text-black transition-colors text-xs" title="Usar mi ubicación actual" @click="obtenerUbicacionUsuario">
-                        Mi ubicación
+                      <button type="button" class="ml-1 px-3 py-2 rounded-lg bg-lanzarote-blue text-white hover:bg-lanzarote-yellow hover:text-black transition-colors text-xs" :title="t('passenger.newBooking.myLocation')" @click="obtenerUbicacionUsuario">
+                        {{ t('passenger.newBooking.myLocation') }}
                       </button>
                     </div>
                   </div>
 
                   <div>
                     <label class="block text-sm font-medium text-neutral-dark mb-1">
-                      Destino - ¿A dónde vas? <span class="text-red-500">*</span>
+                      {{ t('passenger.newBooking.dropoffLabel') }} <span class="text-red-500">*</span>
                     </label>
                     <input v-model="formularioReserva.dropoffAddress" type="text" required class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" placeholder="Ej: Aeropuerto César Manrique"/>
                   </div>
@@ -73,13 +73,13 @@
                   <div v-if="formularioReserva.isScheduled" class="grid grid-cols-2 gap-4">
                     <div>
                       <label class="block text-sm font-medium text-neutral-dark mb-1">
-                        Fecha de recogida <span class="text-red-500">*</span>
+                        {{ t('passenger.newBooking.pickupDate') }} <span class="text-red-500">*</span>
                       </label>
                       <input v-model="formularioReserva.viajeDate" type="date" :min="new Date().toISOString().split('T')[0]" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"/>
                     </div>
                     <div>
                       <label class="block text-sm font-medium text-neutral-dark mb-1">
-                        Hora de recogida <span class="text-red-500">*</span>
+                        {{ t('passenger.newBooking.pickupTime') }} <span class="text-red-500">*</span>
                       </label>
                       <input v-model="formularioReserva.viajeTime" type="time" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue"/>
                     </div>
@@ -92,60 +92,60 @@
                 
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div>
-                    <label class="block text-sm font-medium text-neutral-dark mb-1">Pasajeros</label>
+                    <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('passenger.newBooking.passengers') }}</label>
                     <select v-model.number="formularioReserva.pasajeros" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue bg-white">
                       <option v-for="n in 6" :key="n" :value="n">{{ n }} pasajero{{ n !== 1 ? 's' : '' }}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label class="block text-sm font-medium text-neutral-dark mb-1">Maletas</label>
+                    <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('passenger.newBooking.luggage') }}</label>
                     <select v-model.number="formularioReserva.luggage" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue bg-white">
-                      <option :value="0">Sin maletas</option>
-                      <option :value="1">1 maleta</option>
-                      <option :value="2">2 maletas</option>
-                      <option :value="3">3 maletas</option>
-                      <option :value="4">4+ maletas</option>
+                      <option :value="0">{{ t('passenger.newBooking.noLuggage') }}</option>
+                      <option :value="1">{{ t('passenger.newBooking.luggage1') }}</option>
+                      <option :value="2">{{ t('passenger.newBooking.luggage2') }}</option>
+                      <option :value="3">{{ t('passenger.newBooking.luggage3') }}</option>
+                      <option :value="4">{{ t('passenger.newBooking.luggage4') }}</option>
                     </select>
                   </div>
 
                   <div>
-                    <label class="block text-sm font-medium text-neutral-dark mb-1">Método de pago</label>
+                    <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('passenger.newBooking.paymentMethod') }}</label>
                     <select v-model="formularioReserva.pagoMethod" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue bg-white">
-                      <option value="efectivo">Efectivo</option>
-                      <option value="wallet">Mi Cartera ({{ saldoCartera.toFixed(2) }}€)</option>
-                      <option value="tarjeta">Tarjeta</option>
+                      <option value="efectivo">{{ t('passenger.newBooking.cash') }}</option>
+                      <option value="wallet">{{ t('passenger.newBooking.myWallet', { balance: saldoCartera.toFixed(2) }) }}</option>
+                      <option value="tarjeta">{{ t('passenger.newBooking.card') }}</option>
                     </select>
                   </div>
                 </div>
 
                 <div v-if="formularioReserva.pagoMethod === 'wallet' && totalEstimadoPagar > saldoCartera" class="mt-3 p-2 bg-red-50 border border-red-200 rounded-lg">
-                  <p class="text-sm text-red-600">
-                    Saldo insuficiente. Te faltan {{ (totalEstimadoPagar - saldoCartera).toFixed(2) }}€
-                  </p>
+                    <p class="text-sm text-red-600">
+                    {{ t('passenger.newBooking.insufficientBalance', { amount: (totalEstimadoPagar - saldoCartera).toFixed(2) }) }}
+                    </p>
                 </div>
               </div>
 
               <div class="border-b border-neutral-volcanic pb-6">
                 <h3 class="font-semibold text-neutral-dark mb-4">{{ t('passenger.newBooking.notes') }}</h3>
-                <textarea v-model="formularioReserva.notes" rows="3" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue resize-none" placeholder="Ej: Necesito silla para bebé, vuelo número..."></textarea>
+                <textarea v-model="formularioReserva.notes" rows="3" class="w-full px-4 py-3 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue resize-none" :placeholder="t('passenger.newBooking.notesPlaceholder')"></textarea>
               </div>
 
               <div v-if="formularioReserva.distance > 0" class="bg-neutral-soft p-4 rounded-lg">
                 <div class="flex justify-between items-center mb-2">
-                  <span class="text-neutral-slate">Distancia estimada:</span>
+                  <span class="text-neutral-slate">{{ t('passenger.newBooking.estimatedDistance') }}</span>
                   <span class="font-semibold">{{ formularioReserva.distance }} km</span>
                 </div>
                 <div class="flex justify-between items-center pt-2 border-t border-neutral-volcanic">
-                  <span class="text-lg font-bold text-neutral-dark">Precio estimado:</span>
+                  <span class="text-lg font-bold text-neutral-dark">{{ t('passenger.newBooking.estimatedPrice') }}</span>
                   <span class="text-2xl font-bold text-lanzarote-blue">{{ formularioReserva.estimatedPrice.toFixed(2) }} €</span>
                 </div>
                 <div v-if="deudaPendiente > 0" class="flex justify-between items-center mt-2">
-                  <span class="text-sm text-neutral-slate">Deuda pendiente:</span>
+                  <span class="text-sm text-neutral-slate">{{ t('passenger.newBooking.pendingDebt') }}</span>
                   <span class="font-semibold text-neutral-dark">{{ deudaPendiente.toFixed(2) }} €</span>
                 </div>
                 <div v-if="deudaPendiente > 0" class="flex justify-between items-center pt-2 border-t border-neutral-volcanic mt-2">
-                  <span class="text-lg font-bold text-neutral-dark">Total a pagar:</span>
+                  <span class="text-lg font-bold text-neutral-dark">{{ t('passenger.newBooking.totalToPay') }}</span>
                   <span class="text-2xl font-bold text-lanzarote-blue">{{ totalEstimadoPagar.toFixed(2) }} €</span>
                 </div>
               </div>

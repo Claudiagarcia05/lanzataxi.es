@@ -1,22 +1,22 @@
 <template>
   <DisposicionAdministrador>
     <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-      <h1 class="text-3xl font-bold mb-2">Estadísticas</h1>
-      <p class="text-blue-100">Bienvenido, {{ authStore.usuario?.name }}. Aquí puedes ver el resumen mensual de la plataforma</p>
+      <h1 class="text-3xl font-bold mb-2">{{ t('admin.panel.title') }}</h1>
+      <p class="text-blue-100">{{ t('admin.panel.subtitle', { name: authStore.usuario?.name }) }}</p>
     </div>
 
     <div class="bg-white rounded-xl shadow-sm p-6 mb-8">
       <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <h3 class="font-semibold text-neutral-dark">Resumen mensual</h3>
+        <h3 class="font-semibold text-neutral-dark">{{ t('admin.panel.monthlySummary') }}</h3>
         <div class="flex items-center gap-3">
           <div>
-            <label class="block text-xs text-neutral-slate mb-1">Año</label>
+            <label class="block text-xs text-neutral-slate mb-1">{{ t('admin.panel.year') }}</label>
             <select v-model.number="anioSeleccionado" @change="cargarMensual" class="rounded-lg border-neutral-volcanic text-sm">
               <option v-for="y in anios" :key="y" :value="y">{{ y }}</option>
             </select>
           </div>
           <div>
-            <label class="block text-xs text-neutral-slate mb-1">Mes</label>
+            <label class="block text-xs text-neutral-slate mb-1">{{ t('admin.panel.month') }}</label>
             <select v-model.number="mesSeleccionado" @change="cargarMensual" class="rounded-lg border-neutral-volcanic text-sm">
               <option v-for="m in 12" :key="m" :value="m">{{ String(m).padStart(2, '0') }}</option>
             </select>
@@ -26,21 +26,21 @@
 
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div class="bg-neutral-soft rounded-xl p-4">
-          <p class="text-xs text-neutral-slate">Viajes completados</p>
+          <p class="text-xs text-neutral-slate">{{ t('admin.panel.tripsCompleted') }}</p>
           <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.estadisticasMensuales.viajesCompletados }}</p>
         </div>
         <div class="bg-neutral-soft rounded-xl p-4">
-          <p class="text-xs text-neutral-slate">Viajes cancelados</p>
+          <p class="text-xs text-neutral-slate">{{ t('admin.panel.tripsCancelled') }}</p>
           <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.estadisticasMensuales.viajesCancelados }}</p>
         </div>
         <div class="bg-neutral-soft rounded-xl p-4">
-          <p class="text-xs text-neutral-slate">Ganancias</p>
+          <p class="text-xs text-neutral-slate">{{ t('admin.panel.earnings') }}</p>
           <p class="text-2xl font-bold text-neutral-dark">{{ adminStore.ingresosMensualesFormateado }}</p>
         </div>
       </div>
 
       <div class="mt-6 bg-neutral-soft rounded-xl p-4">
-        <p class="text-xs text-neutral-slate mb-3">Evolución diaria del mes</p>
+        <p class="text-xs text-neutral-slate mb-3">{{ t('admin.panel.dailyEvolution') }}</p>
         <div class="h-64">
           <canvas ref="lienzoGrafico"></canvas>
         </div>
@@ -52,6 +52,7 @@
 
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAuthStore } from '../../Almacenes/almacenAutenticacion.js'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
@@ -63,6 +64,7 @@ import Chart from 'chart.js/auto'
 
 const authStore = useAuthStore()
 const adminStore = useAdminStore()
+const { t } = useI18n()
 
 const lienzoGrafico = ref(null)
 let instanciaGrafico = null

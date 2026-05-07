@@ -1,8 +1,8 @@
 <template>
   <DisposicionAdministrador>
     <div class="bg-gradient-to-r from-lanzarote-blue to-blue-800 rounded-2xl p-8 mb-8 text-white">
-      <h1 class="text-3xl font-bold mb-2">Taxistas</h1>
-      <p class="text-blue-100">Gestiona taxistas y su vehículo</p>
+      <h1 class="text-3xl font-bold mb-2">{{ t('admin.drivers.title') }}</h1>
+      <p class="text-blue-100">{{ t('admin.drivers.subtitle') }}</p>
     </div>
 
     <div v-if="mensajeError" class="mb-6 bg-red-50 border border-red-200 p-4 rounded-lg">
@@ -14,19 +14,19 @@
 
     <div class="bg-white rounded-xl shadow-sm">
       <div class="p-6 border-b border-neutral-volcanic">
-        <h3 class="font-semibold text-neutral-dark">Listado</h3>
+        <h3 class="font-semibold text-neutral-dark">{{ t('admin.shared.list') }}</h3>
       </div>
 
       <div class="overflow-x-auto">
         <table class="w-full">
           <thead class="bg-neutral-soft">
             <tr>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Nombre</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Email</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Teléfono</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Aprobación</th>
-              <th class="text-left p-4 text-xs font-medium text-neutral-slate">Estado</th>
-              <th class="text-right p-4 text-xs font-medium text-neutral-slate">Acciones</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.name') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.email') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.phone') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.drivers.approval') }}</th>
+              <th class="text-left p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.status') }}</th>
+              <th class="text-right p-4 text-xs font-medium text-neutral-slate">{{ t('admin.shared.actions') }}</th>
             </tr>
           </thead>
           <tbody>
@@ -50,18 +50,18 @@
                       : (c.is_active ? 'bg-green-100 text-green-800' : 'bg-neutral-soft text-neutral-slate'),
                   ]"
                 >
-                  {{ c.is_disabled ? 'De baja' : (c.is_active ? 'Conectado' : 'Desconectado') }}
+                  {{ c.is_disabled ? t('admin.shared.inactive') : (c.is_active ? t('admin.drivers.connected') : t('admin.drivers.disconnected')) }}
                 </span>
               </td>
               <td class="p-4 text-right">
                 <button @click="abrirModalConductor(c)" class="text-sm text-lanzarote-blue hover:underline">
-                  Ver
+                  {{ t('admin.shared.view') }}
                 </button>
               </td>
             </tr>
 
             <tr v-if="conductores.length === 0">
-              <td class="p-6 text-sm text-neutral-slate" colspan="6">No hay taxistas.</td>
+              <td class="p-6 text-sm text-neutral-slate" colspan="6">{{ t('admin.drivers.empty') }}</td>
             </tr>
           </tbody>
         </table>
@@ -72,7 +72,7 @@
       <div class="w-full max-w-3xl bg-white rounded-xl shadow-lg border border-neutral-volcanic">
         <div class="p-5 border-b border-neutral-volcanic flex items-center justify-between">
           <div>
-            <h3 class="font-semibold text-neutral-dark">Taxista</h3>
+            <h3 class="font-semibold text-neutral-dark">{{ t('admin.drivers.modalTitle') }}</h3>
           </div>
           <button @click="cerrarModal" class="p-2 rounded-lg hover:bg-neutral-soft">
             <span class="text-neutral-slate font-semibold text-lg leading-none">X</span>
@@ -81,14 +81,14 @@
 
         <div class="p-5 grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div>
-            <h4 class="font-semibold text-neutral-dark mb-3">Datos personales</h4>
+            <h4 class="font-semibold text-neutral-dark mb-3">{{ t('admin.drivers.personalData') }}</h4>
             <div class="space-y-2 text-sm">
-              <p><span class="text-neutral-slate">Nombre:</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.name }}</span></p>
-              <p><span class="text-neutral-slate">Email:</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.email }}</span></p>
-              <p><span class="text-neutral-slate">Teléfono:</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.phone }}</span></p>
-              <p><span class="text-neutral-slate">Licencia:</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.license_number || '—' }}</span></p>
+              <p><span class="text-neutral-slate">{{ t('admin.shared.name') }}</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.name }}</span></p>
+              <p><span class="text-neutral-slate">{{ t('admin.shared.email') }}</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.email }}</span></p>
+              <p><span class="text-neutral-slate">{{ t('admin.shared.phone') }}</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.phone }}</span></p>
+              <p><span class="text-neutral-slate">{{ t('admin.drivers.license') }}</span> <span class="text-neutral-dark">{{ conductorSeleccionado?.license_number || '—' }}</span></p>
               <p>
-                <span class="text-neutral-slate">Aprobación:</span>
+                <span class="text-neutral-slate">{{ t('admin.drivers.approvalLabel') }}</span>
                 <span :class="['ml-2 px-2 py-1 rounded-full text-xs', obtenerClaseAprobacion(conductorSeleccionado?.approval_status)]">
                   {{ obtenerTextoAprobacion(conductorSeleccionado?.approval_status) }}
                 </span>
@@ -101,7 +101,7 @@
                 :disabled="!conductorSeleccionado"
                 class="bg-lanzarote-blue disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-yellow hover:text-black"
               >
-                Informe
+                {{ t('admin.shared.report') }}
               </button>
 
               <button
@@ -110,21 +110,21 @@
                 :disabled="!conductorSeleccionado || !formularioTaxi.id"
                 class="bg-lanzarote-yellow disabled:opacity-50 text-black px-4 py-2 rounded-lg text-sm hover:bg-lanzarote-blue hover:text-white"
               >
-                Guardar vehículo
+                {{ t('admin.drivers.saveVehicle') }}
               </button>
             </div>
           </div>
 
           <div>
-            <h4 class="font-semibold text-neutral-dark mb-3">Vehículo</h4>
+            <h4 class="font-semibold text-neutral-dark mb-3">{{ t('admin.drivers.vehicle') }}</h4>
 
             <div v-if="!formularioTaxi.id" class="text-sm text-neutral-slate">
-              Este taxista no tiene taxi asociado.
+              {{ t('admin.drivers.noVehicle') }}
             </div>
 
             <form v-else @submit.prevent="guardarTaxi" class="space-y-3">
               <div>
-                <label class="block text-xs text-neutral-slate mb-1">Matrícula</label>
+                <label class="block text-xs text-neutral-slate mb-1">{{ t('admin.drivers.plate') }}</label>
                 <input
                   v-model="formularioTaxi.plate"
                   :disabled="esConductorRechazado"
@@ -135,16 +135,16 @@
                 />
               </div>
               <div>
-                <label class="block text-xs text-neutral-slate mb-1">Modelo</label>
+                <label class="block text-xs text-neutral-slate mb-1">{{ t('admin.drivers.model') }}</label>
                 <input v-model="formularioTaxi.model" :disabled="esConductorRechazado" class="w-full rounded-lg border-neutral-volcanic" />
               </div>
               <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
-                  <label class="block text-xs text-neutral-slate mb-1">Capacidad</label>
+                  <label class="block text-xs text-neutral-slate mb-1">{{ t('admin.drivers.capacity') }}</label>
                   <input v-model="formularioTaxi.capacity" :disabled="esConductorRechazado" type="number" min="1" class="w-full rounded-lg border-neutral-volcanic" />
                 </div>
                 <div>
-                  <label class="block text-xs text-neutral-slate mb-1">Color</label>
+                  <label class="block text-xs text-neutral-slate mb-1">{{ t('admin.drivers.color') }}</label>
                   <input v-model="formularioTaxi.color" :disabled="esConductorRechazado" class="w-full rounded-lg border-neutral-volcanic" />
                 </div>
               </div>
@@ -157,7 +157,7 @@
                   :disabled="!conductorSeleccionado || conductorSeleccionado.is_disabled"
                   class="bg-red-500 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-600"
                 >
-                  Dar de baja
+                  {{ t('admin.shared.deactivate') }}
                 </button>
               </div>
             </form>
@@ -171,6 +171,7 @@
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import DisposicionAdministrador from '../../Disposiciones/DisposicionAdministrador.vue'
 import { useAdminStore } from '../../Almacenes/almacenAdministrador.js'
 import axios from 'axios'
@@ -181,6 +182,7 @@ import { jsPDF } from 'jspdf'
 // - Incluye refresco periódico del listado para ver estado online/disabled actualizado.
 
 const adminStore = useAdminStore()
+const { t } = useI18n()
 
 const mensajeError = ref('')
 const mensajeInfo = ref('')
@@ -358,10 +360,10 @@ const formatearMes = (yyyyMm) => {
 
 const obtenerTextoAprobacion = (estadoAprobacion) => {
   switch (estadoAprobacion) {
-    case 'approved': return 'Aprobado'
-    case 'rejected': return 'Rechazado'
+    case 'approved': return t('admin.drivers.approved')
+    case 'rejected': return t('admin.drivers.rejected')
     case 'pending':
-    default: return 'Pendiente'
+    default: return t('admin.drivers.pending')
   }
 }
 
