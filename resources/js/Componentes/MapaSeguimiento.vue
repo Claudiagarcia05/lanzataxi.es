@@ -62,7 +62,7 @@ const normalizeOsrmServiceUrl = (url) => {
 }
 
 const OSRM_SERVICE_URL = normalizeOsrmServiceUrl(import.meta.env.VITE_OSRM_SERVICE_URL)
-  || 'https://router.project-osrm.org/route/v1/'
+  || '/api/osrm/route/v1/'
 
 const props = defineProps({
   pickupLat: { type: Number, default: null },

@@ -27,4 +27,10 @@
                 'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
             ],
         ],
+
+        'osrm' => [
+            // Base URL del motor de rutas (sin /route/v1).
+            // Ejemplo producción: https://router.midominio.com
+            'base_url' => env('OSRM_BASE_URL', 'https://router.project-osrm.org'),
+        ],
     ];

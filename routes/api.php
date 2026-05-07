@@ -28,6 +28,7 @@
     use Illuminate\Http\Request;
     use App\Http\Controllers\Api\ConductorEstadoController;
     use App\Http\Controllers\Api\GeocodingController;
+    use App\Http\Controllers\Api\OsrmController;
 
     // Rutas públicas de autenticación: devuelven token/estado para iniciar sesión.
     Route::post('/register', [AutenticacionController::class, 'register']);
@@ -41,6 +42,9 @@
     // Se deja público para que componentes de terceros (p.ej. Leaflet geocoder) puedan consumirlo.
     Route::get('/geocoding/search', [GeocodingController::class, 'search'])->middleware('throttle:60,1');
     Route::get('/geocoding/reverse', [GeocodingController::class, 'reverse'])->middleware('throttle:60,1');
+    Route::get('/osrm/route/v1/{profile}/{coordinates}', [OsrmController::class, 'route'])
+        ->where('coordinates', '.*')
+        ->middleware('throttle:120,1');
 
     // Rutas privadas: requieren token válido (Sanctum) y que la cuenta esté habilitada.
     Route::middleware(['auth:sanctum', 'account.enabled'])->group(function () {
