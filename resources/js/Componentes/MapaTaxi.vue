@@ -85,11 +85,11 @@ const normalizeOsrmServiceUrl = (url) => {
   const trimmed = url.trim()
   if (!trimmed) return null
 
-  return trimmed.endsWith('/') ? trimmed : `${trimmed}/`
+  return trimmed.replace(/\/+$/, '')
 }
 
 const OSRM_SERVICE_URL = normalizeOsrmServiceUrl(import.meta.env.VITE_OSRM_SERVICE_URL)
-  || '/api/osrm/route/v1/'
+  || '/api/osrm/route/v1'
 
 // Coordenadas iniciales de ejemplo (Lanzarote). Dropoff es opcional.
 const props = defineProps({
