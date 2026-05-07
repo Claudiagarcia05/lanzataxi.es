@@ -260,7 +260,7 @@ const geocodificarDireccion = async (address) => {
     },
   })
 
-  const candidatos = Array.isArray(response.data) ? response.data : []
+  const candidatos = Array.isArray(response) ? response : []
   for (const item of candidatos) {
     const lat = Number.parseFloat(item?.lat)
     const lng = Number.parseFloat(item?.lon)
@@ -314,7 +314,7 @@ const obtenerUbicacionUsuario = async () => {
           lon: lng,
         },
       })
-      const address = response.data.display_name || `${lat}, ${lng}`
+      const address = response?.display_name || `${lat}, ${lng}`
       manejarUbicacionUsuario({ address, lat, lng })
 
       formularioReserva.value.distance = 0

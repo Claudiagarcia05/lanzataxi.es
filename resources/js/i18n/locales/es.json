@@ -374,7 +374,7 @@
     "passwordUpper": "Al menos una mayúscula",
     "passwordLower": "Al menos una minúscula",
     "passwordNumber": "Al menos un número",
-    "passwordSpecial": "Al menos un carácter especial (!@#$%^&*)",
+    "passwordSpecial": "Al menos un carácter especial",
     "driver": {
       "activated": "Activado",
       "offline": "Desconectado"

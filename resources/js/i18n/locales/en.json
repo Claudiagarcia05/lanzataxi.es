@@ -374,7 +374,7 @@
     "passwordUpper": "At least one uppercase letter",
     "passwordLower": "At least one lowercase letter",
     "passwordNumber": "At least one number",
-    "passwordSpecial": "At least one special character (!@#$%^&*)",
+    "passwordSpecial": "At least one special character",
     "driver": {
       "activated": "Active",
       "offline": "Offline"
