@@ -3,9 +3,10 @@
     namespace Tests\Feature\Auth;
 
     use App\Models\User;
-    use Illuminate\Auth\Notifications\ResetPassword;
+    use App\Services\PasswordRecoveryService;
     use Illuminate\Foundation\Testing\RefreshDatabase;
-    use Illuminate\Support\Facades\Notification;
+    use Illuminate\Support\Facades\Cache;
+    use Illuminate\Support\Facades\Hash;
     use Tests\TestCase;
 
     class PasswordResetTest extends TestCase {
@@ -18,51 +19,61 @@
         }
 
         public function test_reset_password_link_can_be_requested(): void {
-            Notification::fake();
-
             $usuario = User::factory()->create();
 
-            $this->post('/forgot-password', ['email' => $usuario->email]);
+            $respuesta = $this->post('/forgot-password', ['email' => $usuario->email]);
 
-            Notification::assertSentTo($usuario, ResetPassword::class);
+            $respuesta->assertStatus(200);
+            $respuesta->assertJson(['message' => 'Si el correo existe, hemos enviado un código de verificación.']);
         }
 
         public function test_reset_password_screen_can_be_rendered(): void {
-            Notification::fake();
-
             $usuario = User::factory()->create();
+            $email = strtolower(trim($usuario->email));
+            $code = '12345';
 
-            $this->post('/forgot-password', ['email' => $usuario->email]);
+            Cache::put('password-recovery:'.$email, [
+                'email' => $email,
+                'code_hash' => Hash::make($code),
+                'attempts' => 0,
+                'verified' => false,
+                'verify_token' => null,
+                'requested_at' => now()->toIso8601String(),
+            ], now()->addMinutes(15));
 
-            Notification::assertSentTo($usuario, ResetPassword::class, function ($notification) {
-                $respuesta = $this->get('/reset-password/'.$notification->token);
+            $respuesta = $this->post('/forgot-password/verify', [
+                'email' => $email,
+                'code' => $code,
+            ]);
 
-                $respuesta->assertStatus(200);
-
-                return true;
-            });
+            $respuesta->assertStatus(200);
+            $respuesta->assertJsonStructure(['message', 'token']);
         }
 
         public function test_password_can_be_reset_with_valid_token(): void {
-            Notification::fake();
-
             $usuario = User::factory()->create();
+            $email = strtolower(trim($usuario->email));
+            $token = \Illuminate\Support\Str::random(64);
 
-            $this->post('/forgot-password', ['email' => $usuario->email]);
+            Cache::put('password-recovery:'.$email, [
+                'email' => $email,
+                'code_hash' => Hash::make('12345'),
+                'attempts' => 0,
+                'verified' => true,
+                'verify_token' => $token,
+                'requested_at' => now()->toIso8601String(),
+                'verified_at' => now()->toIso8601String(),
+            ], now()->addMinutes(15));
 
-            Notification::assertSentTo($usuario, ResetPassword::class, function ($notification) use ($usuario) {
-                $respuesta = $this->post('/reset-password', [
-                    'token' => $notification->token,
-                    'email' => $usuario->email,
-                    'password' => 'password',
-                    'password_confirmation' => 'password',
-                ]);
+            $respuesta = $this->post('/forgot-password/reset', [
+                'email' => $email,
+                'token' => $token,
+                'password' => 'NewPassword1!',
+                'password_confirmation' => 'NewPassword1!',
+            ]);
 
-                $respuesta
-                    ->assertSessionHasNoErrors()
-                    ->assertRedirect(route('login'));
-
-                return true;
-            });
+            $respuesta->assertStatus(200);
+            $respuesta->assertJson(['message' => 'Contraseña actualizada correctamente.']);
+            $this->assertTrue(Hash::check('NewPassword1!', $usuario->refresh()->password));
         }
     }

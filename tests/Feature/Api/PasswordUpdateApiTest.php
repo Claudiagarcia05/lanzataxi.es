@@ -19,8 +19,8 @@ class PasswordUpdateApiTest extends TestCase
         Sanctum::actingAs($usuario);
 
         $respuesta = $this->putJson('/api/user/password', [
-            'new_password' => 'new-password',
-            'new_password_confirmation' => 'new-password',
+            'new_password' => 'NewPassword1!',
+            'new_password_confirmation' => 'NewPassword1!',
         ]);
 
         $respuesta
@@ -29,6 +29,6 @@ class PasswordUpdateApiTest extends TestCase
                 'success' => true,
             ]);
 
-        $this->assertTrue(Hash::check('new-password', $usuario->refresh()->password));
+        $this->assertTrue(Hash::check('NewPassword1!', $usuario->refresh()->password));
     }
 }

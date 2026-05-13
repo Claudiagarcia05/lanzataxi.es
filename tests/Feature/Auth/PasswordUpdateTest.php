@@ -18,15 +18,15 @@
                 ->from('/profile')
                 ->put('/password', [
                     'current_password' => 'password',
-                    'password' => 'new-password',
-                    'password_confirmation' => 'new-password',
+                    'password' => 'NewPassword1!',
+                    'password_confirmation' => 'NewPassword1!',
                 ]);
 
             $respuesta
                 ->assertSessionHasNoErrors()
                 ->assertRedirect('/profile');
 
-            $this->assertTrue(Hash::check('new-password', $usuario->refresh()->password));
+            $this->assertTrue(Hash::check('NewPassword1!', $usuario->refresh()->password));
         }
 
         public function test_correct_password_must_be_provided_to_update_password(): void {
@@ -37,8 +37,8 @@
                 ->from('/profile')
                 ->put('/password', [
                     'current_password' => 'wrong-password',
-                    'password' => 'new-password',
-                    'password_confirmation' => 'new-password',
+                    'password' => 'NewPassword1!',
+                    'password_confirmation' => 'NewPassword1!',
                 ]);
 
             $respuesta
