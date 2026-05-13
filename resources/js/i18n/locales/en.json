@@ -103,7 +103,7 @@
     },
     "placeholders": {
       "fullName": "Your name",
-      "email": "you\\@example.com",
+      "email": "you{'@'}example.com",
       "password": "••••••••",
       "confirmPassword": "••••••••"
     },
@@ -135,7 +135,7 @@
       "stepCode": "Code",
       "stepPassword": "New password",
       "emailLabel": "Email address",
-      "emailPlaceholder": "you@example.com",
+      "emailPlaceholder": "you{'@'}example.com",
       "sendCode": "Send code",
       "codeSent": "If the email exists, we have sent a verification code.",
       "backToLogin": "Back to sign in",
