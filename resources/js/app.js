@@ -11,7 +11,7 @@ import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 
 import { crearI18n, resolverLocaleInicial } from './i18n';
 
-const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
+const appName = import.meta.env.VITE_APP_NAME || 'LanzaTaxi | Taxi en Lanzarote';
 
 createInertiaApp({
 	// Define el título del documento combinando el título de página con el nombre de la app.

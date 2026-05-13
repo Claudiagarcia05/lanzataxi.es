@@ -5,8 +5,11 @@
     </a>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex justify-between items-center h-20">
-        <button type="button" @click="goToHome" class="flex items-center space-x-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue">
-          <img src="/images/logo.png" alt="LanzaTaxi" class="h-20 w-auto" loading="lazy" decoding="async">
+        <button type="button" @click="goToHome" class="flex flex-col items-center justify-center leading-none focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue">
+          <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-11 w-auto" loading="lazy" decoding="async">
+          <span class="mt-1 text-base font-extrabold tracking-tight">
+            <span class="text-lanzarote-blue">Lanza</span><span class="text-lanzarote-yellow">Taxi</span>
+          </span>
         </button>
 
         <div class="hidden md:flex items-center space-x-8">

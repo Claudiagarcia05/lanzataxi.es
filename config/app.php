@@ -9,7 +9,7 @@
 
     return [
         // Nombre visible de la aplicación.
-        'name' => env('APP_NAME', 'Laravel'),
+        'name' => env('APP_NAME', 'LanzaTaxi | Taxi en Lanzarote'),
 
         // Entorno actual: local, staging, production, etc.
         'env' => env('APP_ENV', 'production'),

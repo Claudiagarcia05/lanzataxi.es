@@ -7,9 +7,9 @@
 
         <title inertia>LanzaTaxi | Taxi en Lanzarote</title>
 
-        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo.png') }}">
-        <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/logo.png') }}">
-        <link rel="apple-touch-icon" href="{{ asset('images/logo.png') }}">
+        <link rel="icon" type="image/png" sizes="32x32" href="{{ asset('images/logo_sin_fondo.png') }}?v=2">
+        <link rel="icon" type="image/png" sizes="192x192" href="{{ asset('images/logo_sin_fondo.png') }}?v=2">
+        <link rel="apple-touch-icon" href="{{ asset('images/logo_sin_fondo.png') }}?v=2">
 
         <link rel="preconnect" href="https://fonts.bunny.net">
         <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
