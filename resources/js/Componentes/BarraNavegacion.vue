@@ -1,5 +1,5 @@
 <template>
-  <nav class="bg-white shadow-sm fixed w-full top-0 z-50" aria-label="Principal">
+  <nav class="bg-white dark:bg-gray-900 shadow-sm fixed w-full top-0 z-50 border-b border-transparent dark:border-gray-800" aria-label="Principal">
     <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-50 focus:bg-white focus:text-neutral-dark focus:px-4 focus:py-2 focus:rounded-lg">
       {{ t('nav.skipToContent') }}
     </a>
@@ -10,21 +10,29 @@
         </button>
 
         <div class="hidden md:flex items-center space-x-8">
-          <button type="button" @click="scrollToPasos" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
+          <button type="button" @click="scrollToPasos" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow transition-colors font-medium">
             {{ t('nav.howItWorks') }}
           </button>
-          <button type="button" @click="scrollToMunicipios" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
+          <button type="button" @click="scrollToMunicipios" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow transition-colors font-medium">
             {{ t('nav.municipalities') }}
           </button>
-          <button type="button" @click="scrollToTestimonios" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
+          <button type="button" @click="scrollToTestimonios" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow transition-colors font-medium">
             {{ t('nav.reviews') }}
           </button>
-          <button type="button" @click="scrollToFooter" class="text-neutral-dark hover:text-lanzarote-blue transition-colors font-medium">
+          <button type="button" @click="scrollToFooter" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow transition-colors font-medium">
             {{ t('nav.contact') }}
           </button>
 
+          <button type="button" @click="alternarModoOscuro" class="inline-flex items-center gap-2 rounded-lg border border-neutral-volcanic dark:border-gray-700 px-3 py-2 text-sm font-medium text-neutral-dark dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-neutral-soft dark:hover:bg-gray-700 transition-colors" :aria-label="modoOscuro ? t('darkMode.disable') : t('darkMode.enable')">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="modoOscuro" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            <span>{{ modoOscuro ? t('darkMode.disable') : t('darkMode.enable') }}</span>
+          </button>
+
           <label class="sr-only" for="selector-idioma-desktop">{{ t('nav.language') }}</label>
-          <select id="selector-idioma-desktop" v-model="localeSeleccionado" @change="cambiarIdioma" class="border border-neutral-volcanic rounded-lg px-3 py-2 text-sm text-neutral-dark bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" aria-label="Selector de idioma">
+          <select id="selector-idioma-desktop" v-model="localeSeleccionado" @change="cambiarIdioma" class="border border-neutral-volcanic dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-neutral-dark dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" aria-label="Selector de idioma">
             <option value="es">ES</option>
             <option value="en">EN</option>
           </select>
@@ -35,7 +43,7 @@
         </div>
 
         <div class="md:hidden flex items-center">
-          <button type="button" @click="isMenuOpen = !isMenuOpen" class="text-neutral-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" :aria-expanded="isMenuOpen" aria-controls="mobile-menu" :aria-label="t('nav.toggleMenu')">
+          <button type="button" @click="isMenuOpen = !isMenuOpen" class="text-neutral-dark dark:text-gray-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" :aria-expanded="isMenuOpen" aria-controls="mobile-menu" :aria-label="t('nav.toggleMenu')">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path v-if="!isMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
@@ -44,24 +52,32 @@
         </div>
       </div>
 
-      <div id="mobile-menu" v-show="isMenuOpen" class="md:hidden py-4 border-t border-neutral-volcanic">
+      <div id="mobile-menu" v-show="isMenuOpen" class="md:hidden py-4 border-t border-neutral-volcanic dark:border-gray-700">
         <div class="flex flex-col space-y-4">
-          <button type="button" @click="scrollToPasos; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
+          <button type="button" @click="scrollToPasos; isMenuOpen = false" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow font-medium text-left">
             {{ t('nav.howItWorks') }}
           </button>
-          <button type="button" @click="scrollToMunicipios; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
+          <button type="button" @click="scrollToMunicipios; isMenuOpen = false" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow font-medium text-left">
             {{ t('nav.municipalities') }}
           </button>
-          <button type="button" @click="scrollToTestimonios; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
+          <button type="button" @click="scrollToTestimonios; isMenuOpen = false" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow font-medium text-left">
             {{ t('nav.reviews') }}
           </button>
-          <button type="button" @click="scrollToFooter; isMenuOpen = false" class="text-neutral-dark hover:text-lanzarote-blue font-medium text-left">
+          <button type="button" @click="scrollToFooter; isMenuOpen = false" class="text-neutral-dark dark:text-gray-200 hover:text-lanzarote-blue dark:hover:text-lanzarote-yellow font-medium text-left">
             {{ t('nav.contact') }}
           </button>
 
+          <button type="button" @click="alternarModoOscuro" class="inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-volcanic dark:border-gray-700 px-3 py-2 text-sm font-medium text-neutral-dark dark:text-gray-200 bg-white dark:bg-gray-800 hover:bg-neutral-soft dark:hover:bg-gray-700 transition-colors">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path v-if="modoOscuro" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+              <path v-else stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+            </svg>
+            <span>{{ modoOscuro ? t('darkMode.disable') : t('darkMode.enable') }}</span>
+          </button>
+
           <div class="flex items-center gap-3">
-            <span class="text-sm text-neutral-slate">{{ t('nav.language') }}</span>
-            <select v-model="localeSeleccionado" @change="cambiarIdioma" class="border border-neutral-volcanic rounded-lg px-3 py-2 text-sm text-neutral-dark bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" aria-label="Selector de idioma">
+            <span class="text-sm text-neutral-slate dark:text-gray-300">{{ t('nav.language') }}</span>
+            <select v-model="localeSeleccionado" @change="cambiarIdioma" class="border border-neutral-volcanic dark:border-gray-700 rounded-lg px-3 py-2 text-sm text-neutral-dark dark:text-gray-200 bg-white dark:bg-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-lanzarote-blue" aria-label="Selector de idioma">
               <option value="es">ES</option>
               <option value="en">EN</option>
             </select>
@@ -80,10 +96,11 @@
 
 
 <script setup>
-import { computed, ref, defineAsyncComponent } from 'vue'
+import { computed, ref, defineAsyncComponent, onMounted } from 'vue'
 import axios from 'axios'
 import { useI18n } from 'vue-i18n'
 import { usePage } from '@inertiajs/vue3'
+import { useModoOscuro } from '../Composables/useModoOscuro.js'
 const ModalAutenticacion = defineAsyncComponent(() => import('./Autenticacion/ModalAutenticacion.vue'))
 
 /**
@@ -100,6 +117,11 @@ const isMenuOpen = ref(false)
 
 const { t, locale } = useI18n()
 const page = usePage()
+const { modoOscuro, inicializar, alternarModoOscuro } = useModoOscuro()
+
+onMounted(() => {
+  inicializar()
+})
 
 const localeActual = computed(() => page.props?.locale || 'es')
 const localeSeleccionado = ref(localeActual.value)

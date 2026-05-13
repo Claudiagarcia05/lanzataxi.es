@@ -64,6 +64,35 @@
       "onlyRating": "Este usuario solo dejó una calificación.",
       "readMore": "Leer más"
     },
+    "sustainability": {
+      "kicker": "GREEN IT",
+      "title": "Sostenibilidad aplicada",
+      "subtitle": "Auditamos y optimizamos el impacto ambiental del servicio: menos emisiones por movilidad compartida, menos papel y mejor eficiencia tecnológica.",
+      "roles": {
+        "passengers": "Pasajeros activos",
+        "drivers": "Conductores activos",
+        "admins": "Administradores"
+      },
+      "globalTitle": "Impacto global de la plataforma",
+      "metrics": {
+        "completedTrips": "Viajes completados",
+        "distance": "Distancia total",
+        "co2Mobility": "CO2 evitado en movilidad",
+        "co2Paper": "CO2 evitado por digitalización"
+      },
+      "calculatorTitle": "Calculadora personal de CO2",
+      "calculatorSubtitle": "Compara tu uso digital de LanzaTaxi frente a un proceso físico y coche individual.",
+      "inputs": {
+        "monthlyTrips": "Viajes al mes",
+        "avgKmPerTrip": "Km medios por viaje",
+        "pagesPerTrip": "Páginas físicas evitadas por viaje"
+      },
+      "results": {
+        "mobility": "Ahorro por movilidad",
+        "paper": "Ahorro por digitalización",
+        "total": "Ahorro total estimado"
+      }
+    },
     "footer": {
       "tagline": "La forma más inteligente de moverte por Lanzarote. Reserva tu taxi con seguimiento en tiempo real y llega a cualquier municipio de la isla de forma segura.",
       "company": "Empresa",

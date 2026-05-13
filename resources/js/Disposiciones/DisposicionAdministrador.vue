@@ -9,7 +9,7 @@
       <div class="relative flex items-center p-4 border-b border-neutral-volcanic h-20">
         <div v-if="barraLateralAbierta" class="flex items-center space-x-2 flex-1 min-w-0">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-auto object-contain">
-          <span class="font-bold text-lanzarote-blue text-lg">LanzaTaxi</span>
+          <span class="font-bold text-lanzarote-blue dark:text-lanzarote-yellow text-lg">LanzaTaxi</span>
         </div>
         <div v-else class="flex-1 min-w-0 flex justify-center">
           <img src="/images/logo_sin_fondo.png" alt="LanzaTaxi" class="h-10 w-10 object-contain">
@@ -41,7 +41,7 @@
       <nav class="p-4" aria-label="Navegacion lateral">
         <ul class="space-y-1">
           <li v-for="item in elementosMenu" :key="item.label">
-            <button @click="navegarA(item.path)" :class="[ 'flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 text-lanzarote-blue' : 'text-neutral-dark dark:text-gray-300 hover:bg-neutral-soft dark:hover:bg-gray-700' ]" type="button">
+            <button @click="navegarA(item.path)" :class="[ 'flex items-center space-x-3 p-3 rounded-lg w-full transition-colors', item.activo ? 'bg-lanzarote-blue/10 dark:bg-lanzarote-yellow/20 text-lanzarote-blue dark:text-lanzarote-yellow' : 'text-neutral-dark dark:text-gray-300 hover:bg-neutral-soft dark:hover:bg-gray-700' ]" type="button">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" :d="item.icon" />
               </svg>

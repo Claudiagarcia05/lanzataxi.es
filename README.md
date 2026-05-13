@@ -34,6 +34,8 @@ Con LanzaTaxi los usuarios disfrutan de:
 - **Toda la información de la flota** en un solo sitio: taxis, conductores, viajes, pagos y direcciones.
 - **Seguimiento de cada servicio**, guardando un historial fiable que se pueda consultar cuando haga falta.
 - **Web fácil de usar**, que se entienda a simple vista y que funcione bien tanto en ordenador como en el móvil.
+- **Modo oscuro** sincronizado en toda la aplicación (nav público y paneles de usuario).
+- **Sección de sostenibilidad** en la página principal con métricas globales y calculadora de CO₂ interactiva.
 - **Sistema preparado para crecer**, pudiendo ir añadiendo cosas nuevas sin tener que empezar de cero.
 
 ---
@@ -194,6 +196,16 @@ De esta manera, si accedes por 127.0.0.1:8000, la página debe aparecer sin prob
 ## Visita el Proyecto Online
 
 Puedes visitar la página web [aquí](https://lanzataxi.es/)
+
+---
+
+## Sostenibilidad (Green IT)
+
+LanzaTaxi incluye una sección de sostenibilidad en la página principal con:
+
+- **Métricas globales** de viajes completados, kilómetros recorridos y CO₂ evitado por digitalización.
+- **Calculadora de CO₂ interactiva** que estima el ahorro individual según los viajes al mes, la distancia media y las páginas en papel sustituidas.
+- **Documento de auditoría** disponible en [`docs/SOJ-Green-IT-Auditoria-y-Plan.md`](docs/SOJ-Green-IT-Auditoria-y-Plan.md).
 
 ---
 

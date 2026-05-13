@@ -31,12 +31,6 @@
         <button type="submit" :disabled="cargando" class="w-full rounded-2xl bg-lanzarote-blue px-4 py-3 font-semibold text-white transition hover:bg-lanzarote-yellow hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-60">
           {{ cargando ? t('common.processing') : t('auth.recovery.sendCode') }}
         </button>
-
-        <div class="text-center text-sm text-slate-600">
-          <button type="button" class="font-semibold text-lanzarote-blue hover:underline" @click="volverALogin">
-            {{ t('auth.recovery.backToLogin') }}
-          </button>
-        </div>
       </form>
 
       <form v-else-if="pasoActivo === 2" class="space-y-5" @submit.prevent="verificarCodigo">

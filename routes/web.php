@@ -11,8 +11,10 @@
 
     use App\Http\Controllers\ProfileController;
     use App\Http\Controllers\AuthSessionController;
+    use App\Models\User;
     use App\Models\Viaje;
     use Illuminate\Foundation\Application;
+    use Illuminate\Support\Facades\DB;
     use Illuminate\Support\Facades\Route;
     use Inertia\Inertia;
 
@@ -50,6 +52,55 @@
             report($e);
 
             return collect();
+        }
+    };
+
+    // Resumen ambiental para la landing.
+    // Se usa para mostrar métricas globales de plataforma y alimentar la calculadora eco.
+    $obtenerResumenSostenibilidad = function () {
+        try {
+            $conteoRoles = User::query()
+                ->select('role', DB::raw('COUNT(*) as total'))
+                ->groupBy('role')
+                ->pluck('total', 'role');
+
+            $baseViajesCompletados = Viaje::query()->where('status', 'completed');
+
+            $viajesCompletados = (clone $baseViajesCompletados)->count();
+            $distanciaTotalKm = (float) ((clone $baseViajesCompletados)->sum('distance') ?? 0);
+            $co2TotalKg = (float) ((clone $baseViajesCompletados)->sum('co2_saved') ?? 0);
+
+            // Estimación sencilla de ahorro por digitalización (evitar papeleo por gestión).
+            // Supuesto: 2 hojas A4 por viaje evitadas, 5g/hoja, 1.3 kg CO2e por kg de papel.
+            $kgCo2PorHojaA4 = 0.0065;
+            $hojasEvitadasPorViaje = 2;
+            $co2PapelEvitadoKg = $viajesCompletados * $hojasEvitadasPorViaje * $kgCo2PorHojaA4;
+
+            return [
+                'usersByRole' => [
+                    'passenger' => (int) ($conteoRoles['pasajero'] ?? 0),
+                    'driver' => (int) ($conteoRoles['conductor'] ?? 0),
+                    'admin' => (int) ($conteoRoles['admin'] ?? 0),
+                ],
+                'completedTrips' => (int) $viajesCompletados,
+                'distanceKm' => round($distanciaTotalKm, 2),
+                'co2SavedKg' => round($co2TotalKg, 2),
+                'paperCo2SavedKg' => round($co2PapelEvitadoKg, 2),
+            ];
+        } catch (\Throwable $e) {
+            report($e);
+
+            return [
+                'usersByRole' => [
+                    'passenger' => 0,
+                    'driver' => 0,
+                    'admin' => 0,
+                ],
+                'completedTrips' => 0,
+                'distanceKm' => 0,
+                'co2SavedKg' => 0,
+                'paperCo2SavedKg' => 0,
+            ];
         }
     };
 
@@ -133,9 +184,10 @@
     })->name('locale.set');
 
     // Landing pública.
-    Route::get('/', function () use ($obtenerOpinionesLanding) {
+    Route::get('/', function () use ($obtenerOpinionesLanding, $obtenerResumenSostenibilidad) {
 
         $opiniones = $obtenerOpinionesLanding();
+        $sostenibilidad = $obtenerResumenSostenibilidad();
 
         return Inertia::render('Inicio', [
             'canLogin' => Route::has('login'),
@@ -143,6 +195,7 @@
             'laravelVersion' => Application::VERSION,
             'phpVersion' => PHP_VERSION,
             'opiniones' => $opiniones,
+            'sostenibilidad' => $sostenibilidad,
         ]);
     });
 

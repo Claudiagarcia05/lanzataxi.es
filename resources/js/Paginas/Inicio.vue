@@ -56,6 +56,81 @@
       </div>
     </section>
 
+    <section class="py-20 bg-emerald-950 text-emerald-50">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="mb-12">
+          <p class="text-xs sm:text-sm font-semibold tracking-[0.2em] text-emerald-300 uppercase">{{ t('home.sustainability.kicker') }}</p>
+          <h2 class="text-4xl md:text-5xl font-bold mt-3">{{ t('home.sustainability.title') }}</h2>
+          <p class="text-emerald-100/90 max-w-3xl mt-4">{{ t('home.sustainability.subtitle') }}</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+          <div class="rounded-2xl border border-emerald-700/70 bg-emerald-900/40 p-5">
+            <p class="text-sm text-emerald-200">{{ t('home.sustainability.roles.passengers') }}</p>
+            <p class="text-3xl font-black mt-2">{{ resumenSostenibilidad.usersByRole.passenger }}</p>
+          </div>
+          <div class="rounded-2xl border border-emerald-700/70 bg-emerald-900/40 p-5">
+            <p class="text-sm text-emerald-200">{{ t('home.sustainability.roles.drivers') }}</p>
+            <p class="text-3xl font-black mt-2">{{ resumenSostenibilidad.usersByRole.driver }}</p>
+          </div>
+          <div class="rounded-2xl border border-emerald-700/70 bg-emerald-900/40 p-5">
+            <p class="text-sm text-emerald-200">{{ t('home.sustainability.roles.admins') }}</p>
+            <p class="text-3xl font-black mt-2">{{ resumenSostenibilidad.usersByRole.admin }}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
+          <article class="rounded-3xl border border-emerald-700/70 bg-emerald-900/40 p-6 sm:p-8">
+            <h3 class="text-2xl font-bold">{{ t('home.sustainability.globalTitle') }}</h3>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
+              <div class="rounded-xl bg-black/20 p-4">
+                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.completedTrips') }}</p>
+                <p class="text-2xl font-extrabold mt-1">{{ resumenSostenibilidad.completedTrips }}</p>
+              </div>
+              <div class="rounded-xl bg-black/20 p-4">
+                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.distance') }}</p>
+                <p class="text-2xl font-extrabold mt-1">{{ formatearNumero(resumenSostenibilidad.distanceKm) }} km</p>
+              </div>
+              <div class="rounded-xl bg-black/20 p-4">
+                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.co2Mobility') }}</p>
+                <p class="text-2xl font-extrabold mt-1">{{ formatearNumero(resumenSostenibilidad.co2SavedKg) }} kg</p>
+              </div>
+              <div class="rounded-xl bg-black/20 p-4">
+                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.co2Paper') }}</p>
+                <p class="text-2xl font-extrabold mt-1">{{ formatearNumero(resumenSostenibilidad.paperCo2SavedKg) }} kg</p>
+              </div>
+            </div>
+          </article>
+
+          <article class="rounded-3xl border border-emerald-700/70 bg-emerald-900/40 p-6 sm:p-8">
+            <h3 class="text-2xl font-bold">{{ t('home.sustainability.calculatorTitle') }}</h3>
+            <p class="text-sm text-emerald-100/90 mt-2">{{ t('home.sustainability.calculatorSubtitle') }}</p>
+
+            <div class="space-y-4 mt-6">
+              <label class="block">
+                <span class="text-sm text-emerald-200">{{ t('home.sustainability.inputs.monthlyTrips') }}</span>
+                <input v-model.number="calculadora.viajesMes" type="number" min="1" step="1" class="mt-2 w-full rounded-xl border border-emerald-600/70 bg-emerald-950/70 px-4 py-3 text-emerald-50" />
+              </label>
+              <label class="block">
+                <span class="text-sm text-emerald-200">{{ t('home.sustainability.inputs.avgKmPerTrip') }}</span>
+                <input v-model.number="calculadora.kmMediosViaje" type="number" min="1" step="0.1" class="mt-2 w-full rounded-xl border border-emerald-600/70 bg-emerald-950/70 px-4 py-3 text-emerald-50" />
+              </label>
+              <label class="block">
+                <span class="text-sm text-emerald-200">{{ t('home.sustainability.inputs.pagesPerTrip') }}</span>
+                <input v-model.number="calculadora.paginasFisicas" type="number" min="0" step="1" class="mt-2 w-full rounded-xl border border-emerald-600/70 bg-emerald-950/70 px-4 py-3 text-emerald-50" />
+              </label>
+            </div>
+
+            <div class="rounded-xl bg-black/25 p-4 mt-6 space-y-2">
+              <p class="text-sm text-emerald-200">{{ t('home.sustainability.results.mobility') }}: <span class="font-bold text-emerald-50">{{ formatearNumero(ahorroMovilidadKg) }} kg CO2/mes</span></p>
+              <p class="text-sm text-emerald-200">{{ t('home.sustainability.results.paper') }}: <span class="font-bold text-emerald-50">{{ formatearNumero(ahorroPapelKg) }} kg CO2/mes</span></p>
+              <p class="text-base font-extrabold mt-2">{{ t('home.sustainability.results.total') }}: {{ formatearNumero(ahorroTotalKg) }} kg CO2/mes</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
   <!-- Sección informativa: teléfonos de radio-taxi por municipio -->
     <section id="municipios-section" class="py-20 bg-neutral-soft">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -196,20 +271,7 @@
                   <svg class="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
-                  <span class="text-white/80">{{ contactInfo.email }}</span>
-                </li>
-                <li class="flex items-center space-x-3">
-                  <svg class="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-                  </svg>
-                  <span class="text-white/80">+34 928 123 456</span>
-                </li>
-                <li class="flex items-center space-x-3">
-                  <svg class="w-5 h-5 text-white/60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                  <span class="text-white/80">Arrecife, Lanzarote</span>
+                  <a class="text-white/80 hover:text-white transition-colors" :href="`mailto:${contactInfo.email}`">{{ contactInfo.email }}</a>
                 </li>
               </ul>
             </div>
@@ -267,6 +329,20 @@ const props = defineProps({
   opiniones: {
     type: Array,
     default: () => ([])
+  },
+  sostenibilidad: {
+    type: Object,
+    default: () => ({
+      usersByRole: {
+        passenger: 0,
+        driver: 0,
+        admin: 0,
+      },
+      completedTrips: 0,
+      distanceKm: 0,
+      co2SavedKg: 0,
+      paperCo2SavedKg: 0,
+    })
   }
 })
 
@@ -386,6 +462,53 @@ const testimoniosMock = [
 // Si `props.opiniones` tiene contenido, se usa; si no, se muestran los mocks.
 const testimonios = ref((props.opiniones && props.opiniones.length > 0) ? props.opiniones : testimoniosMock)
 
+const resumenSostenibilidad = computed(() => ({
+  usersByRole: {
+    passenger: Number(props.sostenibilidad?.usersByRole?.passenger || 0),
+    driver: Number(props.sostenibilidad?.usersByRole?.driver || 0),
+    admin: Number(props.sostenibilidad?.usersByRole?.admin || 0),
+  },
+  completedTrips: Number(props.sostenibilidad?.completedTrips || 0),
+  distanceKm: Number(props.sostenibilidad?.distanceKm || 0),
+  co2SavedKg: Number(props.sostenibilidad?.co2SavedKg || 0),
+  paperCo2SavedKg: Number(props.sostenibilidad?.paperCo2SavedKg || 0),
+}))
+
+const calculadora = ref({
+  viajesMes: 20,
+  kmMediosViaje: 8,
+  paginasFisicas: 2,
+})
+
+const FACTOR_CO2_COCHE = 0.12
+const FACTOR_CO2_TAXI = 0.08
+const FACTOR_CO2_HOJA = 0.0065
+
+const ahorroMovilidadKg = computed(() => {
+  const viajes = Math.max(Number(calculadora.value.viajesMes || 0), 0)
+  const kmMedios = Math.max(Number(calculadora.value.kmMediosViaje || 0), 0)
+
+  return Math.max(viajes * kmMedios * (FACTOR_CO2_COCHE - FACTOR_CO2_TAXI), 0)
+})
+
+const ahorroPapelKg = computed(() => {
+  const viajes = Math.max(Number(calculadora.value.viajesMes || 0), 0)
+  const paginas = Math.max(Number(calculadora.value.paginasFisicas || 0), 0)
+
+  return Math.max(viajes * paginas * FACTOR_CO2_HOJA, 0)
+})
+
+const ahorroTotalKg = computed(() => ahorroMovilidadKg.value + ahorroPapelKg.value)
+
+const formatearNumero = (valor) => {
+  const numero = Number(valor || 0)
+
+  return new Intl.NumberFormat('es-ES', {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 2,
+  }).format(numero)
+}
+
 // Helper de scroll (actualmente no se usa desde el template, pero sirve para anclas internas).
 const scrollToPasos = () => {
   const pasos = document.getElementById('como-funciona-section')
@@ -438,9 +561,7 @@ const footerSections = {
 
 // Datos de contacto visibles en el footer.
 const contactInfo = {
-  email: 'info@lanzataxi.es',
-  phone: '+34 928 123 456',
-  address: 'Arrecife, Lanzarote'
+  email: 'soporte@lanzataxi.es'
 }
 
 // Scroll genérico a una sección por id (útil para navegación de una sola página).

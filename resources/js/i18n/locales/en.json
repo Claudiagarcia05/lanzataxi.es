@@ -64,6 +64,35 @@
       "onlyRating": "This user only left a rating.",
       "readMore": "Read more"
     },
+    "sustainability": {
+      "kicker": "GREEN IT",
+      "title": "Applied sustainability",
+      "subtitle": "We audit and optimize the environmental impact of the service: lower mobility emissions, less paper, and better tech efficiency.",
+      "roles": {
+        "passengers": "Active passengers",
+        "drivers": "Active drivers",
+        "admins": "Administrators"
+      },
+      "globalTitle": "Global platform impact",
+      "metrics": {
+        "completedTrips": "Completed trips",
+        "distance": "Total distance",
+        "co2Mobility": "CO2 avoided from mobility",
+        "co2Paper": "CO2 avoided from digitization"
+      },
+      "calculatorTitle": "Personal CO2 calculator",
+      "calculatorSubtitle": "Compare your digital use of LanzaTaxi versus a physical process and private-car mobility.",
+      "inputs": {
+        "monthlyTrips": "Trips per month",
+        "avgKmPerTrip": "Average km per trip",
+        "pagesPerTrip": "Physical pages avoided per trip"
+      },
+      "results": {
+        "mobility": "Mobility savings",
+        "paper": "Digitization savings",
+        "total": "Estimated total savings"
+      }
+    },
     "footer": {
       "tagline": "The smartest way to move around Lanzarote. Book your taxi with real-time tracking and reach any municipality on the island safely.",
       "company": "Company",
