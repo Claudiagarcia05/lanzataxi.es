@@ -13,7 +13,6 @@
     use App\Http\Controllers\Auth\ConfirmablePasswordController;
     use App\Http\Controllers\Auth\EmailVerificationNotificationController;
     use App\Http\Controllers\Auth\EmailVerificationPromptController;
-    use App\Http\Controllers\Auth\NewPasswordController;
     use App\Http\Controllers\Auth\PasswordController;
     use App\Http\Controllers\Auth\PasswordResetLinkController;
     use App\Http\Controllers\Auth\RegisteredUserController;
@@ -38,11 +37,11 @@
         Route::post('forgot-password', [PasswordResetLinkController::class, 'store'])
             ->name('password.email');
 
-        Route::get('reset-password/{token}', [NewPasswordController::class, 'create'])
-            ->name('password.reset');
+        Route::post('forgot-password/verify', [PasswordResetLinkController::class, 'verify'])
+            ->name('password.verify');
 
-        Route::post('reset-password', [NewPasswordController::class, 'store'])
-            ->name('password.store');
+        Route::post('forgot-password/reset', [PasswordResetLinkController::class, 'reset'])
+            ->name('password.reset.store');
     });
 
     // Autenticados: verificación de email, confirmación de password y logout.

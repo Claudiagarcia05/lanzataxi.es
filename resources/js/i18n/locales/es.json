@@ -15,6 +15,10 @@
     "processing": "Procesando...",
     "sending": "Enviando..."
   },
+  "darkMode": {
+    "enable": "Activar modo oscuro",
+    "disable": "Desactivar modo oscuro"
+  },
   "home": {
     "hero": {
       "title": "Tu taxi en",
@@ -120,6 +124,37 @@
     "messages": {
       "registerSuccess": "Usuario creado correctamente. Inicie sesión."
     },
+    "forgotPassword": {
+      "link": "¿Olvidaste tu contraseña?"
+    },
+    "recovery": {
+      "kicker": "RECUPERACIÓN DE ACCESO",
+      "title": "Recupera tu contraseña",
+      "subtitle": "Escribe tu correo registrado, confirma el código de 5 números que te enviaremos y crea una nueva contraseña.",
+      "stepRequest": "Correo",
+      "stepCode": "Código",
+      "stepPassword": "Nueva contraseña",
+      "emailLabel": "Correo electrónico",
+      "emailPlaceholder": "tucorreo@ejemplo.com",
+      "sendCode": "Enviar código",
+      "codeSent": "Si el correo existe, hemos enviado un código de verificación.",
+      "backToLogin": "Volver al inicio de sesión",
+      "codeSentTo": "Hemos enviado un código a {email} si el correo está registrado.",
+      "codeLabel": "Código de 5 dígitos",
+      "codePlaceholder": "12345",
+      "changeEmail": "Cambiar correo",
+      "verifyCode": "Verificar código",
+      "codeVerified": "Código verificado. Ya puedes escribir una nueva contraseña.",
+      "resetPassword": "Cambiar contraseña",
+      "passwordUpdated": "Contraseña actualizada correctamente.",
+      "emailRequired": "Introduce un correo electrónico válido.",
+      "codeRequired": "Introduce el código de 5 dígitos.",
+      "tokenMissing": "Primero verifica el código.",
+      "invalidCode": "El código no es válido o ha caducado.",
+      "sendError": "No se ha podido enviar el código.",
+      "resetError": "No se ha podido cambiar la contraseña.",
+      "passwordRequirements": "La contraseña debe cumplir todos los requisitos de seguridad."
+    },
     "errors": {
       "emailPasswordRequired": "Email y contraseña son requeridos",
       "nameRequired": "El nombre es requerido",
@@ -141,8 +176,12 @@
     "stats": {
       "total": "Total reservas",
       "completed": "Completadas",
-      "spent": "Total gastado"
+      "spent": "Total gastado",
+      "co2Saved": "CO\u2082 ahorrado",
+      "co2Unit": "kg CO\u2082"
     },
+    "co2PerTrip": "\u267b\ufe0f {amount} kg CO\u2082 ahorrado",
+    "co2Tooltip": "Emisi\u00f3n evitada respecto a usar un coche particular (0.12 kg CO\u2082/km vs 0.08 kg CO\u2082/km en taxi)",
     "historyTitle": "Historial de Viajes",
     "historyCount": "{count} reservas",
     "fields": {

@@ -17,7 +17,7 @@
         <p class="text-blue-100">{{ t('reservations.subtitle') }}</p>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-neutral-dark">{{ estadisticasViajes.total }}</p>
           <p class="text-sm text-neutral-slate">{{ t('reservations.stats.total') }}</p>
@@ -29,6 +29,11 @@
         <div class="bg-white rounded-xl shadow-sm p-5">
           <p class="text-3xl font-bold text-lanzarote-blue">{{ totalGastado.toFixed(2) }}€</p>
           <p class="text-sm text-neutral-slate">{{ t('reservations.stats.spent') }}</p>
+        </div>
+        <div class="bg-white rounded-xl shadow-sm p-5 border-l-4 border-green-500" :title="t('reservations.co2Tooltip')">
+          <p class="text-3xl font-bold text-green-600">{{ totalCO2Ahorrado.toFixed(2) }}</p>
+          <p class="text-sm text-neutral-slate">{{ t('reservations.stats.co2Saved') }}</p>
+          <p class="text-xs text-green-500 font-medium">{{ t('reservations.stats.co2Unit') }}</p>
         </div>
       </div>
 
@@ -76,6 +81,12 @@
                   {{ obtenerDistintivoEstado(viaje.estado).label }}
                 </span>
               </div>
+            </div>
+
+            <div v-if="viaje.estado === 'completed' && viaje.co2Saved > 0" class="flex items-center gap-2 mb-2">
+              <span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 border border-green-200 text-green-700 text-xs font-medium" :title="t('reservations.co2Tooltip')">
+                ♻️ {{ t('reservations.co2PerTrip', { amount: viaje.co2Saved.toFixed(2) }) }}
+              </span>
             </div>
 
             <div v-if="['completed', 'cancelled'].includes(viaje.estado)" class="border-t border-neutral-volcanic pt-4 mt-2">
@@ -249,7 +260,11 @@ const totalGastado = computed(() => {
 
   return total - deudaPagada;
 })
-
+const totalCO2Ahorrado = computed(() =>
+  viajeStore.viajesPasajero
+    .filter(v => v.estado === 'completed')
+    .reduce((sum, v) => sum + (v.co2Saved || 0), 0)
+)
 const viajesFiltrados = computed(() => {
   // Filtro por estado + orden por fecha (más reciente primero).
   let viajes = [...viajeStore.viajesPasajero]

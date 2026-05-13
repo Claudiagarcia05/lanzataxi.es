@@ -150,7 +150,7 @@
          */
         public function updatePassword(Request $solicitud) {
             $validado = $solicitud->validate([
-                'new_password' => ['required', 'confirmed', Password::min(8)],
+                'new_password' => ['required', 'confirmed', Password::min(8)->mixedCase()->numbers()->symbols()],
             ]);
 
             $usuario = $solicitud->user();

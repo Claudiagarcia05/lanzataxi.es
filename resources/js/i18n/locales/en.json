@@ -15,6 +15,10 @@
     "processing": "Processing...",
     "sending": "Sending..."
   },
+  "darkMode": {
+    "enable": "Enable dark mode",
+    "disable": "Disable dark mode"
+  },
   "home": {
     "hero": {
       "title": "Your taxi in",
@@ -120,6 +124,37 @@
     "messages": {
       "registerSuccess": "Account created successfully. Please sign in."
     },
+    "forgotPassword": {
+      "link": "Forgot your password?"
+    },
+    "recovery": {
+      "kicker": "ACCESS RECOVERY",
+      "title": "Recover your password",
+      "subtitle": "Enter your registered email, confirm the 5-digit code we send you, and create a new password.",
+      "stepRequest": "Email",
+      "stepCode": "Code",
+      "stepPassword": "New password",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "you@example.com",
+      "sendCode": "Send code",
+      "codeSent": "If the email exists, we have sent a verification code.",
+      "backToLogin": "Back to sign in",
+      "codeSentTo": "We sent a code to {email} if that address is registered.",
+      "codeLabel": "5-digit code",
+      "codePlaceholder": "12345",
+      "changeEmail": "Change email",
+      "verifyCode": "Verify code",
+      "codeVerified": "Code verified. You can now enter a new password.",
+      "resetPassword": "Change password",
+      "passwordUpdated": "Password updated successfully.",
+      "emailRequired": "Please enter a valid email address.",
+      "codeRequired": "Please enter the 5-digit code.",
+      "tokenMissing": "Verify the code first.",
+      "invalidCode": "The code is invalid or has expired.",
+      "sendError": "We could not send the code.",
+      "resetError": "We could not change the password.",
+      "passwordRequirements": "The password must meet all security requirements."
+    },
     "errors": {
       "emailPasswordRequired": "Email and password are required",
       "nameRequired": "Name is required",
@@ -141,8 +176,12 @@
     "stats": {
       "total": "Total bookings",
       "completed": "Completed",
-      "spent": "Total spent"
+      "spent": "Total spent",
+      "co2Saved": "CO\u2082 saved",
+      "co2Unit": "kg CO\u2082"
     },
+    "co2PerTrip": "\u267b\ufe0f {amount} kg CO\u2082 saved",
+    "co2Tooltip": "Avoided emission vs private car (0.12 kg CO\u2082/km vs 0.08 kg CO\u2082/km in taxi)",
     "historyTitle": "Trip History",
     "historyCount": "{count} bookings",
     "fields": {

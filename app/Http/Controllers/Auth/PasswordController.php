@@ -18,7 +18,7 @@
         public function update(Request $solicitud): RedirectResponse {
             $validated = $solicitud->validate([
                 'current_password' => ['required', 'current_password'],
-                'password' => ['required', Password::defaults(), 'confirmed'],
+                'password' => ['required', Password::min(8)->mixedCase()->numbers()->symbols(), 'confirmed'],
             ]);
 
             // Hash seguro (bcrypt/argon según config).

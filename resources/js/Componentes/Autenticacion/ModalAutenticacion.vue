@@ -73,6 +73,12 @@
                 {{ esInicioSesion ? t('auth.switch.signUp') : t('auth.switch.signIn') }}
               </button>
             </p>
+
+            <p v-if="esInicioSesion" class="text-center text-sm">
+              <button type="button" class="text-lanzarote-blue font-semibold hover:underline" @click="irARecuperacion">
+                {{ t('auth.forgotPassword.link') }}
+              </button>
+            </p>
           </form>
         </div>
       </div>
@@ -84,6 +90,7 @@
 <script setup>
 import { ref } from 'vue'
 import axios from 'axios'
+import { router } from '@inertiajs/vue3'
 import { useI18n } from 'vue-i18n'
 import { executeRecaptchaV3 } from '../../recaptchaV3'
 
@@ -122,6 +129,10 @@ const cerrarModal = () => {
   // Cierra el modal (v-model) y resetea formulario/errores.
   emit('update:modelValue', false)
   reiniciarFormulario()
+}
+
+const irARecuperacion = () => {
+  router.visit('/forgot-password')
 }
 
 const reiniciarFormulario = () => {
