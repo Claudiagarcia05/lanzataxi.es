@@ -1,10 +1,10 @@
 <template>
-  <div class="min-h-screen bg-neutral-soft">
+  <div class="min-h-screen bg-neutral-soft text-neutral-dark transition-colors dark:bg-slate-950 dark:text-slate-100">
     <BarraNavegacion />
 
     <main id="main-content">
       <!-- Hero: CTA principal. Abre el modal de autenticación -->
-      <section class="pt-20 bg-lanzarote-blue text-white">
+      <section class="pt-20 bg-lanzarote-blue text-white dark:bg-slate-900">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
           <div class="grid md:grid-cols-2 gap-12 items-center">
             <div>
@@ -29,13 +29,13 @@
       </section>
 
     <!-- Sección educativa: pasos de cómo funciona la reserva -->
-    <section id="como-funciona-section" class="py-20 bg-white">
+    <section id="como-funciona-section" class="py-20 bg-white transition-colors dark:bg-slate-950">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl font-bold text-neutral-dark mb-4">
+          <h2 class="text-4xl md:text-5xl font-bold text-neutral-dark dark:text-slate-100 mb-4">
             {{ t('home.howItWorks.titlePrefix') }} <span class="text-lanzarote-blue">LanzaTaxi</span> {{ t('home.howItWorks.titleSuffix') }}
           </h2>
-          <p class="text-xl text-neutral-slate max-w-3xl mx-auto">
+          <p class="text-xl text-neutral-slate dark:text-slate-300 max-w-3xl mx-auto">
             {{ t('home.howItWorks.subtitle') }}
           </p>
         </div>
@@ -45,112 +45,37 @@
               {{ paso.numero }}
             </div>
             <div class="relative pt-12">
-              <div class="w-20 h-20 bg-lanzarote-blue/10 rounded-full flex items-center justify-center mx-auto mb-6">
+              <div class="w-20 h-20 bg-lanzarote-blue/10 dark:bg-lanzarote-blue/20 rounded-full flex items-center justify-center mx-auto mb-6">
                 <span class="text-3xl text-lanzarote-blue">{{ paso.numero }}</span>
               </div>
-              <h3 class="text-2xl font-bold text-neutral-dark mb-3">{{ paso.titulo }}</h3>
-              <p class="text-neutral-slate">{{ paso.descripcion }}</p>
+              <h3 class="text-2xl font-bold text-neutral-dark dark:text-slate-100 mb-3">{{ paso.titulo }}</h3>
+              <p class="text-neutral-slate dark:text-slate-300">{{ paso.descripcion }}</p>
             </div>
           </div>
-        </div>
-      </div>
-    </section>
-
-    <section class="py-20 bg-emerald-950 text-emerald-50">
-      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="mb-12">
-          <p class="text-xs sm:text-sm font-semibold tracking-[0.2em] text-emerald-300 uppercase">{{ t('home.sustainability.kicker') }}</p>
-          <h2 class="text-4xl md:text-5xl font-bold mt-3">{{ t('home.sustainability.title') }}</h2>
-          <p class="text-emerald-100/90 max-w-3xl mt-4">{{ t('home.sustainability.subtitle') }}</p>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
-          <div class="rounded-2xl border border-emerald-700/70 bg-emerald-900/40 p-5">
-            <p class="text-sm text-emerald-200">{{ t('home.sustainability.roles.passengers') }}</p>
-            <p class="text-3xl font-black mt-2">{{ resumenSostenibilidad.usersByRole.passenger }}</p>
-          </div>
-          <div class="rounded-2xl border border-emerald-700/70 bg-emerald-900/40 p-5">
-            <p class="text-sm text-emerald-200">{{ t('home.sustainability.roles.drivers') }}</p>
-            <p class="text-3xl font-black mt-2">{{ resumenSostenibilidad.usersByRole.driver }}</p>
-          </div>
-          <div class="rounded-2xl border border-emerald-700/70 bg-emerald-900/40 p-5">
-            <p class="text-sm text-emerald-200">{{ t('home.sustainability.roles.admins') }}</p>
-            <p class="text-3xl font-black mt-2">{{ resumenSostenibilidad.usersByRole.admin }}</p>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8">
-          <article class="rounded-3xl border border-emerald-700/70 bg-emerald-900/40 p-6 sm:p-8">
-            <h3 class="text-2xl font-bold">{{ t('home.sustainability.globalTitle') }}</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6">
-              <div class="rounded-xl bg-black/20 p-4">
-                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.completedTrips') }}</p>
-                <p class="text-2xl font-extrabold mt-1">{{ resumenSostenibilidad.completedTrips }}</p>
-              </div>
-              <div class="rounded-xl bg-black/20 p-4">
-                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.distance') }}</p>
-                <p class="text-2xl font-extrabold mt-1">{{ formatearNumero(resumenSostenibilidad.distanceKm) }} km</p>
-              </div>
-              <div class="rounded-xl bg-black/20 p-4">
-                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.co2Mobility') }}</p>
-                <p class="text-2xl font-extrabold mt-1">{{ formatearNumero(resumenSostenibilidad.co2SavedKg) }} kg</p>
-              </div>
-              <div class="rounded-xl bg-black/20 p-4">
-                <p class="text-sm text-emerald-200">{{ t('home.sustainability.metrics.co2Paper') }}</p>
-                <p class="text-2xl font-extrabold mt-1">{{ formatearNumero(resumenSostenibilidad.paperCo2SavedKg) }} kg</p>
-              </div>
-            </div>
-          </article>
-
-          <article class="rounded-3xl border border-emerald-700/70 bg-emerald-900/40 p-6 sm:p-8">
-            <h3 class="text-2xl font-bold">{{ t('home.sustainability.calculatorTitle') }}</h3>
-            <p class="text-sm text-emerald-100/90 mt-2">{{ t('home.sustainability.calculatorSubtitle') }}</p>
-
-            <div class="space-y-4 mt-6">
-              <label class="block">
-                <span class="text-sm text-emerald-200">{{ t('home.sustainability.inputs.monthlyTrips') }}</span>
-                <input v-model.number="calculadora.viajesMes" type="number" min="1" step="1" class="mt-2 w-full rounded-xl border border-emerald-600/70 bg-emerald-950/70 px-4 py-3 text-emerald-50" />
-              </label>
-              <label class="block">
-                <span class="text-sm text-emerald-200">{{ t('home.sustainability.inputs.avgKmPerTrip') }}</span>
-                <input v-model.number="calculadora.kmMediosViaje" type="number" min="1" step="0.1" class="mt-2 w-full rounded-xl border border-emerald-600/70 bg-emerald-950/70 px-4 py-3 text-emerald-50" />
-              </label>
-              <label class="block">
-                <span class="text-sm text-emerald-200">{{ t('home.sustainability.inputs.pagesPerTrip') }}</span>
-                <input v-model.number="calculadora.paginasFisicas" type="number" min="0" step="1" class="mt-2 w-full rounded-xl border border-emerald-600/70 bg-emerald-950/70 px-4 py-3 text-emerald-50" />
-              </label>
-            </div>
-
-            <div class="rounded-xl bg-black/25 p-4 mt-6 space-y-2">
-              <p class="text-sm text-emerald-200">{{ t('home.sustainability.results.mobility') }}: <span class="font-bold text-emerald-50">{{ formatearNumero(ahorroMovilidadKg) }} kg CO2/mes</span></p>
-              <p class="text-sm text-emerald-200">{{ t('home.sustainability.results.paper') }}: <span class="font-bold text-emerald-50">{{ formatearNumero(ahorroPapelKg) }} kg CO2/mes</span></p>
-              <p class="text-base font-extrabold mt-2">{{ t('home.sustainability.results.total') }}: {{ formatearNumero(ahorroTotalKg) }} kg CO2/mes</p>
-            </div>
-          </article>
         </div>
       </div>
     </section>
 
   <!-- Sección informativa: teléfonos de radio-taxi por municipio -->
-    <section id="municipios-section" class="py-20 bg-neutral-soft">
+    <section id="municipios-section" class="py-20 bg-neutral-soft transition-colors dark:bg-slate-900">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="text-center mb-16">
-          <h2 class="text-4xl md:text-5xl font-bold text-neutral-dark mb-4">
+          <h2 class="text-4xl md:text-5xl font-bold text-neutral-dark dark:text-slate-100 mb-4">
             {{ t('home.municipalities.title') }} <span class="text-lanzarote-blue">Lanzarote</span>
           </h2>
-          <p class="text-xl text-neutral-slate max-w-3xl mx-auto">
+          <p class="text-xl text-neutral-slate dark:text-slate-300 max-w-3xl mx-auto">
             {{ t('home.municipalities.subtitle') }}
           </p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div v-for="municipio in municipios" :key="municipio.nombre"
-               class="group bg-white rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-neutral-volcanic">
+               class="group bg-white dark:bg-slate-800 rounded-2xl overflow-hidden hover:shadow-xl transition-all duration-300 border border-neutral-volcanic dark:border-slate-700">
             <div class="h-2 bg-lanzarote-blue"></div>
             <div class="p-8">
-              <h3 class="text-2xl font-bold text-neutral-dark mb-2">{{ municipio.nombre }}</h3>
-              <p class="text-neutral-slate mb-4">{{ municipio.desc }}</p>
+              <h3 class="text-2xl font-bold text-neutral-dark dark:text-slate-100 mb-2">{{ municipio.nombre }}</h3>
+              <p class="text-neutral-slate dark:text-slate-300 mb-4">{{ municipio.desc }}</p>
               <div>
-                <span class="text-sm font-medium text-neutral-dark mb-2 block">{{ t('home.municipalities.radioTaxi') }}</span>
+                <span class="text-sm font-medium text-neutral-dark dark:text-slate-200 mb-2 block">{{ t('home.municipalities.radioTaxi') }}</span>
                 <div class="space-y-2">
                   <a v-for="telefono in municipio.telefonos" :key="telefono" :href="`tel:${telefono.replace(/\s/g, '')}`" class="flex items-center space-x-2 text-lanzarote-blue hover:text-lanzarote-blue/80 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -167,22 +92,22 @@
     </section>
 
   <!-- Sección de prueba social: testimonios (mock o desde props) -->
-    <section id="testimonios-section" class="py-20 bg-lanzarote-yellow">
+    <section id="testimonios-section" class="py-20 bg-lanzarote-yellow transition-colors dark:bg-slate-950">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex flex-col items-center mb-16">
           <div class="flex items-center gap-2 mb-2">
-            <span class="font-bold text-neutral-dark text-sm uppercase tracking-widest">{{ t('home.reviews.excellent') }}</span>
+            <span class="font-bold text-neutral-dark dark:text-slate-100 text-sm uppercase tracking-widest">{{ t('home.reviews.excellent') }}</span>
             <div class="flex text-orange-500 text-lg">
               <template v-for="i in 5">★</template>
             </div>
-            <span class="text-neutral-dark font-medium ml-1">{{ t('home.reviews.count', { count: testimonios.length }) }}</span>
+            <span class="text-neutral-dark dark:text-slate-200 font-medium ml-1">{{ t('home.reviews.count', { count: testimonios.length }) }}</span>
             <img src="https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg" alt="Google" class="h-5 ml-1" loading="lazy" decoding="async">
           </div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div v-for="testimonio in testimonios" :key="testimonio.nombre" class="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 flex flex-col h-fit">
+          <div v-for="testimonio in testimonios" :key="testimonio.nombre" class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-gray-100 dark:border-slate-700 flex flex-col h-fit">
             <div class="flex justify-between items-start mb-1">
-              <h4 class="font-bold text-gray-900 text-[15px] leading-tight">{{ testimonio.nombre }}</h4>
+              <h4 class="font-bold text-gray-900 dark:text-slate-100 text-[15px] leading-tight">{{ testimonio.nombre }}</h4>
               <div class="w-5 h-5 flex-shrink-0">
                 <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
               </div>
@@ -199,13 +124,68 @@
                 </svg>
               </div>
             </div>
-            <div class="text-gray-700 text-[14px] leading-relaxed">
+            <div class="text-gray-700 dark:text-slate-300 text-[14px] leading-relaxed">
               <p v-if="testimonio.texto">{{ testimonio.texto }}</p>
-              <p v-else class="italic text-gray-500 text-xs">{{ t('home.reviews.onlyRating') }}</p>
-              <span v-if="testimonio.tieneMas" class="inline-block mt-2 text-gray-400 text-xs cursor-pointer hover:underline">
+              <p v-else class="italic text-gray-500 dark:text-slate-400 text-xs">{{ t('home.reviews.onlyRating') }}</p>
+              <span v-if="testimonio.tieneMas" class="inline-block mt-2 text-gray-400 dark:text-slate-400 text-xs cursor-pointer hover:underline">
                 {{ t('home.reviews.readMore') }}
               </span>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="py-16 bg-[#f6efe3] transition-colors dark:bg-slate-900">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="rounded-[2rem] border border-[#e6d8bd] bg-white/80 p-6 shadow-sm backdrop-blur sm:p-8 dark:border-slate-700 dark:bg-slate-950/70">
+          <div class="grid gap-8 xl:grid-cols-[1.1fr_0.9fr] xl:items-start">
+            <div>
+              <p class="text-xs font-semibold uppercase tracking-[0.2em] text-lanzarote-blue dark:text-lanzarote-yellow">{{ t('home.sustainability.kicker') }}</p>
+              <h2 class="mt-3 text-3xl font-bold text-neutral-dark dark:text-slate-100 md:text-4xl">{{ t('home.sustainability.title') }}</h2>
+              <p class="mt-3 max-w-2xl text-neutral-slate dark:text-slate-300">{{ t('home.sustainability.subtitle') }}</p>
+
+              <div class="mt-6 grid gap-4 sm:grid-cols-3">
+                <article class="rounded-2xl border border-[#eadfca] bg-[#fffaf2] p-4 dark:border-slate-700 dark:bg-slate-800">
+                  <p class="text-sm text-neutral-slate dark:text-slate-400">{{ t('home.sustainability.metrics.completedTrips') }}</p>
+                  <p class="mt-2 text-2xl font-extrabold text-lanzarote-blue dark:text-lanzarote-yellow">{{ resumenSostenibilidad.completedTrips }}</p>
+                </article>
+                <article class="rounded-2xl border border-[#eadfca] bg-[#fffaf2] p-4 dark:border-slate-700 dark:bg-slate-800">
+                  <p class="text-sm text-neutral-slate dark:text-slate-400">{{ t('home.sustainability.metrics.co2Mobility') }}</p>
+                  <p class="mt-2 text-2xl font-extrabold text-lanzarote-blue dark:text-lanzarote-yellow">{{ formatearNumero(resumenSostenibilidad.co2SavedKg) }} kg</p>
+                </article>
+                <article class="rounded-2xl border border-[#eadfca] bg-[#fffaf2] p-4 dark:border-slate-700 dark:bg-slate-800">
+                  <p class="text-sm text-neutral-slate dark:text-slate-400">{{ t('home.sustainability.metrics.co2Paper') }}</p>
+                  <p class="mt-2 text-2xl font-extrabold text-lanzarote-blue dark:text-lanzarote-yellow">{{ formatearNumero(resumenSostenibilidad.paperCo2SavedKg) }} kg</p>
+                </article>
+              </div>
+            </div>
+
+            <article class="rounded-3xl border border-lanzarote-blue/15 bg-[#fdf8ef] p-5 sm:p-6 dark:border-slate-700 dark:bg-slate-800">
+              <h3 class="text-xl font-bold text-neutral-dark dark:text-slate-100">{{ t('home.sustainability.calculatorTitle') }}</h3>
+              <p class="mt-2 text-sm text-neutral-slate dark:text-slate-300">{{ t('home.sustainability.calculatorSubtitle') }}</p>
+
+              <div class="mt-5 grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
+                <label class="block">
+                  <span class="text-sm text-neutral-slate dark:text-slate-300">{{ t('home.sustainability.inputs.monthlyTrips') }}</span>
+                  <input v-model.number="calculadora.viajesMes" type="number" min="1" step="1" class="mt-2 w-full rounded-xl border border-[#dcc9a7] bg-white px-4 py-3 text-neutral-dark focus:border-lanzarote-blue focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" />
+                </label>
+                <label class="block">
+                  <span class="text-sm text-neutral-slate dark:text-slate-300">{{ t('home.sustainability.inputs.avgKmPerTrip') }}</span>
+                  <input v-model.number="calculadora.kmMediosViaje" type="number" min="1" step="0.1" class="mt-2 w-full rounded-xl border border-[#dcc9a7] bg-white px-4 py-3 text-neutral-dark focus:border-lanzarote-blue focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" />
+                </label>
+                <label class="block">
+                  <span class="text-sm text-neutral-slate dark:text-slate-300">{{ t('home.sustainability.inputs.pagesPerTrip') }}</span>
+                  <input v-model.number="calculadora.paginasFisicas" type="number" min="0" step="1" class="mt-2 w-full rounded-xl border border-[#dcc9a7] bg-white px-4 py-3 text-neutral-dark focus:border-lanzarote-blue focus:outline-none dark:border-slate-600 dark:bg-slate-900 dark:text-slate-100" />
+                </label>
+              </div>
+
+              <div class="mt-5 rounded-2xl bg-lanzarote-blue px-5 py-4 text-white dark:bg-slate-950">
+                <p class="text-sm text-white/80">{{ t('home.sustainability.results.mobility') }}: <span class="font-semibold text-white">{{ formatearNumero(ahorroMovilidadKg) }} kg CO2/mes</span></p>
+                <p class="mt-1 text-sm text-white/80">{{ t('home.sustainability.results.paper') }}: <span class="font-semibold text-white">{{ formatearNumero(ahorroPapelKg) }} kg CO2/mes</span></p>
+                <p class="mt-3 text-lg font-extrabold">{{ t('home.sustainability.results.total') }}: {{ formatearNumero(ahorroTotalKg) }} kg CO2/mes</p>
+              </div>
+            </article>
           </div>
         </div>
       </div>
