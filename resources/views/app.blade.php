@@ -13,14 +13,14 @@
         @routes
         @vite(['resources/js/app.js'])
         @inertiaHead
+        <script>
+          (function(){
+            var d=localStorage.getItem('lanzataxi_dark_mode');
+            var p=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
+            if(d==='true'||(d===null&&p))document.documentElement.classList.add('dark');
+          })();
+        </script>
     </head>
-    <script>
-      (function(){
-        var d=localStorage.getItem('lanzataxi_dark_mode');
-        var p=window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches;
-        if(d==='true'||(d===null&&p))document.documentElement.classList.add('dark');
-      })();
-    <\/script>
     <body class="font-sans antialiased">
         @inertia
     </body>
