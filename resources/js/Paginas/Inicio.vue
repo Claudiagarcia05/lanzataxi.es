@@ -208,54 +208,28 @@
           <nav class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-12" aria-label="Enlaces del sitio">
             <div>
               <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.company') }}</h3>
-              <p class="text-white/65 text-sm leading-6 mb-4">
-                {{ t('home.footer.companySummary') }}
-              </p>
               <ul class="space-y-3">
                 <li>
                   <Link :href="route('public.company')" class="text-white/75 hover:text-white transition-colors text-sm">
                     {{ t('home.footer.about') }}
                   </Link>
                 </li>
-                <li>
-                  <button type="button" @click="scrollToSection('como-funciona-section')" class="text-left text-white/75 hover:text-white transition-colors text-sm">
-                    {{ t('home.footer.howItWorks') }}
-                  </button>
-                </li>
-                <li>
-                  <button type="button" @click="scrollToSection('testimonios-section')" class="text-left text-white/75 hover:text-white transition-colors text-sm">
-                    {{ t('home.footer.reviews') }}
-                  </button>
-                </li>
               </ul>
             </div>
             <div>
               <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.products') }}</h3>
-              <p class="text-white/65 text-sm leading-6 mb-4">
-                {{ t('home.footer.productsSummary') }}
-              </p>
               <ul class="space-y-3">
-                <li><Link :href="route('public.products')" class="text-white/75 hover:text-white transition-colors text-sm">{{ t('home.footer.passengers') }}</Link></li>
-                <li><Link :href="route('public.products')" class="text-white/75 hover:text-white transition-colors text-sm">{{ t('home.footer.drivers') }}</Link></li>
                 <li><Link :href="route('public.products')" class="text-white/75 hover:text-white transition-colors text-sm">{{ t('home.footer.business') }}</Link></li>
               </ul>
             </div>
             <div>
               <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.support') }}</h3>
-              <p class="text-white/65 text-sm leading-6 mb-4">
-                {{ t('home.footer.supportSummary') }}
-              </p>
               <ul class="space-y-3">
                 <li><Link :href="route('public.support')" class="text-white/75 hover:text-white transition-colors text-sm">{{ t('home.footer.help') }}</Link></li>
-                <li><Link :href="route('public.support')" class="text-white/75 hover:text-white transition-colors text-sm">{{ t('home.footer.security') }}</Link></li>
-                <li><span class="text-white/65 text-sm">{{ t('home.footer.responseTime') }}</span></li>
               </ul>
             </div>
             <div>
               <h3 class="font-semibold text-lg mb-4">{{ t('home.footer.legal') }}</h3>
-              <p class="text-white/65 text-sm leading-6 mb-4">
-                {{ t('home.footer.legalSummary') }}
-              </p>
               <ul class="space-y-3">
                 <li><Link :href="route('legal.notice')" class="text-white/75 hover:text-white transition-colors text-sm">{{ t('home.footer.legalNotice') }}</Link></li>
                 <li><Link :href="route('legal.cookies')" class="text-white/75 hover:text-white transition-colors text-sm">{{ t('home.footer.cookiesPolicy') }}</Link></li>
@@ -305,7 +279,6 @@
         <div class="bg-black/20 py-4">
           <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center text-sm text-white/60">
             <p>© {{ currentYear }} LanzaTaxi. {{ t('home.footer.rights') }}</p>
-            <p class="mt-2 md:mt-0 text-white/70">{{ contactInfo.email }} · {{ t('home.footer.responseTime') }}</p>
           </div>
         </div>
       </footer>
