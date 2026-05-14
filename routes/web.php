@@ -183,6 +183,31 @@
             ->withCookie($cookieLegacyDomain);
     })->name('locale.set');
 
+    // Páginas públicas de soporte y legal.
+    Route::get('/aviso-legal', function () {
+        return Inertia::render('Legal/AvisoLegal');
+    })->name('legal.notice');
+
+    Route::get('/politica-cookies', function () {
+        return Inertia::render('Legal/PoliticaCookies');
+    })->name('legal.cookies');
+
+    Route::get('/proteccion-datos', function () {
+        return Inertia::render('Legal/ProteccionDatos');
+    })->name('legal.privacy');
+
+    Route::get('/productos', function () {
+        return Inertia::render('Publico/Productos');
+    })->name('public.products');
+
+    Route::get('/soporte', function () {
+        return Inertia::render('Publico/Soporte');
+    })->name('public.support');
+
+    Route::get('/empresa', function () {
+        return Inertia::render('Publico/Empresa');
+    })->name('public.company');
+
     // Landing pública.
     Route::get('/', function () use ($obtenerOpinionesLanding, $obtenerResumenSostenibilidad) {
 
