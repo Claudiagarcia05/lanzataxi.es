@@ -469,7 +469,13 @@
       "cardHolderPlaceholder": "As it appears on the card",
       "confirmWithdrawTitle": "Confirm withdrawal?",
       "confirmWithdrawText": "Do you confirm the withdrawal of {amount} from your virtual wallet?",
-      "confirmYes": "Yes, withdraw"
+      "confirmYes": "Yes, withdraw",
+      "bankDataTitle": "Bank account details",
+      "ibanLabel": "IBAN",
+      "ibanPlaceholder": "ES00 0000 0000 0000 0000 0000",
+      "ibanInvalid": "The IBAN format is not valid",
+      "accountHolderLabel": "Account holder",
+      "accountHolderPlaceholder": "Full name of the account holder"
     }
   },
   "earnings": {

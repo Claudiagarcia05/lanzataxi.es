@@ -250,10 +250,21 @@
   </DisposicionPasajero>
     <div v-if="mostrarConfirmacionRetiro" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div class="bg-white rounded-2xl p-6 max-w-md w-full">
-        <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('profile.wallet.confirmWithdrawTitle') }}</h3>
-        <p class="text-neutral-slate mb-6">{{ t('profile.wallet.confirmWithdrawText', { amount: formatearMoneda(montoRetiro) }) }}</p>
+        <h3 class="text-xl font-bold text-neutral-dark mb-4">{{ t('profile.wallet.bankDataTitle') }}</h3>
+        <p class="text-neutral-slate mb-4">{{ t('profile.wallet.confirmWithdrawText', { amount: formatearMoneda(montoRetiro) }) }}</p>
+        <div class="space-y-4 mb-6">
+          <div>
+            <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('profile.wallet.ibanLabel') }}</label>
+            <input v-model="datosBancarios.iban" type="text" maxlength="34" :placeholder="t('profile.wallet.ibanPlaceholder')" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" @input="datosBancarios.iban = datosBancarios.iban.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+            <p v-if="datosBancarios.iban && !esIbanValido" class="text-xs text-red-500 mt-1">{{ t('profile.wallet.ibanInvalid') }}</p>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('profile.wallet.accountHolderLabel') }}</label>
+            <input v-model="datosBancarios.titular" type="text" maxlength="100" :placeholder="t('profile.wallet.accountHolderPlaceholder')" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue">
+          </div>
+        </div>
         <div class="flex space-x-3">
-          <button @click="confirmarRetiro" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black">
+          <button @click="confirmarRetiro" :disabled="!puedeConfirmarRetiro" class="flex-1 bg-lanzarote-blue text-white py-2 rounded-lg hover:bg-lanzarote-yellow hover:text-black disabled:opacity-50 disabled:cursor-not-allowed">
             {{ t('profile.wallet.confirmYes') }}
           </button>
           <button @click="cancelarRetiro" class="flex-1 border border-neutral-volcanic py-2 rounded-lg hover:bg-neutral-soft">
@@ -285,6 +296,11 @@ const avatarUsuario = ref(null)
 const mostrarConfirmacionEliminacion = ref(false)
 const editandoPersonal = ref(false)
 const mostrarConfirmacionRetiro = ref(false)
+
+const datosBancarios = reactive({
+  iban: '',
+  titular: ''
+})
 
 const recargaCartera = ref(10)
 const montoPersonalizado = ref('')
@@ -359,6 +375,17 @@ const puedeRetirar = computed(() => {
   const monto = parseFloat(montoRetiro.value)
 
   return monto >= 5 && monto <= carteraStore.saldo
+})
+
+const esIbanValido = computed(() => {
+  const iban = datosBancarios.iban.replace(/\s/g, '')
+
+  return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/.test(iban) && iban.length >= 15
+})
+
+const puedeConfirmarRetiro = computed(() => {
+
+  return esIbanValido.value && datosBancarios.titular.trim().length >= 2
 })
 
 const esContrasenaFuerte = computed(() => {
@@ -749,19 +776,29 @@ const procesarRetiro = async () => {
 }
 
 const confirmarRetiro = async () => {
-  // Ejecuta la retirada (store/back) y muestra mensaje informativo.
+  // Ejecuta la retirada (store/back) con datos bancarios y muestra mensaje informativo.
   const monto = parseFloat(montoRetiro.value)
-  const resultado = await carteraStore.retirarFondos(monto)
+  const resultado = await carteraStore.retirarFondos(monto, {
+    iban: datosBancarios.iban,
+    titular_cuenta: datosBancarios.titular
+  })
   if (resultado.success) {
     mensajeInfo.value = 'Solicitud de retirada procesada. El dinero se transferirá a tu cuenta en 2-3 días hábiles.'
     setTimeout(() => { mensajeInfo.value = '' }, 4000)
     montoRetiro.value = ''
+    datosBancarios.iban = ''
+    datosBancarios.titular = ''
+  } else {
+    mensajeError.value = resultado.error || 'Error al procesar la retirada'
+    setTimeout(() => { mensajeError.value = '' }, 4000)
   }
   mostrarConfirmacionRetiro.value = false
 }
 
 const cancelarRetiro = () => {
   mostrarConfirmacionRetiro.value = false
+  datosBancarios.iban = ''
+  datosBancarios.titular = ''
 }
 
 const eliminarCuenta = async () => {

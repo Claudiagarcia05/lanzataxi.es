@@ -105,7 +105,6 @@
       "passengers": "Pasajeros",
       "drivers": "Taxistas",
       "business": "Empresas",
-      "fleets": "Flotas",
       "support": "Soporte",
       "supportSummary": "Te ayudamos con reservas, incidencias y dudas sobre el servicio.",
       "help": "Ayuda",
@@ -469,7 +468,13 @@
       "cardHolderPlaceholder": "Como aparece en la tarjeta",
       "confirmWithdrawTitle": "¿Confirmar retirada?",
       "confirmWithdrawText": "¿Confirmas la retirada de {amount} de tu cartera virtual?",
-      "confirmYes": "Sí, retirar"
+      "confirmYes": "Sí, retirar",
+      "bankDataTitle": "Datos de cuenta bancaria",
+      "ibanLabel": "IBAN",
+      "ibanPlaceholder": "ES00 0000 0000 0000 0000 0000",
+      "ibanInvalid": "El IBAN no tiene un formato válido",
+      "accountHolderLabel": "Titular de la cuenta",
+      "accountHolderPlaceholder": "Nombre completo del titular"
     }
   },
   "earnings": {

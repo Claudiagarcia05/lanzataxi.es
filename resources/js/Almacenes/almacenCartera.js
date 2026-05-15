@@ -87,11 +87,12 @@ export const useCarteraStore = defineStore('cartera', {
       }
     },
 
-    async retirarFondos(monto) {
-      // Retira saldo (si el backend lo permite).
+    async retirarFondos(monto, datosBancarios = {}) {
+      // Retira saldo (si el backend lo permite), enviando los datos bancarios del destinatario.
       try {
-        const respuesta = await axios.post('/api/wallet/withdraw', { 
-          amount: parseFloat(monto) 
+        const respuesta = await axios.post('/api/wallet/withdraw', {
+          amount: parseFloat(monto),
+          ...datosBancarios
         })
         this.saldo = parseFloat(respuesta.data.new_balance)
         this.transacciones.unshift({
