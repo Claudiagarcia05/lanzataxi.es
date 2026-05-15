@@ -231,8 +231,8 @@
         public function withdrawFunds(Request $solicitud) {
             $solicitud->validate([
                 'amount'          => 'required|numeric|min:5',
-                'iban'            => ['nullable', 'string', 'max:34', 'regex:/^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/'],
-                'titular_cuenta'  => 'nullable|string|max:100'
+                'iban'            => ['required', 'string', 'size:24', 'regex:/^ES[0-9]{22}$/i'],
+                'titular_cuenta'  => 'required|string|min:2|max:100'
             ]);
 
             $usuario = Auth::user();

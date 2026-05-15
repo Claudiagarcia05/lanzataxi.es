@@ -14,7 +14,7 @@
       <section class="rounded-3xl bg-white p-8 shadow-sm ring-1 ring-neutral-volcanic/60 dark:bg-slate-900 dark:ring-slate-800">
         <p class="max-w-3xl text-lg leading-8 text-neutral-slate dark:text-slate-300">{{ copy.intro }}</p>
 
-        <div class="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <div class="mt-10 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           <article v-for="product in copy.products" :key="product.title" class="rounded-3xl border border-neutral-volcanic/60 bg-neutral-soft p-6 transition-transform hover:-translate-y-1 dark:border-slate-800 dark:bg-slate-950/60">
             <div class="inline-flex rounded-2xl bg-lanzarote-blue/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-lanzarote-blue dark:bg-lanzarote-blue/20 dark:text-white">
               {{ product.kicker }}

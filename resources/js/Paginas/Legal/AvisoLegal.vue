@@ -52,6 +52,7 @@ const copyByLocale = {
   es: {
     title: 'Aviso legal',
     back: 'Volver al inicio',
+    intro: 'Este sitio opera bajo la marca LanzaTaxi y ofrece información, soporte y acceso a los servicios publicados. Si necesitas los datos completos del titular o una referencia concreta, contacta con soporte y te los facilitamos.',
     sections: [
       {
         title: 'Uso correcto del sitio',

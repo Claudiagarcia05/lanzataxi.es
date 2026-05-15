@@ -255,7 +255,7 @@
         <div class="space-y-4 mb-6">
           <div>
             <label class="block text-sm font-medium text-neutral-dark mb-1">{{ t('profile.wallet.ibanLabel') }}</label>
-            <input v-model="datosBancarios.iban" type="text" maxlength="34" :placeholder="t('profile.wallet.ibanPlaceholder')" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" @input="datosBancarios.iban = datosBancarios.iban.toUpperCase().replace(/[^A-Z0-9]/g, '')">
+            <input v-model="datosBancarios.iban" type="text" maxlength="24" :placeholder="t('profile.wallet.ibanPlaceholder')" class="w-full px-4 py-2 border border-neutral-volcanic rounded-lg focus:ring-2 focus:ring-lanzarote-blue" @input="datosBancarios.iban = datosBancarios.iban.toUpperCase().replace(/[^A-Z0-9]/g, '')">
             <p v-if="datosBancarios.iban && !esIbanValido" class="text-xs text-red-500 mt-1">{{ t('profile.wallet.ibanInvalid') }}</p>
           </div>
           <div>
@@ -378,9 +378,10 @@ const puedeRetirar = computed(() => {
 })
 
 const esIbanValido = computed(() => {
-  const iban = datosBancarios.iban.replace(/\s/g, '')
+  // IBAN español: ES + 22 dígitos (longitud total 24)
+  const iban = datosBancarios.iban.replace(/\s/g, '').toUpperCase()
 
-  return /^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$/.test(iban) && iban.length >= 15
+  return /^ES[0-9]{22}$/.test(iban)
 })
 
 const puedeConfirmarRetiro = computed(() => {
