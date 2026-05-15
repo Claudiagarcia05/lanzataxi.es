@@ -506,8 +506,7 @@ const footerSections = {
     links: [
       { name: 'Pasajeros', url: '#' },
       { name: 'Taxistas', url: '#' },
-      { name: 'Empresas', url: '#' },
-      { name: 'Flotas', url: '#' }
+      { name: 'Empresas', url: '#' }
     ]
   },
   soporte: {

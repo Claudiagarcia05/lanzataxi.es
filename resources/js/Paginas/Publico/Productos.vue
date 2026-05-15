@@ -70,11 +70,6 @@ const copyByLocale = {
         kicker: 'Empresa',
         title: 'Empresas',
         body: 'Soluciones para desplazamientos corporativos, atención preferente y coordinación de viajes recurrentes.'
-      },
-      {
-        kicker: 'Operación',
-        title: 'Flotas',
-        body: 'Pensado para equipos y gestores que necesitan visibilidad y orden en el servicio de transporte.'
       }
     ],
     sideTitle: 'Qué gana cada perfil',
