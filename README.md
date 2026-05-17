@@ -135,7 +135,7 @@ git --version
 
 1. Clona el repositorio:
 ```
-git clone https://github.com/Claudiagarcia05/lanzataxi.lan.git
+git clone https://github.com/Claudiagarcia05/lanzataxi.es.git
 ```
 2. Accede a la carpeta:
 ```

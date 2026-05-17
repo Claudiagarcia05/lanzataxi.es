@@ -29,7 +29,7 @@
             ], [
                 'name' => 'Admin',
                 // Contraseña de desarrollo. Cambiarla si se habilita en entornos compartidos.
-                'password' => Hash::make('password'),
+                'password' => Hash::make('password1234@'),
                 'role' => 'admin',
                 'phone' => '+34 600 333 333',
                 'wallet_balance' => 0,
